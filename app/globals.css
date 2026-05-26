@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --red: #E8192C;
+  --red-dark: #C01020;
+  --navy: #0D1B2A;
+  --navy-mid: #162234;
+  --navy-light: #1E2F44;
+  --offwhite: #F5F4F0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-finlandica-text), sans-serif;
+  color: var(--navy);
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-finlandica-headline), sans-serif;
+}
+
+/* Quill editor styles */
+.ql-toolbar {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  border-color: #e5e7eb !important;
+  background: #f9fafb;
+}
+
+.ql-container {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  border-color: #e5e7eb !important;
+  font-family: var(--font-finlandica-text), sans-serif !important;
+  font-size: 16px !important;
+  min-height: 400px;
+}
+
+.ql-editor {
+  min-height: 400px;
+  line-height: 1.8;
+}
+
+/* Article content styles */
+.article-content h1,
+.article-content h2,
+.article-content h3 {
+  font-family: var(--font-finlandica-headline), sans-serif;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.article-content p {
+  margin-bottom: 1.25rem;
+  line-height: 1.8;
+}
+
+.article-content img {
+  border-radius: 8px;
+  margin: 2rem 0;
+}
+
+.article-content ul,
+.article-content ol {
+  margin: 1rem 0 1rem 1.5rem;
+}
+
+.article-content blockquote {
+  border-left: 4px solid var(--red);
+  padding-left: 1.5rem;
+  margin: 2rem 0;
+  font-style: italic;
+  color: #4B5563;
+}

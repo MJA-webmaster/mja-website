@@ -4,7 +4,7 @@ import NewsletterForm from '@/components/NewsletterForm'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'MJA Team' }https://github.com/MJA-webmaster/mja-website/tree/main
+export const metadata: Metadata = { title: 'MJA Team' }
 
 export default async function TeamPage() {
   const supabase = createClient()

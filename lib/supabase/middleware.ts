@@ -1,7 +1,14 @@
+import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
 
-export async function updateSession(request: NextRequest) {
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Only protect /admin routes (but NOT /admin/login)
+  if (!pathname.startsWith('/admin') || pathname === '/admin/login') {
+    return NextResponse.next()
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -13,9 +20,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options as never)
@@ -27,19 +32,15 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protect /admin routes
-  if (!user && request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin/login')) {
+  if (!user) {
     const url = request.nextUrl.clone()
     url.pathname = '/admin/login'
     return NextResponse.redirect(url)
   }
 
-  // Redirect logged-in users away from login page
-  if (user && request.nextUrl.pathname === '/admin/login') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/admin'
-    return NextResponse.redirect(url)
-  }
-
   return supabaseResponse
+}
+
+export const config = {
+  matcher: ['/admin/:path*'],
 }

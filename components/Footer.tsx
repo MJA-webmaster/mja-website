@@ -47,7 +47,7 @@ export default function Footer() {
             <img
               src="/mjalogo.png"
               alt="Maldives Journalists Association"
-              className="h-12 w-auto brightness-0 invert"
+              className="h-20 w-auto brightness-0 invert"
             />
           </Link>
           <p className="text-xs text-white/30 leading-relaxed">

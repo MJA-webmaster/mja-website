@@ -41,7 +41,6 @@ export default function Nav() {
     setMobileOpen(false)
   }, [pathname])
 
-  // Don't show public nav on admin pages
   if (pathname?.startsWith('/admin')) return null
 
   return (
@@ -52,18 +51,12 @@ export default function Nav() {
     >
       <nav className="max-w-[1280px] mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 flex-shrink-0">
-          {/* Placeholder logo - replace with actual SVG */}
-          <div className="w-9 h-9 flex items-center justify-center">
-            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-              <path d="M4 28V10L14 24L24 10V28" stroke="#E8192C" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M27 12L33 12" stroke="#E8192C" strokeWidth="2.5" strokeLinecap="round"/>
-              <path d="M27 18L33 18" stroke="#E8192C" strokeWidth="2.5" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <div className="leading-tight text-[10px] font-semibold text-navy uppercase tracking-wide">
-            Maldives<br />Journalist<br />Association
-          </div>
+        <Link href="/" className="flex items-center flex-shrink-0">
+          <img
+            src="/mjalogo.png"
+            alt="Maldives Journalists Association"
+            className="h-10 w-auto"
+          />
         </Link>
 
         {/* Desktop nav */}
@@ -86,7 +79,6 @@ export default function Nav() {
                 {link.label}
               </Link>
 
-              {/* Dropdown */}
               {link.children && (
                 <AnimatePresence>
                   {activeDropdown === link.label && (
@@ -101,7 +93,7 @@ export default function Nav() {
                         <Link
                           key={child.href}
                           href={child.href}
-                          className="block px-4 py-2.5 text-[13px] text-navy hover:bg-offwhite hover:text-red transition-colors"
+                          className="block px-4 py-2.5 text-[13px] text-navy hover:bg-gray-50 hover:text-red transition-colors"
                         >
                           {child.label}
                         </Link>
@@ -118,6 +110,7 @@ export default function Nav() {
         <Link
           href="/join-mja"
           className="hidden lg:block bg-red text-white text-[13px] font-semibold px-5 py-2 rounded hover:bg-red-dark transition-colors"
+          style={{ backgroundColor: '#E8192C' }}
         >
           Join MJA
         </Link>
@@ -181,7 +174,8 @@ export default function Nav() {
               ))}
               <Link
                 href="/join-mja"
-                className="mt-4 bg-red text-white text-center py-3 rounded font-semibold text-[14px]"
+                className="mt-4 text-white text-center py-3 rounded font-semibold text-[14px]"
+                style={{ backgroundColor: '#E8192C' }}
               >
                 Join MJA
               </Link>

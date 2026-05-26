@@ -55,7 +55,7 @@ export default function Nav() {
           <img
             src="/mjalogo.png"
             alt="Maldives Journalists Association"
-            className="h-10 w-auto"
+            className="h-20 w-auto"
           />
         </Link>
 

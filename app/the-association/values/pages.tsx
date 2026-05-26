@@ -35,7 +35,7 @@ export default function ValuesPage() {
                 {
                   icon: '⚖️',
                   title: 'Justice',
-                  body: 'We advocate for fair legal frameworks that protect journalists and uphold the public's right to information.',
+                  body: "We advocate for fair legal frameworks that protect journalists and uphold the public's right to information.",
                 },
                 {
                   icon: '💡',

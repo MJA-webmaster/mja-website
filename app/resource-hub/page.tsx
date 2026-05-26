@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import ResourceHubClient from './ResourceHubClient'
 import NewsletterForm from '@/components/NewsletterForm'
+import ResourceHubClient from '@/app/resource-hub/ResourceHubClient'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -35,18 +35,15 @@ export default async function ResourceHubPage({
   return (
     <>
       <div className="max-w-[1280px] mx-auto px-6 py-14">
-        {/* Header */}
         <h1 className="font-headline text-5xl font-black uppercase mb-8" style={{ color: '#0D1B2A' }}>
           <span style={{ color: '#E8192C' }}>MJA</span> Resource Hub
         </h1>
-
         <ResourceHubClient
           resources={resources ?? []}
           currentCategory={category}
           currentSearch={searchParams.q ?? ''}
         />
       </div>
-
       <section className="py-14 px-6 border-t border-gray-100">
         <div className="max-w-[1280px] mx-auto">
           <h2 className="font-headline text-4xl font-bold mb-6" style={{ color: '#0D1B2A' }}>

@@ -14,6 +14,7 @@ import {
   Mail,
   Settings,
   LogOut,
+  ClipboardList,
 } from 'lucide-react'
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { label: 'Articles', href: '/admin/articles', icon: FileText },
   { label: 'Campaigns', href: '/admin/campaigns', icon: Megaphone },
   { label: 'Members', href: '/admin/members', icon: Users },
+  { label: 'Applications', href: '/admin/applications', icon: ClipboardList },
   { label: 'Executive Committee', href: '/admin/executive', icon: Award },
   { label: 'Team', href: '/admin/team', icon: UserCheck },
   { label: 'Resources', href: '/admin/resources', icon: FolderOpen },
@@ -40,18 +42,12 @@ export default function AdminSidebar() {
 
   return (
     <aside className="w-60 bg-navy flex flex-col flex-shrink-0" style={{ backgroundColor: '#0D1B2A' }}>
-      {/* Logo */}
       <div className="p-5 border-b border-white/10">
         <Link href="/" target="_blank">
-          <img
-            src="/mjalogo.png"
-            alt="MJA"
-            className="h-8 w-auto brightness-0 invert"
-          />
+          <img src="/mjalogo.png" alt="MJA" className="h-8 w-auto brightness-0 invert" />
         </Link>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon
@@ -64,9 +60,7 @@ export default function AdminSidebar() {
               key={item.href}
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                isActive
-                  ? 'text-white font-semibold'
-                  : 'text-white/50 hover:text-white hover:bg-white/5'
+                isActive ? 'text-white font-semibold' : 'text-white/50 hover:text-white hover:bg-white/5'
               }`}
               style={isActive ? { backgroundColor: '#E8192C' } : {}}
             >
@@ -77,7 +71,6 @@ export default function AdminSidebar() {
         })}
       </nav>
 
-      {/* Logout */}
       <div className="p-4 border-t border-white/10">
         <button
           onClick={handleLogout}

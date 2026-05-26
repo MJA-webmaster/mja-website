@@ -1,25 +1,11 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-
-export function createClient() {
-  const cookieStore = cookies()
-
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {}
-        },
-      },
-    }
-  )
-}
+Failed to compile.
+./lib/supabase/server.ts:15:16
+Type error: Parameter 'cookiesToSet' implicitly has an 'any' type.
+  13 |           return cookieStore.getAll()
+  14 |         },
+> 15 |         setAll(cookiesToSet) {
+     |                ^
+  16 |           try {
+  17 |             cookiesToSet.forEach(({ name, value, options }) =>
+  18 |               cookieStore.set(name, value, options)
+Error: Command "npm run build" exited with 1

@@ -7,6 +7,6 @@ export default async function AdminPagesPage() {
     .from('pages')
     .select('*')
     .order('slug')
-
+  
   return <PagesClient pages={pages ?? []} />
 }

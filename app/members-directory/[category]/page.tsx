@@ -17,7 +17,6 @@ export async function generateMetadata({ params }: { params: { category: string 
 
 export default async function MembersCategoryPage({ params }: { params: { category: string } }) {
   const supabase = createClient()
-
   const [{ data: members }, { data: stats }] = await Promise.all([
     supabase.from('members').select('*').eq('category', params.category).eq('is_active', true).order('name'),
     supabase.from('member_stats').select('*').single(),
@@ -31,57 +30,58 @@ export default async function MembersCategoryPage({ params }: { params: { catego
 
   return (
     <>
-      <div className="max-w-[1280px] mx-auto px-6 py-14">
-        <div className="flex gap-16">
-          {/* Sidebar */}
-          <aside className="w-52 flex-shrink-0">
+      {/* Mobile category tabs */}
+      <div className="md:hidden sticky top-16 z-40 bg-white border-b border-gray-100">
+        <div className="flex overflow-x-auto px-4 py-3 gap-2" style={{ scrollbarWidth: 'none' }}>
+          {categories.map((cat) => (
+            <Link key={cat} href={`/members-directory/${cat}`}
+              className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap"
+              style={{
+                backgroundColor: params.category === cat ? '#E8192C' : '#F3F4F6',
+                color: params.category === cat ? 'white' : '#6B7280',
+              }}>
+              {categoryLabels[cat]}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 md:py-14">
+        <div className="md:flex md:gap-16">
+          {/* Desktop sidebar */}
+          <aside className="hidden md:block w-52 flex-shrink-0">
             <nav className="space-y-1 sticky top-24">
-              <Link href="/the-association" className="block py-2 text-[14px] text-gray-400 hover:text-navy transition-colors">
-                The Association
-              </Link>
-              <Link href="/the-association/governance" className="block py-2 text-[14px] text-gray-400 hover:text-navy transition-colors">
-                Governance
-              </Link>
+              <Link href="/the-association" className="block py-2 text-[14px] text-gray-400 hover:text-navy transition-colors">The Association</Link>
+              <Link href="/the-association/governance" className="block py-2 text-[14px] text-gray-400 hover:text-navy transition-colors">Governance</Link>
               <div>
-                <Link
-                  href="/members-directory"
-                  className="block py-2 text-[14px] font-bold transition-colors"
-                  style={{ color: '#E8192C' }}
-                >
+                <Link href="/members-directory" className="block py-2 text-[14px] font-bold transition-colors" style={{ color: '#E8192C' }}>
                   Members Directory
                 </Link>
                 <div className="ml-4 space-y-1 mt-1">
                   {categories.map((cat) => (
-                    <Link
-                      key={cat}
-                      href={`/members-directory/${cat}`}
+                    <Link key={cat} href={`/members-directory/${cat}`}
                       className="block py-1.5 text-[13px] transition-colors"
-                      style={params.category === cat ? { color: '#0D1B2A', fontWeight: 600 } : { color: '#9CA3AF' }}
-                    >
+                      style={params.category === cat ? { color: '#0D1B2A', fontWeight: 600 } : { color: '#9CA3AF' }}>
                       {categoryLabels[cat]}
                     </Link>
                   ))}
                 </div>
               </div>
-              <Link href="/the-association/team" className="block py-2 text-[14px] text-gray-400 hover:text-navy transition-colors">
-                MJA Team
-              </Link>
-              <Link href="/the-association/code-of-conduct" className="block py-2 text-[14px] text-gray-400 hover:text-navy transition-colors">
-                Code of Conduct
-              </Link>
+              <Link href="/the-association/team" className="block py-2 text-[14px] text-gray-400 hover:text-navy transition-colors">MJA Team</Link>
+              <Link href="/the-association/code-of-conduct" className="block py-2 text-[14px] text-gray-400 hover:text-navy transition-colors">Code of Conduct</Link>
             </nav>
           </aside>
 
-          {/* Main */}
           <div className="flex-1 min-w-0">
-            <div className="grid md:grid-cols-2 gap-10 mb-10 items-start">
+            {/* Header */}
+            <div className="grid md:grid-cols-2 gap-8 mb-10 items-start">
               <div>
-                <h1 className="font-headline font-black uppercase leading-none mb-2" style={{ color: '#0D1B2A' }}>
+                <h1 className="font-headline font-black uppercase leading-none mb-2" style={{ color: '#0D1B2A', fontSize: 'clamp(32px, 4vw, 48px)' }}>
                   <span style={{ color: '#E8192C' }}>Category</span><br />
                   {categoryLabels[params.category]?.split(' ')[1] ?? 'One'}
                 </h1>
-                <p className="text-gray-500 text-[14px] leading-relaxed mt-4">
-                  MJA members are journalists, media professionals, and advocates dedicated to press freedom across the Maldives.
+                <p className="text-gray-500 text-[14px] leading-relaxed mt-3">
+                  MJA members dedicated to press freedom across the Maldives.
                 </p>
               </div>
               <MemberMeter stats={memberStats} />
@@ -89,46 +89,42 @@ export default async function MembersCategoryPage({ params }: { params: { catego
 
             {/* Members grid */}
             {members && members.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 gap-6 md:gap-8">
                 {members.map((member) => (
-                  <div key={member.id} className="text-center group cursor-pointer">
-                    <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 mx-auto mb-3 relative" style={{ border: '3px solid #E5E7EB' }}>
+                  <div key={member.id} className="text-center group">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-gray-100 mx-auto mb-2 md:mb-3 relative"
+                      style={{ border: '3px solid #E5E7EB' }}>
                       {member.photo ? (
                         <Image src={member.photo} alt={member.name} width={96} height={96} className="object-cover w-full h-full grayscale group-hover:grayscale-0 transition-all" />
                       ) : (
-                        <div className="w-full h-full bg-gray-800 flex items-center justify-center text-white text-2xl font-bold">
+                        <div className="w-full h-full bg-gray-800 flex items-center justify-center text-white font-bold text-xl">
                           {member.name[0]}
                         </div>
                       )}
-                      {/* Status dot */}
-                      <div className="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-white" style={{ backgroundColor: '#E8192C' }} />
+                      <div className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: '#E8192C' }} />
                     </div>
-                    <p className="font-semibold text-sm" style={{ color: '#E8192C' }}>{member.name}</p>
+                    <p className="font-semibold text-xs md:text-sm leading-tight" style={{ color: '#E8192C' }}>{member.name}</p>
                     {member.representing && (
-                      <p className="text-xs text-gray-400 mt-0.5">Representing: {member.representing}</p>
-                    )}
-                    {member.years_in_journalism && (
-                      <p className="text-xs text-gray-300 mt-0.5">{member.years_in_journalism} Years in Journalism</p>
+                      <p className="text-[10px] md:text-xs text-gray-400 mt-0.5">Rep: {member.representing}</p>
                     )}
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-16 text-gray-400">
-                <p className="text-5xl mb-3">👥</p>
+                <p className="text-4xl mb-3">👥</p>
                 <p className="font-semibold text-sm">No members in this category yet</p>
-                <p className="text-xs mt-1">Members can be added via the admin panel</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <section className="py-14 px-6 border-t border-gray-100">
+      <section className="py-14 px-4 sm:px-6 border-t border-gray-100">
         <div className="max-w-[1280px] mx-auto">
-          <h2 className="font-headline text-4xl font-bold mb-6" style={{ color: '#0D1B2A' }}>
-            Don't wait for information being deprived<br />
-            of you to <span style={{ color: '#E8192C' }}>defend it!</span>
+          <h2 className="font-headline text-3xl md:text-4xl font-bold mb-6" style={{ color: '#0D1B2A' }}>
+            Don't wait for information being deprived<br className="hidden md:block" />
+            {' '}of you to <span style={{ color: '#E8192C' }}>defend it!</span>
           </h2>
           <NewsletterForm />
         </div>

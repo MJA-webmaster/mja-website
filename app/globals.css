@@ -11,35 +11,35 @@
   --offwhite: #F5F4F0;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
-  font-family: var(--font-finlandica-text), sans-serif;
+  font-family: 'Finlandica', 'Inter', sans-serif;
   color: var(--navy);
   background: #fff;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-finlandica-headline), sans-serif;
+  font-family: 'Finlandica', 'Inter', sans-serif;
 }
 
-/* Quill editor styles */
+/* ── Quill editor ── */
 .ql-toolbar {
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
   border-color: #e5e7eb !important;
   background: #f9fafb;
+  font-family: 'Finlandica', sans-serif !important;
 }
 
 .ql-container {
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
   border-color: #e5e7eb !important;
-  font-family: var(--font-finlandica-text), sans-serif !important;
-  font-size: 16px !important;
+  font-family: 'Finlandica', sans-serif !important;
+  font-size: 15px !important;
   min-height: 400px;
 }
 
@@ -48,34 +48,89 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.8;
 }
 
-/* Article content styles */
+.ql-editor.ql-blank::before {
+  font-style: normal;
+  color: #9CA3AF;
+}
+
+/* ── Article content ── */
 .article-content h1,
 .article-content h2,
 .article-content h3 {
-  font-family: var(--font-finlandica-headline), sans-serif;
+  font-family: 'Finlandica', sans-serif;
+  font-weight: 700;
   margin-top: 2rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
+  color: var(--navy);
 }
+
+.article-content h1 { font-size: 2rem; }
+.article-content h2 { font-size: 1.5rem; }
+.article-content h3 { font-size: 1.2rem; }
 
 .article-content p {
   margin-bottom: 1.25rem;
-  line-height: 1.8;
+  line-height: 1.85;
+  color: #374151;
 }
 
 .article-content img {
-  border-radius: 8px;
+  border-radius: 10px;
   margin: 2rem 0;
+  max-width: 100%;
 }
 
 .article-content ul,
 .article-content ol {
-  margin: 1rem 0 1rem 1.5rem;
+  margin: 1rem 0 1.25rem 1.5rem;
+  color: #374151;
 }
+
+.article-content li { margin-bottom: 0.4rem; line-height: 1.75; }
 
 .article-content blockquote {
   border-left: 4px solid var(--red);
-  padding-left: 1.5rem;
+  padding: 0.5rem 0 0.5rem 1.5rem;
   margin: 2rem 0;
   font-style: italic;
-  color: #4B5563;
+  color: #6B7280;
 }
+
+.article-content a {
+  color: var(--red);
+  text-decoration: underline;
+}
+
+/* ── Mobile nav fix ── */
+@media (max-width: 768px) {
+  .hide-mobile { display: none !important; }
+}
+
+/* ── Smooth page transitions ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+/* ── Focus styles ── */
+:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Selection color ── */
+::selection {
+  background: var(--red);
+  color: white;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--red); }

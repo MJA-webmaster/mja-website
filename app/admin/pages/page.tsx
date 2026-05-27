@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import PagesClient from './PagesClient'
+import PagesClient from '@/app/admin/pages/PagesClient'
 
 export default async function AdminPagesPage() {
   const supabase = createClient()

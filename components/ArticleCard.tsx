@@ -18,7 +18,7 @@ export default function ArticleCard({ article, variant = 'default' }: Props) {
     return (
       <Link href={`/news-room/${article.slug}`} className="flex gap-3 group">
         {article.cover_image && (
-          <div className="w-20 h-16 rounded overflow-hidden flex-shrink-0">
+          <div className="w-20 h-16 rounded-lg overflow-hidden flex-shrink-0">
             <Image
               src={article.cover_image}
               alt={article.title}
@@ -28,11 +28,14 @@ export default function ArticleCard({ article, variant = 'default' }: Props) {
             />
           </div>
         )}
-        <div>
-          <p className="text-[13px] font-semibold text-navy group-hover:text-red transition-colors line-clamp-2 leading-snug">
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold leading-snug line-clamp-2 transition-colors"
+            style={{ color: '#0D1B2A' }}
+            onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#E8192C'}
+            onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#0D1B2A'}>
             {article.title}
           </p>
-          <p className="text-[11px] text-red mt-1">{date}</p>
+          <p className="text-[11px] mt-1 font-semibold" style={{ color: '#E8192C' }}>{date}</p>
         </div>
       </Link>
     )
@@ -40,7 +43,9 @@ export default function ArticleCard({ article, variant = 'default' }: Props) {
 
   if (variant === 'featured') {
     return (
-      <Link href={`/news-room/${article.slug}`} className="relative block rounded-xl overflow-hidden group h-full min-h-[300px]">
+      <Link href={`/news-room/${article.slug}`}
+        className="relative block rounded-xl overflow-hidden group"
+        style={{ minHeight: 300 }}>
         {article.cover_image ? (
           <Image
             src={article.cover_image}
@@ -49,12 +54,14 @@ export default function ArticleCard({ article, variant = 'default' }: Props) {
             className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <div className="absolute inset-0 bg-navy-light" />
+          <div className="absolute inset-0" style={{ backgroundColor: '#162234' }} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-6">
-          <p className="text-red text-[11px] font-bold tracking-wider uppercase mb-2">{date}</p>
-          <h3 className="font-headline text-white text-xl font-bold leading-snug">{article.title}</h3>
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)' }} />
+        <div className="absolute bottom-0 left-0 right-0 p-5 md:p-6">
+          <p className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: '#E8192C' }}>{date}</p>
+          <h3 className="font-headline text-white font-bold leading-snug" style={{ fontSize: 'clamp(16px, 2vw, 22px)' }}>
+            {article.title}
+          </h3>
         </div>
       </Link>
     )
@@ -63,7 +70,7 @@ export default function ArticleCard({ article, variant = 'default' }: Props) {
   return (
     <Link href={`/news-room/${article.slug}`} className="group block">
       {article.cover_image && (
-        <div className="rounded-lg overflow-hidden mb-3 aspect-video">
+        <div className="rounded-lg overflow-hidden mb-3" style={{ aspectRatio: '16/9' }}>
           <Image
             src={article.cover_image}
             alt={article.title}
@@ -73,8 +80,17 @@ export default function ArticleCard({ article, variant = 'default' }: Props) {
           />
         </div>
       )}
-      <p className="text-[11px] text-red font-bold tracking-wide mb-1.5">{date}</p>
-      <h3 className="font-semibold text-navy group-hover:text-red transition-colors text-[14px] leading-snug line-clamp-3">
+      {!article.cover_image && (
+        <div className="rounded-lg mb-3 flex items-center justify-center"
+          style={{ aspectRatio: '16/9', backgroundColor: '#F3F4F6' }}>
+          <span className="font-headline font-black text-4xl" style={{ color: '#E8192C', opacity: 0.3 }}>MJA</span>
+        </div>
+      )}
+      <p className="text-[11px] font-bold tracking-wide mb-1.5" style={{ color: '#E8192C' }}>{date}</p>
+      <h3 className="font-semibold text-[14px] leading-snug line-clamp-3 transition-colors"
+        style={{ color: '#0D1B2A' }}
+        onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#E8192C'}
+        onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#0D1B2A'}>
         {article.title}
       </h3>
     </Link>

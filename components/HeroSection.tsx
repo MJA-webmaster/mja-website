@@ -8,98 +8,160 @@ interface Props {
   campaign?: Campaign | null
 }
 
+const fadeUp = {
+  initial: { opacity: 0, y: 28 },
+  animate: { opacity: 1, y: 0 },
+}
+
+const fadeRight = {
+  initial: { opacity: 0, x: 28 },
+  animate: { opacity: 1, x: 0 },
+}
+
 export default function HeroSection({ campaign }: Props) {
   return (
-    <section className="grid md:grid-cols-2 min-h-[480px]">
+    <section className="grid md:grid-cols-2" style={{ minHeight: 'clamp(400px, 55vh, 560px)' }}>
       {/* Campaign panel */}
-      <div className="bg-red text-white p-10 flex flex-col justify-between relative overflow-hidden">
-        {/* BG decoration */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="font-headline font-black text-[200px] leading-none text-white absolute -bottom-8 -left-4">M</div>
+      <div className="relative flex flex-col justify-between p-10 md:p-14 overflow-hidden text-white"
+        style={{ backgroundColor: '#E8192C' }}>
+        {/* Big decorative M */}
+        <div className="absolute bottom-0 left-0 font-headline font-black leading-none select-none pointer-events-none"
+          style={{ fontSize: 'clamp(160px, 22vw, 280px)', color: 'rgba(0,0,0,0.12)', lineHeight: 0.85 }}>
+          M
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="relative z-10"
+          variants={fadeUp}
+          initial="initial"
+          animate="animate"
+          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          className="relative z-10 flex flex-col h-full justify-between"
         >
-          <p className="text-xs font-bold tracking-widest uppercase text-white/70 mb-3">Upcoming Campaigns</p>
-          {campaign ? (
-            <>
-              <h1 className="font-headline text-3xl md:text-4xl font-black uppercase leading-tight mb-4">
-                {campaign.hashtag && <span className="block text-white/80">{campaign.hashtag}</span>}
-                {campaign.title}
-              </h1>
-              <p className="text-white/70 text-sm leading-relaxed mb-6 max-w-sm">
-                {campaign.description}
-              </p>
-              {campaign.event_date && (
-                <p className="text-white/60 text-xs mb-6">
-                  {new Date(campaign.event_date).toLocaleDateString('en-US', {
-                    day: 'numeric', month: 'long', year: 'numeric'
-                  })}
-                  {campaign.event_location && ` — ${campaign.event_location}`}
-                </p>
+          <div>
+            <motion.p
+              variants={fadeUp}
+              transition={{ duration: 0.5, delay: 0.05 }}
+              className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/60 mb-4"
+            >
+              Upcoming Campaigns
+            </motion.p>
+
+            <motion.h1
+              variants={fadeUp}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="font-headline font-black uppercase leading-[0.95] mb-5"
+              style={{ fontSize: 'clamp(28px, 3.5vw, 46px)' }}
+            >
+              {campaign ? (
+                <>
+                  {campaign.hashtag && (
+                    <span className="block text-white/75 text-[0.7em] mb-1">{campaign.hashtag}</span>
+                  )}
+                  {campaign.title}
+                </>
+              ) : (
+                <>
+                  <span className="block text-white/75 text-[0.7em] mb-1">#FreedomForPress</span>
+                  MV of Press Rally
+                </>
               )}
-            </>
-          ) : (
-            <>
-              <h1 className="font-headline text-3xl md:text-4xl font-black uppercase leading-tight mb-4">
-                <span className="block text-white/80">#FreedomForPress</span>
-                MV of Press Rally
-              </h1>
-              <p className="text-white/70 text-sm leading-relaxed mb-6 max-w-sm">
-                Walking towards the freedom of press and undeniable truth. Join us in defending freedom of information for every journalist.
-              </p>
-            </>
-          )}
-          <div className="flex gap-3 flex-wrap">
+            </motion.h1>
+
+            <motion.p
+              variants={fadeUp}
+              transition={{ duration: 0.6, delay: 0.18 }}
+              className="text-white/65 text-sm leading-relaxed mb-4 max-w-xs"
+            >
+              {campaign?.description ?? 'Walking towards the freedom of press and undeniable truth. Join us in defending freedom of information.'}
+            </motion.p>
+
+            {campaign?.event_date && (
+              <motion.p
+                variants={fadeUp}
+                transition={{ duration: 0.5, delay: 0.24 }}
+                className="text-white/50 text-xs mb-6"
+              >
+                {new Date(campaign.event_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {campaign.event_location && ` — ${campaign.event_location}`}
+              </motion.p>
+            )}
+          </div>
+
+          <motion.div
+            variants={fadeUp}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex gap-3 flex-wrap mt-6"
+          >
             <Link
               href={campaign ? `/campaigns/${campaign.slug}` : '/campaigns'}
-              className="bg-white text-red px-6 py-2.5 rounded text-sm font-bold hover:bg-white/90 transition-colors"
+              className="bg-white font-bold px-7 py-3 rounded text-sm hover:bg-white/90 transition-colors"
+              style={{ color: '#E8192C' }}
             >
               Join the Rally
             </Link>
             <Link
               href="/join-mja"
-              className="border border-white/40 text-white px-6 py-2.5 rounded text-sm font-bold hover:bg-white/10 transition-colors"
+              className="border border-white/35 text-white px-7 py-3 rounded text-sm font-semibold hover:bg-white/10 transition-colors"
             >
               Contribute
             </Link>
-          </div>
+          </motion.div>
         </motion.div>
       </div>
 
       {/* Be the Voice panel */}
-      <div className="bg-navy text-white p-10 flex flex-col justify-center relative overflow-hidden">
-        {/* Mic SVG decoration */}
-        <div className="absolute right-0 bottom-0 opacity-10">
-          <svg viewBox="0 0 200 280" className="w-48 h-64" fill="none">
-            <rect x="70" y="20" width="60" height="120" rx="30" fill="white"/>
-            <line x1="100" y1="140" x2="100" y2="190" stroke="white" strokeWidth="8"/>
-            <line x1="65" y1="190" x2="135" y2="190" stroke="white" strokeWidth="8" strokeLinecap="round"/>
+      <div className="relative flex flex-col justify-center p-10 md:p-14 overflow-hidden text-white"
+        style={{ backgroundColor: '#0D1B2A' }}>
+        {/* Mic decoration */}
+        <div className="absolute right-6 bottom-0 opacity-[0.07] pointer-events-none select-none">
+          <svg viewBox="0 0 160 240" className="w-40 h-56" fill="none">
+            <rect x="50" y="10" width="60" height="110" rx="30" fill="white"/>
+            <line x1="80" y1="120" x2="80" y2="165" stroke="white" strokeWidth="7"/>
+            <line x1="48" y1="165" x2="112" y2="165" stroke="white" strokeWidth="7" strokeLinecap="round"/>
+            <path d="M30 95 Q20 110 30 125" stroke="white" strokeWidth="4" strokeLinecap="round" fill="none"/>
+            <path d="M130 95 Q140 110 130 125" stroke="white" strokeWidth="4" strokeLinecap="round" fill="none"/>
           </svg>
         </div>
 
         <motion.div
-          initial={{ opacity: 0, x: 24 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.15 }}
+          variants={fadeRight}
+          initial="initial"
+          animate="animate"
+          transition={{ duration: 0.65, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
           className="relative z-10"
         >
-          <p className="text-xs font-bold tracking-widest uppercase text-white/40 mb-4">Maldives Journalist Association</p>
-          <h2 className="font-headline text-4xl md:text-5xl font-black leading-tight mb-6">
-            Be the <span className="text-red">voice</span><br />
-            for freedom<br />
-            of press
-          </h2>
-          <Link
-            href="/join-mja"
-            className="inline-block bg-red text-white px-8 py-3.5 rounded font-semibold hover:bg-red-dark transition-colors"
+          <motion.p
+            variants={fadeUp}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/35 mb-5"
           >
-            Become a Member
-          </Link>
+            Maldives Journalists Association
+          </motion.p>
+
+          <motion.h2
+            variants={fadeUp}
+            transition={{ duration: 0.65, delay: 0.25 }}
+            className="font-headline font-black leading-[0.95] mb-7"
+            style={{ fontSize: 'clamp(36px, 4.5vw, 58px)' }}
+          >
+            Be the{' '}
+            <em className="not-italic" style={{ color: '#E8192C' }}>voice</em>
+            <br />for freedom
+            <br />of press
+          </motion.h2>
+
+          <motion.div
+            variants={fadeUp}
+            transition={{ duration: 0.5, delay: 0.35 }}
+          >
+            <Link
+              href="/join-mja"
+              className="inline-block text-white font-semibold px-8 py-3.5 rounded transition-opacity hover:opacity-85"
+              style={{ backgroundColor: '#E8192C' }}
+            >
+              Become a Member
+            </Link>
+          </motion.div>
         </motion.div>
       </div>
     </section>

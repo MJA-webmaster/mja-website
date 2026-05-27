@@ -7,8 +7,8 @@ export const metadata: Metadata = { title: 'Code of Conduct' }
 export default function CodeOfConductPage() {
   return (
     <>
-      <div className="max-w-[1280px] mx-auto px-6 py-14">
-        <div className="flex gap-16">
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 md:py-14">
+        <div className="md:flex md:gap-16">
           <AssociationSidebar />
           <div className="flex-1 min-w-0 max-w-[680px]">
             <h1 className="font-headline text-4xl font-black uppercase mb-8" style={{ color: '#0D1B2A' }}>

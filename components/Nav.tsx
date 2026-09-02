@@ -10,10 +10,8 @@ const navLinks = [
     label: 'The Association',
     href: '/the-association',
     children: [
-      { label: 'About', href: '/the-association' },
       { label: 'Our Values', href: '/the-association/values' },
       { label: 'Governance', href: '/the-association/governance' },
-      { label: 'MJA Team', href: '/the-association/team' },
       { label: 'Code of Conduct', href: '/the-association/code-of-conduct' },
     ],
   },
@@ -49,18 +47,18 @@ export default function Nav() {
         scrolled ? 'shadow-md' : 'border-b border-gray-100'
       }`}
     >
-      <nav className="max-w-[1280px] mx-auto px-6 h-16 flex items-center justify-between">
+      <nav className="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center flex-shrink-0">
           <img
             src="/mjalogo.png"
             alt="Maldives Journalists Association"
-            className="h-16 w-auto"
+            className="h-14 w-auto"
           />
         </Link>
 
         {/* Desktop nav */}
-        <ul className="hidden lg:flex items-center gap-6">
+        <ul className="hidden lg:flex items-center gap-7">
           {navLinks.map((link) => (
             <li
               key={link.href}
@@ -70,7 +68,7 @@ export default function Nav() {
             >
               <Link
                 href={link.href}
-                className={`text-[13px] font-medium tracking-wide transition-colors hover:text-red ${
+                className={`text-[15px] font-medium tracking-wide transition-colors hover:text-red ${
                   pathname?.startsWith(link.href) && link.href !== '/'
                     ? 'text-red'
                     : 'text-navy'
@@ -87,17 +85,19 @@ export default function Nav() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute top-full left-0 mt-2 w-52 bg-white border border-gray-100 rounded-lg shadow-lg overflow-hidden"
+                      className="absolute top-full left-0 pt-3 w-60"
                     >
-                      {link.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          className="block px-4 py-2.5 text-[13px] text-navy hover:bg-gray-50 hover:text-red transition-colors"
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
+                      <div className="bg-white border border-gray-100 rounded-lg shadow-lg overflow-hidden">
+                        {link.children.map((child) => (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className="block px-5 py-3 text-[14px] text-navy hover:bg-gray-50 hover:text-red transition-colors"
+                          >
+                            {child.label}
+                          </Link>
+                        ))}
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -109,7 +109,7 @@ export default function Nav() {
         {/* Join CTA */}
         <Link
           href="/join-mja"
-          className="hidden lg:block bg-red text-white text-[13px] font-semibold px-5 py-2 rounded hover:bg-red-dark transition-colors"
+          className="hidden lg:block text-white text-[14px] font-semibold px-6 py-2.5 rounded transition-opacity hover:opacity-90"
           style={{ backgroundColor: '#E8192C' }}
         >
           Join MJA
@@ -151,7 +151,7 @@ export default function Nav() {
                 <div key={link.href}>
                   <Link
                     href={link.href}
-                    className={`block py-2.5 text-[15px] font-medium border-b border-gray-50 ${
+                    className={`block py-3 text-[16px] font-medium border-b border-gray-50 ${
                       pathname?.startsWith(link.href) ? 'text-red' : 'text-navy'
                     }`}
                   >
@@ -163,7 +163,7 @@ export default function Nav() {
                         <Link
                           key={child.href}
                           href={child.href}
-                          className="block py-1.5 text-[13px] text-gray-500 hover:text-red"
+                          className="block py-2 text-[14px] text-gray-500 hover:text-red"
                         >
                           {child.label}
                         </Link>
@@ -174,7 +174,7 @@ export default function Nav() {
               ))}
               <Link
                 href="/join-mja"
-                className="mt-4 text-white text-center py-3 rounded font-semibold text-[14px]"
+                className="mt-4 text-white text-center py-3.5 rounded font-semibold text-[15px]"
                 style={{ backgroundColor: '#E8192C' }}
               >
                 Join MJA

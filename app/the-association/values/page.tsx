@@ -14,7 +14,6 @@ export default function ValuesPage() {
             <h1 className="font-headline text-4xl font-black uppercase mb-8" style={{ color: '#0D1B2A' }}>
               Our <span style={{ color: '#E8192C' }}>Values</span>
             </h1>
-
             <div className="grid md:grid-cols-2 gap-6">
               {[
                 {
@@ -35,7 +34,7 @@ export default function ValuesPage() {
                 {
                   icon: '⚖️',
                   title: 'Justice',
-                  body: 'We advocate for fair legal frameworks that protect journalists and uphold the public's right to information.',
+                  body: "We advocate for fair legal frameworks that protect journalists and uphold the public's right to information.",
                 },
                 {
                   icon: '💡',
@@ -50,8 +49,7 @@ export default function ValuesPage() {
               ].map((value) => (
                 <div
                   key={value.title}
-                  className="bg-white rounded-xl p-6 border border-gray-100 hover:border-red hover:shadow-sm transition-all"
-                  style={{ '--hover-border': '#E8192C' } as React.CSSProperties}
+                  className="bg-white rounded-xl p-6 border border-gray-100 hover:shadow-sm transition-all"
                 >
                   <div className="text-3xl mb-3">{value.icon}</div>
                   <h3 className="font-bold text-navy text-[16px] mb-2">{value.title}</h3>
@@ -62,10 +60,11 @@ export default function ValuesPage() {
           </div>
         </div>
       </div>
+
       <section className="py-14 px-6 border-t border-gray-100">
         <div className="max-w-[1280px] mx-auto">
           <h2 className="font-headline text-4xl font-bold mb-6" style={{ color: '#0D1B2A' }}>
-            Don't wait for information being deprived<br />of you to <span style={{ color: '#E8192C' }}>defend it!</span>
+            Don&apos;t wait for information being deprived<br />of you to <span style={{ color: '#E8192C' }}>defend it!</span>
           </h2>
           <NewsletterForm />
         </div>

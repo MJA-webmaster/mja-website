@@ -18,7 +18,14 @@ const navLinks = [
   { label: 'News Room', href: '/news-room' },
   { label: 'Resource Hub', href: '/resource-hub' },
   { label: 'Campaigns', href: '/campaigns' },
-  { label: 'Members Directory', href: '/members-directory' },
+  {
+    label: 'Members Directory',
+    href: '/members-directory',
+    children: [
+      { label: 'Directory', href: '/members-directory' },
+      { label: 'Check Membership Status', href: '/membership-status' },
+    ],
+  },
   { label: 'Shop', href: '/shop' },
   { label: 'Connect', href: '/connect' },
 ]

@@ -13,6 +13,20 @@ interface Props {
   accept?: string
 }
 
+function ViewLink({ href }: { href: string }) {
+  return (
+    
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-[11px]"
+      style={{ color: '#E8192C' }}
+    >
+      View file ↗
+    </a>
+  )
+}
+
 export default function FileUpload({
   value,
   onChange,
@@ -93,15 +107,7 @@ export default function FileUpload({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-navy truncate">{filename}</p>
-            
-              href={value}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px]"
-              style={{ color: '#E8192C' }}
-            >
-              View file ↗
-            </a>
+            <ViewLink href={value} />
           </div>
           <button
             type="button"

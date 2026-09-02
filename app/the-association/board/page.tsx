@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import AssociationSidebar from '@/components/AssociationSidebar'
 import NewsletterForm from '@/components/NewsletterForm'

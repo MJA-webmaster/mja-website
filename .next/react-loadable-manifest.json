@@ -1,0 +1,23 @@
+{
+  "app/admin/pages/PagesClient.tsx -> react-quill": {
+    "id": 8436,
+    "files": [
+      "static/chunks/8012d7e2.4cceffc94ad9c809.js",
+      "static/chunks/8436.906f9cdc416f7d0c.js"
+    ]
+  },
+  "components/ArticleEditor.tsx -> react-quill": {
+    "id": 8436,
+    "files": [
+      "static/chunks/8012d7e2.4cceffc94ad9c809.js",
+      "static/chunks/8436.906f9cdc416f7d0c.js"
+    ]
+  },
+  "components/CampaignEditor.tsx -> react-quill": {
+    "id": 8436,
+    "files": [
+      "static/chunks/8012d7e2.4cceffc94ad9c809.js",
+      "static/chunks/8436.906f9cdc416f7d0c.js"
+    ]
+  }
+}

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import MemberMeter from '@/components/MemberMeter'
 import NewsletterForm from '@/components/NewsletterForm'

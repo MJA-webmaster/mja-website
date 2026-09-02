@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import NewsletterForm from '@/components/NewsletterForm'
 import ResourceHubClient from '@/app/resource-hub/ResourceHubClient'

@@ -39,6 +39,32 @@ const socials = [
   },
 ]
 
+function SocialIcon({ label, href, d }: { label: string; href: string; d: string }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={() => window.open(href, '_blank', 'noopener,noreferrer')}
+      className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+      style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#E8192C')}
+      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)')}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="w-3.5 h-3.5"
+      >
+        <path d={d} />
+      </svg>
+    </button>
+  )
+}
+
 export default function Footer() {
   return (
     <footer style={{ backgroundColor: '#0D1B2A' }} className="text-white">
@@ -58,7 +84,7 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* About */}
+        {/* The Association */}
         <div>
           <p className="text-[11px] font-bold tracking-widest uppercase text-white mb-4">The Association</p>
           {footerLinks.about.map((link) => (
@@ -107,30 +133,8 @@ export default function Footer() {
           © {new Date().getFullYear()} Maldives Journalists Association · mja.mv
         </p>
         <div className="flex items-center gap-3">
-          {socials.map((social) => (
-            
-              key={social.label}
-              href={social.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={social.label}
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-              style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#E8192C')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)')}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-3.5 h-3.5"
-              >
-                <path d={social.d} />
-              </svg>
-            </a>
+          {socials.map((s) => (
+            <SocialIcon key={s.label} label={s.label} href={s.href} d={s.d} />
           ))}
         </div>
       </div>

@@ -15,15 +15,14 @@ interface Props {
 
 function ViewLink({ href }: { href: string }) {
   return (
-    
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-[11px]"
+    <button
+      type="button"
+      onClick={() => window.open(href, '_blank', 'noopener,noreferrer')}
+      className="text-[11px] text-left"
       style={{ color: '#E8192C' }}
     >
       View file ↗
-    </a>
+    </button>
   )
 }
 

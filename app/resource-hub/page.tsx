@@ -1,33 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import NewsletterForm from '@/components/NewsletterForm'
 import ResourceHubClient from '@/app/resource-hub/ResourceHubClient'
+import { RESOURCE_CATEGORIES } from '@/lib/resource-categories'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Resource Hub',
   description: 'Access MJA publications, annual reports, photos and videos.',
 }
-
-export const CATEGORIES = [
-  {
-    slug: 'publications',
-    label: 'Publications',
-    blurb: 'Reports, guidelines and books',
-    subcategories: ['Reports', 'Guidelines', 'Books'],
-  },
-  {
-    slug: 'annual-reports',
-    label: 'Annual Reports & Financials',
-    blurb: 'Yearly reports and audited accounts',
-    subcategories: ['Annual Report', 'Financial Statement'],
-  },
-  {
-    slug: 'multimedia',
-    label: 'Multimedia',
-    blurb: 'Photo and video',
-    subcategories: ['Photo', 'Video'],
-  },
-]
 
 export default async function ResourceHubPage({
   searchParams,
@@ -36,9 +16,9 @@ export default async function ResourceHubPage({
 }) {
   const supabase = createClient()
 
-  const valid = CATEGORIES.map((c) => c.slug)
+  const valid = [...RESOURCE_CATEGORIES.map((c) => c.slug), 'all']
   const category =
-    searchParams.category && [...valid, 'all'].includes(searchParams.category)
+    searchParams.category && valid.includes(searchParams.category)
       ? searchParams.category
       : 'publications'
 
@@ -62,13 +42,13 @@ export default async function ResourceHubPage({
 
   return (
     <>
-      <div className="max-w-[1280px] mx-auto px-6 py-14">
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-14">
         <h1 className="font-headline text-5xl font-black uppercase mb-8" style={{ color: '#0D1B2A' }}>
           <span style={{ color: '#E8192C' }}>MJA</span> Resource Hub
         </h1>
         <ResourceHubClient
           resources={resources ?? []}
-          categories={CATEGORIES}
+          categories={RESOURCE_CATEGORIES}
           currentCategory={category}
           currentSub={searchParams.sub ?? ''}
           currentSearch={searchParams.q ?? ''}

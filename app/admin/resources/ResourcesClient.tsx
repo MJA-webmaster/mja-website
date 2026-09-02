@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Resource } from '@/lib/types'
 import { RESOURCE_CATEGORIES, subcategoriesFor, labelFor } from '@/lib/resource-categories'
-import { Plus, Trash2, ExternalLink, Download } from 'lucide-react'
+import FileUpload from '@/components/FileUpload'
+import { Plus, Trash2, ExternalLink, Download, ChevronDown } from 'lucide-react'
 
 const EMPTY = {
   title: '',
@@ -17,6 +18,41 @@ const EMPTY = {
   published: true,
 }
 
+const inputClass =
+  'w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-navy focus:outline-none focus:border-gray-400 transition-colors bg-white'
+const labelClass =
+  'block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5'
+
+function Select({
+  value,
+  onChange,
+  options,
+}: {
+  value: string
+  onChange: (val: string) => void
+  options: { value: string; label: string }[]
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full appearance-none border border-gray-200 rounded-lg px-4 py-2.5 pr-10 text-sm text-navy focus:outline-none focus:border-gray-400 transition-colors bg-white cursor-pointer"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        size={15}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+      />
+    </div>
+  )
+}
+
 export default function ResourcesClient({ resources: initial }: { resources: Resource[] }) {
   const [resources, setResources] = useState(initial)
   const [showForm, setShowForm] = useState(false)
@@ -26,22 +62,18 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
   const [form, setForm] = useState(EMPTY)
 
   const filtered = filter === 'all' ? resources : resources.filter((r) => r.category === filter)
-  const subOptions = subcategoriesFor(form.category)
+  const subOptions = subcategoriesFor(form.category).map((s) => ({ value: s, label: s }))
+  const isMultimedia = form.category === 'multimedia'
 
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const target = e.target
     const val = target.type === 'checkbox' ? (target as HTMLInputElement).checked : target.value
-
-    // switching category resets subcategory to that category's first option
-    if (target.name === 'category') {
-      const nextSubs = subcategoriesFor(val as string)
-      setForm({ ...form, category: val as Resource['category'], subcategory: nextSubs[0] ?? '' })
-      return
-    }
-
     setForm({ ...form, [target.name]: val })
+  }
+
+  function handleCategory(val: string) {
+    const nextSubs = subcategoriesFor(val)
+    setForm({ ...form, category: val as Resource['category'], subcategory: nextSubs[0] ?? '' })
   }
 
   async function handleSave() {
@@ -52,12 +84,14 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
     const { data, error } = await supabase
       .from('resources')
       .insert({
-        ...form,
+        title: form.title,
+        description: form.description || null,
+        category: form.category,
         subcategory: form.subcategory || null,
         file_url: form.file_url || null,
         external_url: form.external_url || null,
         file_size: form.file_size || null,
-        description: form.description || null,
+        published: form.published,
       })
       .select()
       .single()
@@ -65,7 +99,7 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
     if (error) {
       setError(error.message)
     } else if (data) {
-      setResources((prev) => [data as Resource, ...prev])
+      setResources((prev) => [data, ...prev])
       setForm(EMPTY)
       setShowForm(false)
     }
@@ -78,6 +112,12 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
     const { error } = await supabase.from('resources').delete().eq('id', id)
     if (!error) setResources((prev) => prev.filter((r) => r.id !== id))
   }
+
+  const categoryOptions = RESOURCE_CATEGORIES.map((c) => ({ value: c.slug, label: c.label }))
+  const filterOptions = [
+    { value: 'all', label: 'All' },
+    ...RESOURCE_CATEGORIES.map((c) => ({ value: c.slug, label: c.label })),
+  ]
 
   return (
     <div>
@@ -102,102 +142,87 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
           <h2 className="font-semibold text-navy mb-4">New Resource</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">Title *</label>
+              <label className={labelClass}>Title *</label>
               <input
-                name="title"
-                value={form.title}
-                onChange={handleChange}
+                name="title" value={form.title} onChange={handleChange}
                 placeholder="Resource title"
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
+                className={inputClass}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">Category</label>
-                <select
-                  name="category"
-                  value={form.category}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
-                >
-                  {RESOURCE_CATEGORIES.map((c) => (
-                    <option key={c.slug} value={c.slug}>{c.label}</option>
-                  ))}
-                </select>
+                <label className={labelClass}>Category</label>
+                <Select value={form.category} onChange={handleCategory} options={categoryOptions} />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">Sub-category</label>
-                <select
-                  name="subcategory"
+                <label className={labelClass}>Sub-category</label>
+                <Select
                   value={form.subcategory}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
-                >
-                  {subOptions.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
+                  onChange={(val) => setForm({ ...form, subcategory: val })}
+                  options={subOptions}
+                />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">Description</label>
+              <label className={labelClass}>Description</label>
               <input
-                name="description"
-                value={form.description}
-                onChange={handleChange}
+                name="description" value={form.description} onChange={handleChange}
                 placeholder="Brief description"
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
+                className={inputClass}
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">File URL</label>
-                <input
-                  name="file_url"
-                  value={form.file_url}
-                  onChange={handleChange}
-                  placeholder="https://..."
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">External URL</label>
-                <input
-                  name="external_url"
-                  value={form.external_url}
-                  onChange={handleChange}
-                  placeholder="https://..."
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">File Size</label>
-                <input
-                  name="file_size"
-                  value={form.file_size}
-                  onChange={handleChange}
-                  placeholder="e.g. 2.4 MB"
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
-                />
-              </div>
+            {/* File upload — hidden for multimedia, shown for everything else */}
+            {!isMultimedia && (
+              <FileUpload
+                label="File"
+                value={form.file_url}
+                folder={form.category}
+                onChange={(url, size) => setForm({ ...form, file_url: url, file_size: size })}
+                onClear={() => setForm({ ...form, file_url: '', file_size: '' })}
+              />
+            )}
+
+            {/* External URL — always shown; required for multimedia */}
+            <div>
+              <label className={labelClass}>
+                {isMultimedia ? 'Video / Photo URL *' : 'External URL'}
+              </label>
+              <input
+                name="external_url" value={form.external_url} onChange={handleChange}
+                placeholder={isMultimedia ? 'YouTube, Vimeo, or direct link' : 'https://...'}
+                className={inputClass}
+              />
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+            {/* File size — auto-filled on upload, editable override */}
+            {!isMultimedia && (
+              <div className="w-40">
+                <label className={labelClass}>File Size</label>
+                <input
+                  name="file_size" value={form.file_size} onChange={handleChange}
+                  placeholder="e.g. 2.4 MB"
+                  className={inputClass}
+                />
+                <p className="text-[10px] text-gray-300 mt-1">Auto-filled on upload</p>
+              </div>
+            )}
+
+            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
               <input
-                type="checkbox"
-                name="published"
-                checked={form.published}
-                onChange={handleChange}
+                type="checkbox" name="published" checked={form.published} onChange={handleChange}
                 style={{ accentColor: '#E8192C' }}
               />
               Published
             </label>
 
             {error && (
-              <p className="text-sm" style={{ color: '#E8192C' }}>{error}</p>
+              <p className="text-sm px-4 py-3 rounded-lg"
+                style={{ color: '#E8192C', backgroundColor: 'rgba(232,25,44,0.08)', border: '1px solid rgba(232,25,44,0.2)' }}>
+                {error}
+              </p>
             )}
 
             <div className="flex gap-3">
@@ -222,17 +247,17 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
 
       {/* Filter */}
       <div className="flex flex-wrap gap-2 mb-5">
-        {['all', ...RESOURCE_CATEGORIES.map((c) => c.slug)].map((f) => (
+        {filterOptions.map((f) => (
           <button
-            key={f}
-            onClick={() => setFilter(f)}
+            key={f.value}
+            onClick={() => setFilter(f.value)}
             className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
             style={{
-              backgroundColor: filter === f ? '#0D1B2A' : '#F3F4F6',
-              color: filter === f ? 'white' : '#6B7280',
+              backgroundColor: filter === f.value ? '#0D1B2A' : '#F3F4F6',
+              color: filter === f.value ? 'white' : '#6B7280',
             }}
           >
-            {f === 'all' ? 'All' : labelFor(f)}
+            {f.label}
           </button>
         ))}
       </div>
@@ -249,24 +274,31 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
                   {resource.subcategory && (
                     <span className="text-xs text-gray-300">{resource.subcategory}</span>
                   )}
-                  {resource.file_size && <span className="text-xs text-gray-300">{resource.file_size}</span>}
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${resource.published ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                  {resource.file_size && (
+                    <span className="text-xs text-gray-300">{resource.file_size}</span>
+                  )}
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    resource.published ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
+                  }`}>
                     {resource.published ? 'Live' : 'Draft'}
                   </span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 {resource.file_url && (
-                  <a href={resource.file_url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-navy">
+                  <a href={resource.file_url} target="_blank" rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-navy">
                     <Download size={15} />
                   </a>
                 )}
                 {resource.external_url && (
-                  <a href={resource.external_url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-navy">
+                  <a href={resource.external_url} target="_blank" rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-navy">
                     <ExternalLink size={15} />
                   </a>
                 )}
-                <button onClick={() => handleDelete(resource.id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                <button onClick={() => handleDelete(resource.id)}
+                  className="text-gray-300 hover:text-red-500 transition-colors">
                   <Trash2 size={15} />
                 </button>
               </div>

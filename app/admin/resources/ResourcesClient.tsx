@@ -65,7 +65,7 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
     if (error) {
       setError(error.message)
     } else if (data) {
-      setResources((prev) => [data, ...prev])
+      setResources((prev) => [data as Resource, ...prev])
       setForm(EMPTY)
       setShowForm(false)
     }
@@ -104,7 +104,9 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
             <div>
               <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">Title *</label>
               <input
-                name="title" value={form.title} onChange={handleChange}
+                name="title"
+                value={form.title}
+                onChange={handleChange}
                 placeholder="Resource title"
                 className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
               />
@@ -114,7 +116,9 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">Category</label>
                 <select
-                  name="category" value={form.category} onChange={handleChange}
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
                   className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
                 >
                   {RESOURCE_CATEGORIES.map((c) => (
@@ -125,7 +129,9 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">Sub-category</label>
                 <select
-                  name="subcategory" value={form.subcategory} onChange={handleChange}
+                  name="subcategory"
+                  value={form.subcategory}
+                  onChange={handleChange}
                   className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
                 >
                   {subOptions.map((s) => (
@@ -138,7 +144,9 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
             <div>
               <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">Description</label>
               <input
-                name="description" value={form.description} onChange={handleChange}
+                name="description"
+                value={form.description}
+                onChange={handleChange}
                 placeholder="Brief description"
                 className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
               />
@@ -148,7 +156,9 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">File URL</label>
                 <input
-                  name="file_url" value={form.file_url} onChange={handleChange}
+                  name="file_url"
+                  value={form.file_url}
+                  onChange={handleChange}
                   placeholder="https://..."
                   className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
                 />
@@ -156,7 +166,9 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">External URL</label>
                 <input
-                  name="external_url" value={form.external_url} onChange={handleChange}
+                  name="external_url"
+                  value={form.external_url}
+                  onChange={handleChange}
                   placeholder="https://..."
                   className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
                 />
@@ -164,7 +176,9 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">File Size</label>
                 <input
-                  name="file_size" value={form.file_size} onChange={handleChange}
+                  name="file_size"
+                  value={form.file_size}
+                  onChange={handleChange}
                   placeholder="e.g. 2.4 MB"
                   className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none text-navy"
                 />
@@ -172,7 +186,13 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
             </div>
 
             <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-              <input type="checkbox" name="published" checked={form.published} onChange={handleChange} style={{ accentColor: '#E8192C' }} />
+              <input
+                type="checkbox"
+                name="published"
+                checked={form.published}
+                onChange={handleChange}
+                style={{ accentColor: '#E8192C' }}
+              />
               Published
             </label>
 

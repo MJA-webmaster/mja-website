@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import ImageUpload from '@/components/ImageUpload'
 import type { Member } from '@/lib/types'
 import { MEMBERSHIP_TYPES } from '@/lib/membership'
 import { Plus, Trash2 } from 'lucide-react'
@@ -188,9 +189,13 @@ export default function MembersClient({ members: initial }: { members: Member[] 
               <label className={labelClass}>Years in Journalism</label>
               <input type="number" name="years_in_journalism" value={form.years_in_journalism} onChange={handleChange} placeholder="e.g. 10" className={inputClass} />
             </div>
-            <div>
-              <label className={labelClass}>Photo URL</label>
-              <input name="photo" value={form.photo} onChange={handleChange} placeholder="https://..." className={inputClass} />
+            <div className="col-span-2">
+              <ImageUpload
+                label="Photo"
+                value={form.photo}
+                folder="members"
+                onChange={(url) => setForm({ ...form, photo: url })}
+              />
             </div>
             <div>
               <label className={labelClass}>Member Since</label>

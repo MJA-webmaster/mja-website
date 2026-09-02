@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import ImageUpload from '@/components/ImageUpload'
 import type { Member } from '@/lib/types'
 import { MEMBERSHIP_TYPES } from '@/lib/membership'
+import ImageUpload from '@/components/ImageUpload'
 import { Plus, Trash2 } from 'lucide-react'
 
 const categories = [
@@ -55,7 +55,8 @@ export default function MembersClient({ members: initial }: { members: Member[] 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) {
-    const val = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value
+    const val =
+      e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value
     setForm({ ...form, [e.target.name]: val })
   }
 
@@ -109,7 +110,9 @@ export default function MembersClient({ members: initial }: { members: Member[] 
     const supabase = createClient()
     const { error } = await supabase.from('members').update({ is_active: !current }).eq('id', id)
     if (!error) {
-      setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, is_active: !current } : m)))
+      setMembers((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, is_active: !current } : m))
+      )
     }
   }
 
@@ -152,44 +155,10 @@ export default function MembersClient({ members: initial }: { members: Member[] 
       {showForm && (
         <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
           <h2 className="font-semibold text-navy mb-4">New Member</h2>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className={labelClass}>Full Name *</label>
-              <input name="name" value={form.name} onChange={handleChange} placeholder="Ahmed Mohamed" className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Membership Type</label>
-              <select name="membership_type" value={form.membership_type} onChange={handleChange} className={inputClass}>
-                {MEMBERSHIP_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>Member ID</label>
-              <input name="member_id" value={form.member_id} onChange={handleChange} placeholder="e.g. MJA-0042" className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>ID Card No.</label>
-              <input name="id_card_no" value={form.id_card_no} onChange={handleChange} placeholder="e.g. A123456" className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Directory Category</label>
-              <select name="category" value={form.category} onChange={handleChange} className={inputClass}>
-                {categories.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>Representing</label>
-              <input name="representing" value={form.representing} onChange={handleChange} placeholder="e.g. Mihaaru" className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Years in Journalism</label>
-              <input type="number" name="years_in_journalism" value={form.years_in_journalism} onChange={handleChange} placeholder="e.g. 10" className={inputClass} />
-            </div>
-            <div className="col-span-2">
+
+          <div className="flex gap-6 mb-4">
+            {/* Photo — fixed square left */}
+            <div className="w-40 flex-shrink-0">
               <ImageUpload
                 label="Photo"
                 value={form.photo}
@@ -197,20 +166,81 @@ export default function MembersClient({ members: initial }: { members: Member[] 
                 onChange={(url) => setForm({ ...form, photo: url })}
               />
             </div>
-            <div>
-              <label className={labelClass}>Member Since</label>
-              <input type="date" name="member_since" value={form.member_since} onChange={handleChange} className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Fee Status</label>
-              <select name="fee_status" value={form.fee_status} onChange={handleChange} className={inputClass}>
-                <option value="unpaid">Unpaid</option>
-                <option value="paid">Paid</option>
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>Fee Paid Until</label>
-              <input type="date" name="fee_paid_until" value={form.fee_paid_until} onChange={handleChange} className={inputClass} />
+
+            {/* Fields — right */}
+            <div className="flex-1 grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Full Name *</label>
+                <input
+                  name="name" value={form.name} onChange={handleChange}
+                  placeholder="Ahmed Mohamed" className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Membership Type</label>
+                <select name="membership_type" value={form.membership_type} onChange={handleChange} className={inputClass}>
+                  {MEMBERSHIP_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Member ID</label>
+                <input
+                  name="member_id" value={form.member_id} onChange={handleChange}
+                  placeholder="e.g. MJA-0042" className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>ID Card No.</label>
+                <input
+                  name="id_card_no" value={form.id_card_no} onChange={handleChange}
+                  placeholder="e.g. A123456" className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Directory Category</label>
+                <select name="category" value={form.category} onChange={handleChange} className={inputClass}>
+                  {categories.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Representing</label>
+                <input
+                  name="representing" value={form.representing} onChange={handleChange}
+                  placeholder="e.g. Mihaaru" className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Years in Journalism</label>
+                <input
+                  type="number" name="years_in_journalism" value={form.years_in_journalism}
+                  onChange={handleChange} placeholder="e.g. 10" className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Member Since</label>
+                <input
+                  type="date" name="member_since" value={form.member_since}
+                  onChange={handleChange} className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Fee Status</label>
+                <select name="fee_status" value={form.fee_status} onChange={handleChange} className={inputClass}>
+                  <option value="unpaid">Unpaid</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Fee Paid Until</label>
+                <input
+                  type="date" name="fee_paid_until" value={form.fee_paid_until}
+                  onChange={handleChange} className={inputClass}
+                />
+              </div>
             </div>
           </div>
 
@@ -244,7 +274,7 @@ export default function MembersClient({ members: initial }: { members: Member[] 
           placeholder="Search name, member ID or ID card..."
           className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-navy focus:outline-none flex-1 max-w-xs"
         />
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {['all', ...MEMBERSHIP_TYPES.map((t) => t.value)].map((f) => (
             <button
               key={f}

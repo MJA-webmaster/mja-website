@@ -26,7 +26,6 @@ const navLinks = [
       { label: 'Check Membership Status', href: '/membership-status' },
     ],
   },
-  { label: 'Shop', href: '/shop' },
   { label: 'Connect', href: '/connect' },
 ]
 

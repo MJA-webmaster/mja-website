@@ -48,6 +48,28 @@ export default function ResourceHubClient(props: Props) {
     push(currentCategory, currentSub, search)
   }
 
+  function ResourceLink({ resource }: { resource: Resource }) {
+    const url = resource.file_url || resource.external_url
+    if (!url) return null
+
+    const isDownload = Boolean(resource.file_url)
+
+    return (
+      
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-1.5 text-xs font-semibold"
+        style={{ color: '#E8192C' }}
+      >
+        {isDownload ? <Download size={16} /> : <ExternalLink size={16} />}
+        {isDownload && resource.file_size && (
+          <span className="text-gray-400">{resource.file_size}</span>
+        )}
+      </a>
+    )
+  }
+
   return (
     <div>
       {/* Search */}
@@ -152,28 +174,7 @@ export default function ResourceHubClient(props: Props) {
                     )}
                   </div>
                   <div className="flex-shrink-0">
-                    {resource.file_url ? (
-                      
-                        href={resource.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-xs font-semibold"
-                        style={{ color: '#E8192C' }}
-                      >
-                        <Download size={16} />
-                        {resource.file_size && <span className="text-gray-400">{resource.file_size}</span>}
-                      </a>
-                    ) : resource.external_url ? (
-                      
-                        href={resource.external_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-xs font-semibold"
-                        style={{ color: '#E8192C' }}
-                      >
-                        <ExternalLink size={16} />
-                      </a>
-                    ) : null}
+                    <ResourceLink resource={resource} />
                   </div>
                 </div>
               ))}

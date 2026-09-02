@@ -2,45 +2,48 @@ import Link from 'next/link'
 
 const footerLinks = {
   about: [
-    { label: 'Journalist Directory', href: '/members-directory' },
-    { label: 'MJA Press Freedom Index', href: '/resource-hub/publications' },
-    { label: 'Downloads', href: '/resource-hub' },
+    { label: 'Our Values', href: '/the-association/values' },
+    { label: 'Governance', href: '/the-association/governance' },
+    { label: 'Board Members', href: '/the-association/board' },
     { label: 'Code of Conduct', href: '/the-association/code-of-conduct' },
-    { label: 'MJA Team', href: '/the-association/team' },
   ],
-  contact: [
-    { label: 'Connect with Us', href: '/connect' },
-    { label: 'Press Inquiries', href: '/connect' },
-    { label: 'Membership', href: '/join-mja' },
+  membership: [
+    { label: 'Join MJA', href: '/join-mja' },
+    { label: 'Members Directory', href: '/members-directory' },
+    { label: 'Check Membership Status', href: '/membership-status' },
     { label: 'Report a Case', href: '/connect' },
   ],
-  resourceHub: [
-    { label: 'Publications', href: '/resource-hub/publications' },
-    { label: 'Photos', href: '/resource-hub/photos' },
-    { label: 'Videos', href: '/resource-hub/videos' },
-    { label: 'Code of Conduct', href: '/the-association/code-of-conduct' },
+  resources: [
+    { label: 'Publications', href: '/resource-hub?category=publications' },
+    { label: 'Annual Reports', href: '/resource-hub?category=annual-reports' },
+    { label: 'Financials', href: '/resource-hub?category=financials' },
+    { label: 'Multimedia', href: '/resource-hub?category=multimedia' },
   ],
 }
 
+const socials = [
+  {
+    label: 'Facebook',
+    href: 'https://facebook.com/mjamaldives',
+    d: 'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z',
+  },
+  {
+    label: 'Instagram',
+    href: 'https://instagram.com/mjamaldives',
+    d: 'M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z M17.5 6.5h.01 M7.5 2h9a5.5 5.5 0 0 1 5.5 5.5v9a5.5 5.5 0 0 1-5.5 5.5h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2z',
+  },
+  {
+    label: 'X (Twitter)',
+    href: 'https://x.com/mjamaldives',
+    d: 'M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z',
+  },
+]
+
 export default function Footer() {
   return (
-    <footer className="bg-navy text-white">
-      {/* CTA Row */}
-      <div className="bg-navy-mid px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-6">
-        <p className="text-xs font-bold tracking-widest uppercase text-white/50">
-          Get Involved Today!
-        </p>
-        <Link
-          href="/shop"
-          className="text-white px-7 py-3 rounded text-sm font-bold tracking-widest uppercase transition-colors"
-          style={{ backgroundColor: '#E8192C' }}
-        >
-          Visit the Shop
-        </Link>
-      </div>
-
-      {/* Links Grid */}
-      <div className="max-w-[1280px] mx-auto px-8 py-14 grid grid-cols-2 md:grid-cols-4 gap-10 border-t border-white/5">
+    <footer style={{ backgroundColor: '#0D1B2A' }} className="text-white">
+      {/* Links grid */}
+      <div className="max-w-[1280px] mx-auto px-8 py-14 grid grid-cols-2 md:grid-cols-4 gap-10">
         {/* Logo col */}
         <div>
           <Link href="/" className="inline-block mb-6">
@@ -51,16 +54,16 @@ export default function Footer() {
             />
           </Link>
           <p className="text-xs text-white/30 leading-relaxed">
-            Defending freedom of information across every corner of the globe.
+            Defending freedom of information across every corner of the Maldives.
           </p>
         </div>
 
         {/* About */}
         <div>
-          <p className="text-[11px] font-bold tracking-widest uppercase text-white mb-4">About</p>
+          <p className="text-[11px] font-bold tracking-widest uppercase text-white mb-4">The Association</p>
           {footerLinks.about.map((link) => (
             <Link
-              key={link.href}
+              key={link.label}
               href={link.href}
               className="block text-[13px] text-white/45 hover:text-white transition-colors leading-loose"
             >
@@ -69,12 +72,12 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Contact */}
+        {/* Membership */}
         <div>
-          <p className="text-[11px] font-bold tracking-widest uppercase text-white mb-4">Contact</p>
-          {footerLinks.contact.map((link) => (
+          <p className="text-[11px] font-bold tracking-widest uppercase text-white mb-4">Membership</p>
+          {footerLinks.membership.map((link) => (
             <Link
-              key={link.href}
+              key={link.label}
               href={link.href}
               className="block text-[13px] text-white/45 hover:text-white transition-colors leading-loose"
             >
@@ -83,12 +86,12 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Resource Hub */}
+        {/* Resources */}
         <div>
-          <p className="text-[11px] font-bold tracking-widest uppercase text-white mb-4">Resource Hub</p>
-          {footerLinks.resourceHub.map((link) => (
+          <p className="text-[11px] font-bold tracking-widest uppercase text-white mb-4">Resources</p>
+          {footerLinks.resources.map((link) => (
             <Link
-              key={link.href}
+              key={link.label}
               href={link.href}
               className="block text-[13px] text-white/45 hover:text-white transition-colors leading-loose"
             >
@@ -99,25 +102,32 @@ export default function Footer() {
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t border-white/5 px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="border-t border-white/5 px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-[1280px] mx-auto">
         <p className="text-xs text-white/25">
-          © {new Date().getFullYear()} Maldives Journalists Association
+          © {new Date().getFullYear()} Maldives Journalists Association · mja.mv
         </p>
-        <div className="flex items-center gap-4">
-          {[
-            { label: 'Facebook', d: 'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z' },
-            { label: 'Instagram', d: 'M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z M17.5 6.5h.01 M7.5 2h9a5.5 5.5 0 0 1 5.5 5.5v9a5.5 5.5 0 0 1-5.5 5.5h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2z' },
-            { label: 'LinkedIn', d: 'M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z M2 9h4v12H2z M4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z' },
-            { label: 'Twitter', d: 'M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z' },
-          ].map((social) => (
-            <a
+        <div className="flex items-center gap-3">
+          {socials.map((social) => (
+            
               key={social.label}
-              href="#"
+              href={social.href}
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label={social.label}
-              className="w-8 h-8 rounded-full bg-white/5 hover:bg-red flex items-center justify-center transition-colors"
-              style={{ '--hover-bg': '#E8192C' } as React.CSSProperties}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+              style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#E8192C')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)')}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-3.5 h-3.5"
+              >
                 <path d={social.d} />
               </svg>
             </a>

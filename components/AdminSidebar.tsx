@@ -20,7 +20,7 @@ const navItems = [
   { divider: 'People' },
   { label: 'Members', href: '/admin/members', icon: Users },
   { label: 'Applications', href: '/admin/applications', icon: ClipboardList },
-  { label: 'Executive Committee', href: '/admin/executive', icon: Award },
+  { label: 'Board Members', href: '/admin/executive', icon: Award },
   { label: 'Team', href: '/admin/team', icon: UserCheck },
   { label: 'Supporters', href: '/admin/supporters', icon: Heart },
   { divider: 'Data' },

@@ -80,8 +80,8 @@ export type Resource = {
   id: string
   title: string
   description: string | null
-  category: 'publication' | 'photo' | 'video' | 'code-of-conduct' | 'multimedia' | 'annual-reports' | (string & {})
-  subcategory?: string | null
+  category: 'publications' | 'annual-reports' | 'financials' | 'multimedia'
+  subcategory: string | null
   file_url: string | null
   external_url: string | null
   file_size: string | null

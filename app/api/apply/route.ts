@@ -1,107 +1,170 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json()
-    const { type, name, email, phone, outlet, years, message } = body
+const MEMBERSHIP_TYPES = ['Professional', 'Student', 'Corporate']
 
-    if (!name || !email || !type) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+export async function POST(req: Request) {
+  try {
+    const body = await req.json()
+
+    const {
+      membership_type,
+      full_name,
+      common_name,
+      id_card_no,
+      email,
+      mobile_no,
+      employment_type,
+      nature_of_work,
+      workplace_name,
+      designation,
+      atoll_island,
+      message,
+      declaration,
+      photo_url,
+      id_card_url,
+      portfolio_url,
+    } = body
+
+    // ── Validation ──
+    if (!MEMBERSHIP_TYPES.includes(membership_type)) {
+      return NextResponse.json({ error: 'Invalid membership type.' }, { status: 400 })
+    }
+    if (!full_name || !email || !mobile_no || !id_card_no) {
+      return NextResponse.json({ error: 'Please fill in all required fields.' }, { status: 400 })
+    }
+    if (!declaration) {
+      return NextResponse.json({ error: 'The declaration must be accepted.' }, { status: 400 })
     }
 
-    const supabase = createClient()
+    const isCorporate = membership_type === 'Corporate'
 
-    // Save to Supabase
-    const { error: dbError } = await supabase
-      .from('membership_applications')
-      .insert({
-        type,
-        name,
-        email,
-        phone: phone || null,
-        outlet: outlet || null,
-        years_in_journalism: years ? parseInt(years) : null,
-        message: message || null,
-      })
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { error: dbError } = await supabase.from('membership_applications').insert({
+      membership_type,
+      full_name,
+      common_name: common_name || null,
+      id_card_no,
+      email,
+      mobile_no,
+      employment_type: isCorporate ? null : employment_type,
+      nature_of_work: isCorporate ? null : nature_of_work,
+      workplace_name: workplace_name || null,
+      designation: designation || null,
+      atoll_island: atoll_island || null,
+      message: message || null,
+      declaration: true,
+      photo_url: photo_url || null,
+      id_card_url: id_card_url || null,
+      portfolio_url: portfolio_url || null,
+      status: 'pending',
+    })
 
     if (dbError) {
-      console.error('DB error:', dbError)
-      return NextResponse.json({ error: 'Failed to save application' }, { status: 500 })
+      console.error('Application insert failed:', dbError)
+      return NextResponse.json({ error: 'Could not save your application.' }, { status: 500 })
     }
 
-    // Send email via Resend
+    // ── Emails (non-blocking: a mail failure must not lose the application) ──
     const resendKey = process.env.RESEND_API_KEY
-    const mjaEmail = process.env.MJA_EMAIL || 'info@mja.mv'
+    const mjaEmail = process.env.MJA_EMAIL
+    const from = process.env.MJA_FROM_EMAIL || 'MJA Website <onboarding@resend.dev>'
 
-    if (resendKey) {
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'MJA Website <onboarding@resend.dev>',
-          to: [mjaEmail],
-          subject: `New Membership Application — ${name}`,
-          html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-              <div style="background: #E8192C; padding: 24px; border-radius: 8px 8px 0 0;">
-                <h1 style="color: white; margin: 0; font-size: 24px;">New Membership Application</h1>
-              </div>
-              <div style="background: #f9fafb; padding: 24px; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb;">
-                <table style="width: 100%; border-collapse: collapse;">
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 13px; width: 140px;">Membership Type</td>
-                    <td style="padding: 8px 0; color: #0D1B2A; font-weight: 600; text-transform: capitalize;">${type}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Full Name</td>
-                    <td style="padding: 8px 0; color: #0D1B2A; font-weight: 600;">${name}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Email</td>
-                    <td style="padding: 8px 0; color: #0D1B2A;">${email}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Phone</td>
-                    <td style="padding: 8px 0; color: #0D1B2A;">${phone || '—'}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Media Outlet</td>
-                    <td style="padding: 8px 0; color: #0D1B2A;">${outlet || '—'}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 13px;">Years in Journalism</td>
-                    <td style="padding: 8px 0; color: #0D1B2A;">${years || '—'}</td>
-                  </tr>
-                  ${message ? `
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 13px; vertical-align: top;">Message</td>
-                    <td style="padding: 8px 0; color: #0D1B2A;">${message}</td>
-                  </tr>
-                  ` : ''}
-                </table>
-                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-                  <p style="color: #6b7280; font-size: 12px; margin: 0;">
-                    Submitted on ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </p>
-                  <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://mja-website-gilt.vercel.app'}/admin"
-                     style="display: inline-block; margin-top: 12px; background: #0D1B2A; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">
-                    View in Admin Panel →
-                  </a>
-                </div>
-              </div>
+    if (resendKey && mjaEmail) {
+      const rows: [string, string | null][] = [
+        [isCorporate ? 'Organisation' : 'Full Name', full_name],
+        [isCorporate ? 'Contact Person' : 'Common Name', common_name],
+        [isCorporate ? 'Registration No.' : 'ID Card No.', id_card_no],
+        ['Email', email],
+        ['Mobile', mobile_no],
+        ['Membership Type', membership_type],
+        ['Employment Type', isCorporate ? null : employment_type],
+        ['Nature of Work', isCorporate ? null : nature_of_work],
+        ['Workplace', workplace_name],
+        ['Designation', designation],
+        ['Atoll / Island', atoll_island],
+      ]
+
+      const detailRows = rows
+        .filter(([, value]) => Boolean(value))
+        .map(
+          ([label, value]) => `
+            <div style="display:flex;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+              <span style="color:#9CA3AF;font-size:13px;width:150px;flex-shrink:0;">${label}</span>
+              <span style="color:#0D1B2A;font-size:13px;font-weight:500;">${value}</span>
+            </div>`
+        )
+        .join('')
+
+      const send = (payload: Record<string, unknown>) =>
+        fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${resendKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }).catch((e) => console.error('Resend failed:', e))
+
+      // Applicant confirmation
+      await send({
+        from,
+        to: [email],
+        subject: 'We received your MJA membership application',
+        html: `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
+            <div style="background:#0D1B2A;padding:28px;border-radius:8px 8px 0 0;">
+              <h1 style="color:white;margin:0;font-size:20px;">Application Received</h1>
             </div>
-          `,
-        }),
+            <div style="background:#f9fafb;padding:28px;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;">
+              <p style="color:#0D1B2A;font-size:14px;line-height:1.6;margin-top:0;">
+                Thank you for applying for ${membership_type} membership with the Maldives
+                Journalists Association. Our team will review your application and respond
+                within 3 business days.
+              </p>
+              <div style="margin-top:20px;">${detailRows}</div>
+              <p style="color:#9CA3AF;font-size:12px;margin-top:24px;line-height:1.6;">
+                Questions? Contact us at
+                <a href="mailto:${mjaEmail}" style="color:#E8192C;">${mjaEmail}</a>
+              </p>
+            </div>
+            <p style="text-align:center;color:#9CA3AF;font-size:11px;margin-top:20px;">
+              © ${new Date().getFullYear()} Maldives Journalists Association · mja.mv
+            </p>
+          </div>`,
+      })
+
+      // Admin notification
+      await send({
+        from,
+        to: [mjaEmail],
+        subject: `New ${membership_type} Application — ${full_name}`,
+        html: `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
+            <div style="background:#E8192C;padding:24px;border-radius:8px 8px 0 0;">
+              <h1 style="color:white;margin:0;font-size:20px;">New Membership Application</h1>
+            </div>
+            <div style="background:#f9fafb;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;">
+              ${detailRows}
+              ${message ? `<p style="color:#6B7280;font-size:13px;margin-top:16px;">${message}</p>` : ''}
+              <p style="margin-top:24px;">
+                <a href="https://mja.mv/admin/applications"
+                   style="background:#E8192C;color:white;text-decoration:none;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:600;">
+                  Review in Admin
+                </a>
+              </p>
+            </div>
+          </div>`,
       })
     }
 
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Apply error:', error)
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('Apply route error:', err)
+    return NextResponse.json({ error: 'Something went wrong.' }, { status: 500 })
   }
 }

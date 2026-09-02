@@ -7,9 +7,15 @@ export const RESOURCE_CATEGORIES = [
   },
   {
     slug: 'annual-reports',
-    label: 'Annual Reports & Financials',
-    blurb: 'Yearly reports and audited accounts',
-    subcategories: ['Annual Report', 'Financial Statement'],
+    label: 'Annual Reports',
+    blurb: 'Yearly reports',
+    subcategories: ['Annual Report'],
+  },
+  {
+    slug: 'financials',
+    label: 'Financials',
+    blurb: 'Audited accounts and financial statements',
+    subcategories: ['Financial Statement', 'Audit Report'],
   },
   {
     slug: 'multimedia',

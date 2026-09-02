@@ -157,10 +157,10 @@ export default function ArticleEditor({ article }: { article?: Article }) {
     const url = window.prompt('URL:', editor?.getAttributes('link').href ?? '')
     if (url === null) return
     if (url === '') {
-      editor?.chain().focus().extendMarkToLink().unsetLink().run()
+      editor?.chain().focus().unsetLink().run()
       return
     }
-    editor?.chain().focus().extendMarkToLink().setLink({ href: url }).run()
+    editor?.chain().focus().setLink({ href: url }).run()
   }
 
   async function handleSave(publish?: boolean) {

@@ -63,7 +63,7 @@ export default function ImageUpload({ value, onChange, folder = 'misc', label }:
       )}
 
       {value ? (
-        <div className="relative w-full h-36 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+        <div className="relative w-full h-40 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
           <img src={value} alt="" className="w-full h-full object-cover" />
           <button
             type="button"
@@ -80,14 +80,14 @@ export default function ImageUpload({ value, onChange, folder = 'misc', label }:
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
-          className="w-full h-36 rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors"
+          className="w-full h-40 rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors"
           style={{
             borderColor: dragging ? '#E8192C' : '#E5E7EB',
             backgroundColor: dragging ? 'rgba(232,25,44,0.03)' : '#FAFAFA',
           }}
         >
           <Upload size={20} strokeWidth={1.75} className="text-gray-300 mb-2" />
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 text-center px-2">
             {uploading ? 'Uploading...' : 'Click or drag an image here'}
           </p>
           <p className="text-[10px] text-gray-300 mt-0.5">JPG or PNG, max 5MB</p>

@@ -15,7 +15,7 @@ interface Category {
   slug: string
   label: string
   blurb: string
-  subcategories: string[]
+  subcategories: readonly string[]
 }
 
 interface Props {

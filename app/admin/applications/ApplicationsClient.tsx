@@ -145,7 +145,7 @@ export default function ApplicationsClient({ applications: initial }: { applicat
         { key: 'idCard', label: isCorporate ? 'Registration certificate' : 'ID card copy' },
         { key: 'portfolio', label: 'Portfolio' },
       ].filter((d) => docLinks[d.key])
-    : []
+    : [];
 
   return (
     <div className="flex gap-6 h-full">

@@ -5,12 +5,6 @@ import { useRouter, usePathname } from 'next/navigation'
 import type { Resource } from '@/lib/types'
 import { Download, FileText, Image as ImageIcon, BookOpen, ExternalLink } from 'lucide-react'
 
-const ICONS: Record<string, typeof BookOpen> = {
-  'publications': BookOpen,
-  'annual-reports': FileText,
-  'multimedia': ImageIcon,
-}
-
 interface Category {
   slug: string
   label: string
@@ -20,36 +14,38 @@ interface Category {
 
 interface Props {
   resources: Resource[]
-  categories: Category[]
+  categories: readonly Category[]
   currentCategory: string
   currentSub: string
   currentSearch: string
 }
 
-export default function ResourceHubClient({
-  resources,
-  categories,
-  currentCategory,
-  currentSub,
-  currentSearch,
-}: Props) {
+export default function ResourceHubClient(props: Props) {
+  const { resources, categories, currentCategory, currentSub, currentSearch } = props
+
   const router = useRouter()
   const pathname = usePathname()
   const [search, setSearch] = useState(currentSearch)
 
   const active = categories.find((c) => c.slug === currentCategory)
 
-  function push(next: { category?: string; sub?: string; q?: string }) {
+  function iconFor(slug: string) {
+    if (slug === 'multimedia') return ImageIcon
+    if (slug === 'annual-reports') return FileText
+    return BookOpen
+  }
+
+  function push(category: string, sub: string, q: string) {
     const params = new URLSearchParams()
-    params.set('category', next.category ?? currentCategory)
-    if (next.sub) params.set('sub', next.sub)
-    if (next.q) params.set('q', next.q)
-    router.push(`${pathname}?${params.toString()}`)
+    params.set('category', category)
+    if (sub) params.set('sub', sub)
+    if (q) params.set('q', q)
+    router.push(pathname + '?' + params.toString())
   }
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
-    push({ sub: currentSub, q: search })
+    push(currentCategory, currentSub, search)
   }
 
   return (
@@ -73,16 +69,16 @@ export default function ResourceHubClient({
       </form>
 
       <div className="md:grid md:grid-cols-[240px_1fr] md:gap-10">
-        {/* Sidebar */}
+        {/* Category sidebar */}
         <aside className="mb-8 md:mb-0">
           <nav className="flex md:block gap-2 overflow-x-auto pb-2 md:pb-0 md:space-y-1">
             {categories.map((cat) => {
-              const Icon = ICONS[cat.slug] ?? BookOpen
+              const Icon = iconFor(cat.slug)
               const isActive = currentCategory === cat.slug
               return (
                 <button
                   key={cat.slug}
-                  onClick={() => push({ category: cat.slug, q: search })}
+                  onClick={() => push(cat.slug, '', search)}
                   className="flex-shrink-0 md:w-full flex items-start gap-3 px-4 py-3 rounded-lg text-left transition-colors whitespace-nowrap md:whitespace-normal"
                   style={{
                     backgroundColor: isActive ? '#E8192C' : 'transparent',
@@ -107,15 +103,14 @@ export default function ResourceHubClient({
 
         {/* Resources list */}
         <div>
-          {/* Subcategory filter */}
           {active && active.subcategories.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">
               <button
-                onClick={() => push({ q: search })}
+                onClick={() => push(currentCategory, '', search)}
                 className="px-4 py-1.5 rounded-full text-[12px] font-semibold transition-colors"
                 style={{
-                  backgroundColor: !currentSub ? '#0D1B2A' : '#F3F4F6',
-                  color: !currentSub ? 'white' : '#6B7280',
+                  backgroundColor: currentSub ? '#F3F4F6' : '#0D1B2A',
+                  color: currentSub ? '#6B7280' : 'white',
                 }}
               >
                 All
@@ -125,7 +120,7 @@ export default function ResourceHubClient({
                 return (
                   <button
                     key={sub}
-                    onClick={() => push({ sub, q: search })}
+                    onClick={() => push(currentCategory, sub, search)}
                     className="px-4 py-1.5 rounded-full text-[12px] font-semibold transition-colors"
                     style={{
                       backgroundColor: isActive ? '#0D1B2A' : '#F3F4F6',
@@ -162,13 +157,11 @@ export default function ResourceHubClient({
                         href={resource.file_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-xs font-semibold transition-colors"
+                        className="flex items-center gap-1.5 text-xs font-semibold"
                         style={{ color: '#E8192C' }}
                       >
                         <Download size={16} />
-                        {resource.file_size && (
-                          <span className="text-gray-400">{resource.file_size}</span>
-                        )}
+                        {resource.file_size && <span className="text-gray-400">{resource.file_size}</span>}
                       </a>
                     ) : resource.external_url ? (
                       

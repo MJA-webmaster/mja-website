@@ -145,7 +145,7 @@ export default function ApplicationsClient({ applications: initial }: { applicat
         { key: 'idCard', label: isCorporate ? 'Registration certificate' : 'ID card copy' },
         { key: 'portfolio', label: 'Portfolio' },
       ].filter((d) => docLinks[d.key])
-    : [];
+    : []
 
   return (
     <div className="flex gap-6 h-full">
@@ -265,7 +265,7 @@ export default function ApplicationsClient({ applications: initial }: { applicat
                   </p>
                   <div className="space-y-1.5">
                     {docs.map((d) => (
-                      
+                      <a
                         key={d.key}
                         href={docLinks[d.key]}
                         target="_blank"

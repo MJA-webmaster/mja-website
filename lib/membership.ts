@@ -18,5 +18,21 @@ export const MEMBERSHIP_TYPES = [
 
 export type MembershipType = (typeof MEMBERSHIP_TYPES)[number]['value']
 
+export const EMPLOYMENT_TYPES = [
+  'Media Organisation',
+  'Freelance',
+] as const
+
+// TODO: confirm against MJA's Google Form
+export const NATURE_OF_WORK = [
+  'Reporter',
+  'Editor',
+  'Photojournalist',
+  'Videographer / Camera Operator',
+  'Producer',
+  'Presenter',
+  'Other',
+] as const
+
 export const FEE_STATUSES = ['paid', 'unpaid'] as const
 export type FeeStatus = (typeof FEE_STATUSES)[number]

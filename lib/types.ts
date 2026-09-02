@@ -42,6 +42,11 @@ export type Member = {
   member_since: string | null
   is_active: boolean
   created_at: string
+  id_card_no: string | null
+  member_id: string | null
+  membership_type: 'Professional' | 'Student' | 'Corporate'
+  fee_status: 'paid' | 'unpaid'
+  fee_paid_until: string | null
 }
 
 export type ExecutiveCommitteeMember = {

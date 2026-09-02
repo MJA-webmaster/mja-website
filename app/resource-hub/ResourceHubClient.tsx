@@ -3,45 +3,59 @@
 import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import type { Resource } from '@/lib/types'
-import { Download, FileText, Image, Video, BookOpen, ExternalLink } from 'lucide-react'
+import { Download, FileText, Image as ImageIcon, BookOpen, ExternalLink } from 'lucide-react'
 
-const categories = [
-  { value: 'publication', label: 'Publications', icon: BookOpen },
-  { value: 'photo', label: 'Photos', icon: Image },
-  { value: 'video', label: 'Videos', icon: Video },
-  { value: 'code-of-conduct', label: 'Code of Conduct', icon: FileText },
-]
+const ICONS: Record<string, typeof BookOpen> = {
+  'publications': BookOpen,
+  'annual-reports': FileText,
+  'multimedia': ImageIcon,
+}
+
+interface Category {
+  slug: string
+  label: string
+  blurb: string
+  subcategories: string[]
+}
 
 interface Props {
   resources: Resource[]
+  categories: Category[]
   currentCategory: string
+  currentSub: string
   currentSearch: string
 }
 
-export default function ResourceHubClient({ resources, currentCategory, currentSearch }: Props) {
+export default function ResourceHubClient({
+  resources,
+  categories,
+  currentCategory,
+  currentSub,
+  currentSearch,
+}: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const [search, setSearch] = useState(currentSearch)
 
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault()
+  const active = categories.find((c) => c.slug === currentCategory)
+
+  function push(next: { category?: string; sub?: string; q?: string }) {
     const params = new URLSearchParams()
-    params.set('category', currentCategory)
-    if (search) params.set('q', search)
+    params.set('category', next.category ?? currentCategory)
+    if (next.sub) params.set('sub', next.sub)
+    if (next.q) params.set('q', next.q)
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  function handleCategory(cat: string) {
-    const params = new URLSearchParams()
-    params.set('category', cat)
-    if (search) params.set('q', search)
-    router.push(`${pathname}?${params.toString()}`)
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault()
+    push({ sub: currentSub, q: search })
   }
 
   return (
     <div>
       {/* Search */}
-      <form onSubmit={handleSearch} className="flex gap-0 mb-10 border border-gray-200 rounded-lg overflow-hidden">
+      <form onSubmit={handleSearch} className="flex mb-10 border border-gray-200 rounded-lg overflow-hidden">
         <input
           type="text"
           value={search}
@@ -58,25 +72,33 @@ export default function ResourceHubClient({ resources, currentCategory, currentS
         </button>
       </form>
 
-      <div className="grid grid-cols-[200px_1fr] gap-10">
+      <div className="md:grid md:grid-cols-[240px_1fr] md:gap-10">
         {/* Sidebar */}
-        <aside>
-          <nav className="space-y-1">
+        <aside className="mb-8 md:mb-0">
+          <nav className="flex md:block gap-2 overflow-x-auto pb-2 md:pb-0 md:space-y-1">
             {categories.map((cat) => {
-              const Icon = cat.icon
-              const isActive = currentCategory === cat.value
+              const Icon = ICONS[cat.slug] ?? BookOpen
+              const isActive = currentCategory === cat.slug
               return (
                 <button
-                  key={cat.value}
-                  onClick={() => handleCategory(cat.value)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-left transition-colors"
+                  key={cat.slug}
+                  onClick={() => push({ category: cat.slug, q: search })}
+                  className="flex-shrink-0 md:w-full flex items-start gap-3 px-4 py-3 rounded-lg text-left transition-colors whitespace-nowrap md:whitespace-normal"
                   style={{
                     backgroundColor: isActive ? '#E8192C' : 'transparent',
                     color: isActive ? 'white' : '#6B7280',
                   }}
                 >
-                  <Icon size={15} strokeWidth={1.75} />
-                  {cat.label}
+                  <Icon size={16} strokeWidth={1.75} className="mt-0.5 flex-shrink-0" />
+                  <span>
+                    <span className="block text-[14px] font-semibold">{cat.label}</span>
+                    <span
+                      className="hidden md:block text-[11px] mt-0.5 leading-snug"
+                      style={{ color: isActive ? 'rgba(255,255,255,0.7)' : '#9CA3AF' }}
+                    >
+                      {cat.blurb}
+                    </span>
+                  </span>
                 </button>
               )
             })}
@@ -85,6 +107,38 @@ export default function ResourceHubClient({ resources, currentCategory, currentS
 
         {/* Resources list */}
         <div>
+          {/* Subcategory filter */}
+          {active && active.subcategories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              <button
+                onClick={() => push({ q: search })}
+                className="px-4 py-1.5 rounded-full text-[12px] font-semibold transition-colors"
+                style={{
+                  backgroundColor: !currentSub ? '#0D1B2A' : '#F3F4F6',
+                  color: !currentSub ? 'white' : '#6B7280',
+                }}
+              >
+                All
+              </button>
+              {active.subcategories.map((sub) => {
+                const isActive = currentSub === sub
+                return (
+                  <button
+                    key={sub}
+                    onClick={() => push({ sub, q: search })}
+                    className="px-4 py-1.5 rounded-full text-[12px] font-semibold transition-colors"
+                    style={{
+                      backgroundColor: isActive ? '#0D1B2A' : '#F3F4F6',
+                      color: isActive ? 'white' : '#6B7280',
+                    }}
+                  >
+                    {sub}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
           {resources.length > 0 ? (
             <div className="divide-y divide-gray-100">
               {resources.map((resource) => (
@@ -96,13 +150,15 @@ export default function ResourceHubClient({ resources, currentCategory, currentS
                     {resource.description && (
                       <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{resource.description}</p>
                     )}
-                    {resource.file_size && (
-                      <p className="text-xs text-gray-300 mt-0.5">{resource.file_size}</p>
+                    {resource.subcategory && (
+                      <p className="text-[11px] text-gray-300 mt-1 uppercase tracking-wide">
+                        {resource.subcategory}
+                      </p>
                     )}
                   </div>
                   <div className="flex-shrink-0">
                     {resource.file_url ? (
-                      <a
+                      
                         href={resource.file_url}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -110,10 +166,12 @@ export default function ResourceHubClient({ resources, currentCategory, currentS
                         style={{ color: '#E8192C' }}
                       >
                         <Download size={16} />
-                        <span className="text-gray-400">{resource.file_size}</span>
+                        {resource.file_size && (
+                          <span className="text-gray-400">{resource.file_size}</span>
+                        )}
                       </a>
                     ) : resource.external_url ? (
-                      <a
+                      
                         href={resource.external_url}
                         target="_blank"
                         rel="noopener noreferrer"

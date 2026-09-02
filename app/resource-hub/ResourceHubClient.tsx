@@ -48,14 +48,14 @@ export default function ResourceHubClient(props: Props) {
     push(currentCategory, currentSub, search)
   }
 
-  function ResourceLink({ resource }: { resource: Resource }) {
+function ResourceLink({ resource }: { resource: Resource }) {
     const url = resource.file_url || resource.external_url
     if (!url) return null
 
     const isDownload = Boolean(resource.file_url)
 
     return (
-      
+      <a
         href={url}
         target="_blank"
         rel="noopener noreferrer"

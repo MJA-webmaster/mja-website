@@ -45,7 +45,7 @@ export type Member = {
   created_at: string
   id_card_no: string | null
   member_id: string | null
-  membership_type: 'Professional' | 'Student' | 'Corporate'
+  membership_type: 'Professional' | 'Student' | 'Corporate' | 'Affiliate'
   fee_status: 'paid' | 'unpaid'
   fee_paid_until: string | null
 }

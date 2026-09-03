@@ -48,6 +48,7 @@ export type Member = {
   membership_type: 'Professional' | 'Student' | 'Corporate' | 'Affiliate'
   fee_status: 'paid' | 'unpaid'
   fee_paid_until: string | null
+  sort_order: number
 }
 
 export type ExecutiveCommitteeMember = {

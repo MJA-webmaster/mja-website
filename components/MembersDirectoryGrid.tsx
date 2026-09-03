@@ -10,6 +10,7 @@ const badgeCopy: Record<Member['membership_type'], string> = {
   Professional: 'Accredited Journalist',
   Student: 'Student Member',
   Corporate: 'Corporate Member',
+  Affiliate: 'Affiliate Member',
 }
 
 const selectClass = 'border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-navy focus:outline-none bg-white'

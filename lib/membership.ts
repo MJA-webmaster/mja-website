@@ -14,6 +14,11 @@ export const MEMBERSHIP_TYPES = [
     label: 'Corporate',
     blurb: 'Media organisations and institutions',
   },
+  {
+    value: 'Affiliate',
+    label: 'Affiliate',
+    blurb: 'Supporters and allied professionals outside core journalism roles',
+  },
 ] as const
 
 export type MembershipType = (typeof MEMBERSHIP_TYPES)[number]['value']

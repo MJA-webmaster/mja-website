@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Pencil } from 'lucide-react'
 
 type TeamMember = {
   id: string
@@ -20,28 +20,65 @@ export default function TeamClient({ team: initial }: { team: TeamMember[] }) {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState(emptyForm)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  function openAddForm() {
+    setEditingId(null)
+    setForm(emptyForm)
+    setShowForm(true)
+  }
+
+  function openEditForm(member: TeamMember) {
+    setEditingId(member.id)
+    setForm({
+      name: member.name,
+      position: member.position,
+      photo: member.photo ?? '',
+      bio: member.bio ?? '',
+      order: member.order,
+    })
+    setShowForm(true)
+  }
+
+  function closeForm() {
+    setShowForm(false)
+    setEditingId(null)
+    setForm(emptyForm)
   }
 
   async function handleSave() {
     if (!form.name || !form.position) return
     setSaving(true)
     const supabase = createClient()
-    const { data, error } = await supabase
-      .from('team_members')
-      .insert({
-        name: form.name, position: form.position,
-        photo: form.photo || null, bio: form.bio || null,
-        order: Number(form.order),
-      })
-      .select().single()
+    const payload = {
+      name: form.name, position: form.position,
+      photo: form.photo || null, bio: form.bio || null,
+      order: Number(form.order),
+    }
 
-    if (!error && data) {
-      setTeam(prev => [...prev, data].sort((a, b) => a.order - b.order))
-      setForm(emptyForm)
-      setShowForm(false)
+    if (editingId) {
+      const { data, error } = await supabase
+        .from('team_members')
+        .update(payload)
+        .eq('id', editingId)
+        .select().single()
+      if (!error && data) {
+        setTeam(prev => prev.map(m => (m.id === editingId ? data : m)).sort((a, b) => a.order - b.order))
+        closeForm()
+      }
+    } else {
+      const { data, error } = await supabase
+        .from('team_members')
+        .insert(payload)
+        .select().single()
+      if (!error && data) {
+        setTeam(prev => [...prev, data].sort((a, b) => a.order - b.order))
+        closeForm()
+      }
     }
     setSaving(false)
   }
@@ -60,7 +97,7 @@ export default function TeamClient({ team: initial }: { team: TeamMember[] }) {
           <h1 className="font-headline text-3xl font-bold text-navy">MJA Team</h1>
           <p className="text-gray-400 text-sm mt-1">{team.length} team members</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)}
+        <button onClick={() => (showForm ? closeForm() : openAddForm())}
           className="flex items-center gap-2 text-white px-5 py-2.5 rounded-lg text-sm font-semibold"
           style={{ backgroundColor: '#E8192C' }}>
           <Plus size={16} /> Add Member
@@ -69,7 +106,7 @@ export default function TeamClient({ team: initial }: { team: TeamMember[] }) {
 
       {showForm && (
         <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
-          <h2 className="font-semibold text-navy mb-4">New Team Member</h2>
+          <h2 className="font-semibold text-navy mb-4">{editingId ? 'Edit Team Member' : 'New Team Member'}</h2>
           <div className="grid grid-cols-2 gap-4 mb-4">
             {[
               { name: 'name', label: 'Full Name *', placeholder: 'Fathimath Ali' },
@@ -95,9 +132,9 @@ export default function TeamClient({ team: initial }: { team: TeamMember[] }) {
             <button onClick={handleSave} disabled={saving || !form.name || !form.position}
               className="text-white px-6 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
               style={{ backgroundColor: '#E8192C' }}>
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? 'Saving...' : editingId ? 'Update' : 'Save'}
             </button>
-            <button onClick={() => setShowForm(false)}
+            <button onClick={closeForm}
               className="border border-gray-200 text-gray-500 px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50">
               Cancel
             </button>
@@ -122,9 +159,14 @@ export default function TeamClient({ team: initial }: { team: TeamMember[] }) {
                   <p className="text-xs text-gray-400">{member.position}</p>
                 </div>
               </div>
-              <button onClick={() => handleDelete(member.id)} className="text-gray-300 hover:text-red-500 transition-colors">
-                <Trash2 size={15} />
-              </button>
+              <div className="flex items-center gap-3">
+                <button onClick={() => openEditForm(member)} className="text-gray-300 hover:text-navy transition-colors" title="Edit member">
+                  <Pencil size={15} />
+                </button>
+                <button onClick={() => handleDelete(member.id)} className="text-gray-300 hover:text-red-500 transition-colors" title="Delete member">
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
           ))}
           {team.length === 0 && (

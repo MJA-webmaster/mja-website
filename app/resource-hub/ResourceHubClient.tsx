@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import type { Resource } from '@/lib/types'
 import { Download, ExternalLink, Search, FileText, Film, Eye } from 'lucide-react'
+import PdfViewerModal from '@/components/PdfViewerModal'
 
 interface Category {
   slug: string
@@ -25,29 +26,23 @@ function DocIcon({ category }: { category: string }) {
   return <FileText size={28} style={{ color: '#E8192C' }} />
 }
 
-function DocumentCard({ resource }: { resource: Resource }) {
+function DocumentCard({ resource, onView }: { resource: Resource; onView: (r: Resource) => void }) {
   const hasCover = Boolean(resource.cover_image)
   const isImageFile = resource.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+  const isPdf = resource.file_url?.endsWith('.pdf')
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
       {/* Cover — A4 ratio */}
       <div
-        className="relative flex items-center justify-center overflow-hidden"
+        className="relative flex items-center justify-center overflow-hidden cursor-pointer"
         style={{ backgroundColor: '#F3F4F6', aspectRatio: '1 / 1.414' }}
+        onClick={() => resource.file_url && onView(resource)}
       >
         {hasCover ? (
-          <img
-            src={resource.cover_image!}
-            alt={resource.title}
-            className="w-full h-full object-cover object-top"
-          />
+          <img src={resource.cover_image!} alt={resource.title} className="w-full h-full object-cover object-top" />
         ) : isImageFile && resource.file_url ? (
-          <img
-            src={resource.file_url}
-            alt={resource.title}
-            className="w-full h-full object-cover object-top"
-          />
+          <img src={resource.file_url} alt={resource.title} className="w-full h-full object-cover object-top" />
         ) : (
           <div className="flex flex-col items-center gap-2">
             <div
@@ -59,6 +54,17 @@ function DocumentCard({ resource }: { resource: Resource }) {
             {resource.file_size && (
               <span className="text-[10px] text-gray-400 font-mono">{resource.file_size}</span>
             )}
+          </div>
+        )}
+
+        {/* Hover overlay for PDFs */}
+        {isPdf && (
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+            style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
+            <div className="flex items-center gap-2 text-white text-xs font-bold">
+              <Eye size={16} />
+              Preview
+            </div>
           </div>
         )}
 
@@ -88,16 +94,14 @@ function DocumentCard({ resource }: { resource: Resource }) {
         <div className="flex gap-2 mt-auto pt-3 border-t border-gray-50">
           {resource.file_url && (
             <>
-              {/* View — opens inline */}
               <button
                 type="button"
-                onClick={() => window.open(resource.file_url!, '_blank', 'noopener,noreferrer')}
+                onClick={() => onView(resource)}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-bold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 <Eye size={12} />
                 View
               </button>
-              {/* Download — forces download */}
               <button
                 type="button"
                 onClick={async () => {
@@ -107,7 +111,7 @@ function DocumentCard({ resource }: { resource: Resource }) {
                     const blobUrl = URL.createObjectURL(blob)
                     const a = document.createElement('a')
                     a.href = blobUrl
-                    a.download = resource.title + (resource.file_url!.endsWith('.pdf') ? '.pdf' : '')
+                    a.download = resource.title + (isPdf ? '.pdf' : '')
                     a.click()
                     URL.revokeObjectURL(blobUrl)
                   } catch {
@@ -148,6 +152,7 @@ export default function ResourceHubClient({
   const router = useRouter()
   const pathname = usePathname()
   const [search, setSearch] = useState(currentSearch)
+  const [viewing, setViewing] = useState<Resource | null>(null)
 
   function push(category: string, sub: string, q: string) {
     const params = new URLSearchParams()
@@ -167,6 +172,14 @@ export default function ResourceHubClient({
 
   return (
     <div>
+      {viewing && viewing.file_url && (
+        <PdfViewerModal
+          url={viewing.file_url}
+          title={viewing.title}
+          onClose={() => setViewing(null)}
+        />
+      )}
+
       {/* Integrated search */}
       <form onSubmit={handleSearch} className="flex items-center mb-8 border border-gray-200 rounded-xl overflow-hidden bg-white">
         <div className="pl-5 text-gray-300 flex-shrink-0">
@@ -259,7 +272,7 @@ export default function ResourceHubClient({
       {resources.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {resources.map((resource) => (
-            <DocumentCard key={resource.id} resource={resource} />
+            <DocumentCard key={resource.id} resource={resource} onView={setViewing} />
           ))}
         </div>
       ) : (

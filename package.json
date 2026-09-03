@@ -22,6 +22,7 @@
     "@tiptap/react": "^3.31.0",
     "@tiptap/starter-kit": "^3.31.0",
     "clsx": "^2.1.1",
+    "easy-pdf-viewer": "github:w99910/pdf-viewer",
     "framer-motion": "^11.3.0",
     "lucide-react": "^0.383.0",
     "next": "14.2.5",

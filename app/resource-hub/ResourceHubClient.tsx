@@ -27,7 +27,7 @@ function DocIcon({ category }: { category: string }) {
 }
 
 function DocumentCard({ resource }: { resource: Resource }) {
-  const isImage = resource.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+  const isImage = resource.cover_image || resource.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
   const url = resource.file_url || resource.external_url
 
   return (

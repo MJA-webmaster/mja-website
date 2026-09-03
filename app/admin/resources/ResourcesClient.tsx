@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { Resource } from '@/lib/types'
 import { RESOURCE_CATEGORIES, subcategoriesFor, labelFor } from '@/lib/resource-categories'
 import FileUpload from '@/components/FileUpload'
+import ImageUpload from '@/components/ImageUpload'
 import { Plus, Trash2, ExternalLink, Download, ChevronDown } from 'lucide-react'
 
 const EMPTY = {
@@ -15,6 +16,7 @@ const EMPTY = {
   file_url: '',
   external_url: '',
   file_size: '',
+  cover_image: '',
   published: true,
 }
 
@@ -40,15 +42,10 @@ function Select({
         className="w-full appearance-none border border-gray-200 rounded-lg px-4 py-2.5 pr-10 text-sm text-navy focus:outline-none focus:border-gray-400 transition-colors bg-white cursor-pointer"
       >
         {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
+          <option key={o.value} value={o.value}>{o.label}</option>
         ))}
       </select>
-      <ChevronDown
-        size={15}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-      />
+      <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
     </div>
   )
 }
@@ -91,6 +88,7 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
         file_url: form.file_url || null,
         external_url: form.external_url || null,
         file_size: form.file_size || null,
+        cover_image: form.cover_image || null,
         published: form.published,
       })
       .select()
@@ -136,111 +134,98 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
         </button>
       </div>
 
-      {/* Add form */}
       {showForm && (
         <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
           <h2 className="font-semibold text-navy mb-4">New Resource</h2>
-          <div className="space-y-4">
+          <div className="grid grid-cols-[160px_1fr] gap-6 mb-4">
+            {/* Cover image — A4 portrait ratio */}
             <div>
-              <label className={labelClass}>Title *</label>
-              <input
-                name="title" value={form.title} onChange={handleChange}
-                placeholder="Resource title"
-                className={inputClass}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Category</label>
-                <Select value={form.category} onChange={handleCategory} options={categoryOptions} />
-              </div>
-              <div>
-                <label className={labelClass}>Sub-category</label>
-                <Select
-                  value={form.subcategory}
-                  onChange={(val) => setForm({ ...form, subcategory: val })}
-                  options={subOptions}
+              <label className={labelClass}>Cover (A4)</label>
+              <div style={{ aspectRatio: '1/1.414' }} className="w-full">
+                <ImageUpload
+                  value={form.cover_image}
+                  folder="resource-covers"
+                  onChange={(url) => setForm({ ...form, cover_image: url })}
                 />
               </div>
+              <p className="text-[10px] text-gray-300 mt-1">Upload an A4 cover image</p>
             </div>
 
-            <div>
-              <label className={labelClass}>Description</label>
-              <input
-                name="description" value={form.description} onChange={handleChange}
-                placeholder="Brief description"
-                className={inputClass}
-              />
-            </div>
+            {/* Fields */}
+            <div className="space-y-4">
+              <div>
+                <label className={labelClass}>Title *</label>
+                <input name="title" value={form.title} onChange={handleChange} placeholder="Resource title" className={inputClass} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Category</label>
+                  <Select value={form.category} onChange={handleCategory} options={categoryOptions} />
+                </div>
+                <div>
+                  <label className={labelClass}>Sub-category</label>
+                  <Select
+                    value={form.subcategory}
+                    onChange={(val) => setForm({ ...form, subcategory: val })}
+                    options={subOptions}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Description</label>
+                <input name="description" value={form.description} onChange={handleChange} placeholder="Brief description" className={inputClass} />
+              </div>
 
-            {/* File upload — hidden for multimedia, shown for everything else */}
-            {!isMultimedia && (
-              <FileUpload
-                label="File"
-                value={form.file_url}
-                folder={form.category}
-                onChange={(url, size) => setForm({ ...form, file_url: url, file_size: size })}
-                onClear={() => setForm({ ...form, file_url: '', file_size: '' })}
-              />
-            )}
+              {!isMultimedia && (
+                <FileUpload
+                  label="File (PDF or image)"
+                  value={form.file_url}
+                  folder={form.category}
+                  onChange={(url, size) => setForm({ ...form, file_url: url, file_size: size })}
+                  onClear={() => setForm({ ...form, file_url: '', file_size: '' })}
+                />
+              )}
 
-            {/* External URL — always shown; required for multimedia */}
-            <div>
-              <label className={labelClass}>
-                {isMultimedia ? 'Video / Photo URL *' : 'External URL'}
-              </label>
-              <input
-                name="external_url" value={form.external_url} onChange={handleChange}
-                placeholder={isMultimedia ? 'YouTube, Vimeo, or direct link' : 'https://...'}
-                className={inputClass}
-              />
-            </div>
-
-            {/* File size — auto-filled on upload, editable override */}
-            {!isMultimedia && (
-              <div className="w-40">
-                <label className={labelClass}>File Size</label>
+              <div>
+                <label className={labelClass}>{isMultimedia ? 'Video / Photo URL *' : 'External URL'}</label>
                 <input
-                  name="file_size" value={form.file_size} onChange={handleChange}
-                  placeholder="e.g. 2.4 MB"
+                  name="external_url" value={form.external_url} onChange={handleChange}
+                  placeholder={isMultimedia ? 'YouTube, Vimeo, or direct link' : 'https://...'}
                   className={inputClass}
                 />
-                <p className="text-[10px] text-gray-300 mt-1">Auto-filled on upload</p>
               </div>
-            )}
 
-            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
-              <input
-                type="checkbox" name="published" checked={form.published} onChange={handleChange}
-                style={{ accentColor: '#E8192C' }}
-              />
-              Published
-            </label>
-
-            {error && (
-              <p className="text-sm px-4 py-3 rounded-lg"
-                style={{ color: '#E8192C', backgroundColor: 'rgba(232,25,44,0.08)', border: '1px solid rgba(232,25,44,0.2)' }}>
-                {error}
-              </p>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleSave}
-                disabled={saving || !form.title}
-                className="text-white px-6 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
-                style={{ backgroundColor: '#E8192C' }}
-              >
-                {saving ? 'Saving...' : 'Save Resource'}
-              </button>
-              <button
-                onClick={() => { setShowForm(false); setError(null) }}
-                className="border border-gray-200 text-gray-500 px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50"
-              >
-                Cancel
-              </button>
+              {!isMultimedia && form.file_size && (
+                <div className="w-40">
+                  <label className={labelClass}>File Size</label>
+                  <input name="file_size" value={form.file_size} onChange={handleChange} placeholder="e.g. 2.4 MB" className={inputClass} />
+                </div>
+              )}
             </div>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none mb-4">
+            <input type="checkbox" name="published" checked={form.published} onChange={handleChange} style={{ accentColor: '#E8192C' }} />
+            Published
+          </label>
+
+          {error && (
+            <p className="text-sm px-4 py-3 rounded-lg mb-4"
+              style={{ color: '#E8192C', backgroundColor: 'rgba(232,25,44,0.08)', border: '1px solid rgba(232,25,44,0.2)' }}>
+              {error}
+            </p>
+          )}
+
+          <div className="flex gap-3">
+            <button onClick={handleSave} disabled={saving || !form.title}
+              className="text-white px-6 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
+              style={{ backgroundColor: '#E8192C' }}>
+              {saving ? 'Saving...' : 'Save Resource'}
+            </button>
+            <button onClick={() => { setShowForm(false); setError(null) }}
+              className="border border-gray-200 text-gray-500 px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50">
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -248,15 +233,12 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
       {/* Filter */}
       <div className="flex flex-wrap gap-2 mb-5">
         {filterOptions.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setFilter(f.value)}
+          <button key={f.value} onClick={() => setFilter(f.value)}
             className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
             style={{
               backgroundColor: filter === f.value ? '#0D1B2A' : '#F3F4F6',
               color: filter === f.value ? 'white' : '#6B7280',
-            }}
-          >
+            }}>
             {f.label}
           </button>
         ))}
@@ -266,39 +248,38 @@ export default function ResourcesClient({ resources: initial }: { resources: Res
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
         <div className="divide-y divide-gray-50">
           {filtered.map((resource) => (
-            <div key={resource.id} className="flex items-center justify-between px-6 py-4">
-              <div className="flex-1 min-w-0 pr-4">
+            <div key={resource.id} className="flex items-center gap-4 px-6 py-4">
+              {resource.cover_image && (
+                <img
+                  src={resource.cover_image}
+                  alt={resource.title}
+                  className="w-10 rounded flex-shrink-0 object-cover border border-gray-100"
+                  style={{ aspectRatio: '1/1.414' }}
+                />
+              )}
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-navy">{resource.title}</p>
                 <div className="flex items-center gap-3 mt-0.5">
                   <span className="text-xs text-gray-400">{labelFor(resource.category)}</span>
-                  {resource.subcategory && (
-                    <span className="text-xs text-gray-300">{resource.subcategory}</span>
-                  )}
-                  {resource.file_size && (
-                    <span className="text-xs text-gray-300">{resource.file_size}</span>
-                  )}
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    resource.published ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
-                  }`}>
+                  {resource.subcategory && <span className="text-xs text-gray-300">{resource.subcategory}</span>}
+                  {resource.file_size && <span className="text-xs text-gray-300">{resource.file_size}</span>}
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${resource.published ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                     {resource.published ? 'Live' : 'Draft'}
                   </span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 {resource.file_url && (
-                  <a href={resource.file_url} target="_blank" rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-navy">
+                  <a href={resource.file_url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-navy">
                     <Download size={15} />
                   </a>
                 )}
                 {resource.external_url && (
-                  <a href={resource.external_url} target="_blank" rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-navy">
+                  <a href={resource.external_url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-navy">
                     <ExternalLink size={15} />
                   </a>
                 )}
-                <button onClick={() => handleDelete(resource.id)}
-                  className="text-gray-300 hover:text-red-500 transition-colors">
+                <button onClick={() => handleDelete(resource.id)} className="text-gray-300 hover:text-red-500 transition-colors">
                   <Trash2 size={15} />
                 </button>
               </div>

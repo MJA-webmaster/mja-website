@@ -100,4 +100,7 @@ export type MemberStats = {
   international: number
   non_member_contributors: number
   total: number
+  media_outlets: number
+  male: number
+  female: number
 }

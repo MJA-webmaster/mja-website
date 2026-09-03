@@ -14,10 +14,21 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient()
-  const { data } = await supabase.from('articles').select('title, excerpt').eq('slug', params.slug).single()
+  const { data } = await supabase.from('articles').select('title, excerpt, cover_image').eq('slug', params.slug).single()
   return {
     title: data?.title ?? 'Article',
     description: data?.excerpt ?? '',
+    openGraph: {
+      title: data?.title ?? 'Article',
+      description: data?.excerpt ?? '',
+      images: data?.cover_image ? [{ url: data.cover_image, width: 1200, height: 630 }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: data?.title ?? 'Article',
+      description: data?.excerpt ?? '',
+      images: data?.cover_image ? [data.cover_image] : undefined,
+    },
   }
 }
 

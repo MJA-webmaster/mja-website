@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import ArticleCard from '@/components/ArticleCard'
-import NewsletterForm from '@/components/NewsletterForm'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -77,7 +76,6 @@ export default async function NewsRoomPage() {
             Don't wait for information being deprived<br />
             of you to <span className="text-red">defend it!</span>
           </h2>
-          <NewsletterForm />
         </div>
       </section>
     </>

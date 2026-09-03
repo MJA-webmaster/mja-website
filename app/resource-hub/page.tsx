@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
-import NewsletterForm from '@/components/NewsletterForm'
 import ResourceHubClient from '@/app/resource-hub/ResourceHubClient'
 import { RESOURCE_CATEGORIES } from '@/lib/resource-categories'
 import type { Metadata } from 'next'
@@ -63,7 +62,6 @@ export default async function ResourceHubPage({
             Don&apos;t wait for information being deprived<br />
             of you to <span style={{ color: '#E8192C' }}>defend it!</span>
           </h2>
-          <NewsletterForm />
         </div>
       </section>
     </>

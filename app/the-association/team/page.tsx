@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import AssociationSidebar from '@/components/AssociationSidebar'
-import NewsletterForm from '@/components/NewsletterForm'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 
@@ -60,7 +59,6 @@ export default async function TeamPage() {
           <h2 className="font-headline text-4xl font-bold mb-6" style={{ color: '#0D1B2A' }}>
             Don't wait for information being deprived<br />of you to <span style={{ color: '#E8192C' }}>defend it!</span>
           </h2>
-          <NewsletterForm />
         </div>
       </section>
     </>

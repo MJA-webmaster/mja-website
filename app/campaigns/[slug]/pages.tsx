@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import NewsletterForm from '@/components/NewsletterForm'
 import type { Metadata } from 'next'
 
 interface Props { params: { slug: string } }
@@ -116,7 +115,6 @@ export default async function CampaignPage({ params }: Props) {
             Don't wait for information being deprived<br />
             of you to <span style={{ color: '#E8192C' }}>defend it!</span>
           </h2>
-          <NewsletterForm />
         </div>
       </section>
     </>

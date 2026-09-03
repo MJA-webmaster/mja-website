@@ -1,5 +1,4 @@
 import AssociationSidebar from '@/components/AssociationSidebar'
-import NewsletterForm from '@/components/NewsletterForm'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -68,7 +67,6 @@ export default function TheAssociationPage() {
             Don't wait for information being deprived<br className="hidden md:block" />
             {' '}of you to <span style={{ color: '#E8192C' }}>defend it!</span>
           </h2>
-          <NewsletterForm />
         </div>
       </section>
     </>

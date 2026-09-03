@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import Image from 'next/image'
 import MemberMeter from '@/components/MemberMeter'
-import NewsletterForm from '@/components/NewsletterForm'
 import type { Metadata } from 'next'
 
 const categoryLabels: Record<string, string> = {
@@ -128,7 +127,6 @@ export default async function MembersCategoryPage({ params }: { params: { catego
             Don't wait for information being deprived<br className="hidden md:block" />
             {' '}of you to <span style={{ color: '#E8192C' }}>defend it!</span>
           </h2>
-          <NewsletterForm />
         </div>
       </section>
     </>

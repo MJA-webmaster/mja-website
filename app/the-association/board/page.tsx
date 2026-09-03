@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import AssociationSidebar from '@/components/AssociationSidebar'
-import NewsletterForm from '@/components/NewsletterForm'
 import type { ExecutiveCommitteeMember } from '@/lib/types'
 import type { Metadata } from 'next'
 
@@ -115,7 +114,6 @@ export default async function BoardPage() {
             Don&apos;t wait for information being deprived<br />
             of you to <span style={{ color: '#E8192C' }}>defend it!</span>
           </h2>
-          <NewsletterForm />
         </div>
       </section>
     </>

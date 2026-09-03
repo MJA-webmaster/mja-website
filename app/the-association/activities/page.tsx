@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import AssociationSidebar from '@/components/AssociationSidebar'
-import NewsletterForm from '@/components/NewsletterForm'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Our Activities' }
@@ -78,7 +77,6 @@ export default async function ActivitiesPage() {
             Don't wait for information being deprived<br />
             of you to <span style={{ color: '#E8192C' }}>defend it!</span>
           </h2>
-          <NewsletterForm />
         </div>
       </section>
     </>

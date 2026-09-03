@@ -1,4 +1,3 @@
-import NewsletterForm from '@/components/NewsletterForm'
 import MembershipLookup from '@/components/MembershipLookup'
 import type { Metadata } from 'next'
 
@@ -34,7 +33,6 @@ export default function MembershipStatusPage() {
             Don&apos;t wait for information being deprived<br />
             of you to <span style={{ color: '#E8192C' }}>defend it!</span>
           </h2>
-          <NewsletterForm />
         </div>
       </section>
     </>

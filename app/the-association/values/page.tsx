@@ -1,5 +1,4 @@
 import AssociationSidebar from '@/components/AssociationSidebar'
-import NewsletterForm from '@/components/NewsletterForm'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Our Values' }
@@ -66,7 +65,6 @@ export default function ValuesPage() {
           <h2 className="font-headline text-4xl font-bold mb-6" style={{ color: '#0D1B2A' }}>
             Don&apos;t wait for information being deprived<br />of you to <span style={{ color: '#E8192C' }}>defend it!</span>
           </h2>
-          <NewsletterForm />
         </div>
       </section>
     </>

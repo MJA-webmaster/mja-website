@@ -6,13 +6,10 @@ export type Article = {
   content: string
   cover_image: string | null
   category: 'latest' | 'top-news' | 'news-room'
-  cover_image: string | null
-  cover_image: string | null
   published: boolean
   published_at: string | null
   created_at: string
   updated_at: string
-  show_prompt: boolean
 }
 
 export type Campaign = {
@@ -25,12 +22,10 @@ export type Campaign = {
   cover_image: string | null
   event_date: string | null
   event_location: string | null
-  cover_image: string | null
-  cover_image: string | null
   published: boolean
+  show_prompt: boolean
   created_at: string
   updated_at: string
-  show_prompt: boolean
 }
 
 export type Member = {
@@ -91,7 +86,6 @@ export type Resource = {
   file_url: string | null
   external_url: string | null
   file_size: string | null
-  cover_image: string | null
   cover_image: string | null
   published: boolean
   created_at: string

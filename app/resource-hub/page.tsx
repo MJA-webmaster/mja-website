@@ -42,28 +42,20 @@ export default async function ResourceHubPage({
   const { data: resources } = await query
 
   return (
-    <>
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-14">
-        <h1 className="font-headline text-5xl font-black uppercase mb-8" style={{ color: '#0D1B2A' }}>
-          Resource Archive & Publications
-        </h1>
-        <ResourceHubClient
-          resources={resources ?? []}
-          categories={RESOURCE_CATEGORIES}
-          currentCategory={category}
-          currentSub={searchParams.sub ?? ''}
-          currentSearch={searchParams.q ?? ''}
-        />
-      </div>
-
-      <section className="py-14 px-6 border-t border-gray-100">
-        <div className="max-w-[1280px] mx-auto">
-          <h2 className="font-headline text-4xl font-bold mb-6" style={{ color: '#0D1B2A' }}>
-            Don&apos;t wait for information being deprived<br />
-            of you to <span style={{ color: '#E8192C' }}>defend it!</span>
-          </h2>
-        </div>
-      </section>
-    </>
+    <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-14">
+      <h1 className="font-headline text-5xl font-black uppercase mb-2" style={{ color: '#0D1B2A' }}>
+        Resource Archive
+      </h1>
+      <p className="text-gray-400 text-[15px] mb-10">
+        Access official reports, safety guidelines, and legal frameworks.
+      </p>
+      <ResourceHubClient
+        resources={resources ?? []}
+        categories={RESOURCE_CATEGORIES}
+        currentCategory={category}
+        currentSub={searchParams.sub ?? ''}
+        currentSearch={searchParams.q ?? ''}
+      />
+    </div>
   )
 }

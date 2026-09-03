@@ -78,6 +78,17 @@ export default async function JoinMJAPage() {
         </div>
       </section>
 
+      {/* Membership Acceptance Policy */}
+      <section className="max-w-[760px] mx-auto px-6 py-12 border-t border-gray-100">
+        <h2 className="font-headline text-2xl font-black text-navy mb-4 uppercase">
+          Membership Acceptance Policy
+        </h2>
+        <p className="text-gray-500 text-sm leading-relaxed">
+          By submitting this form, you certify that all information and documentation provided are accurate,
+          and you agree to adhere to the MJA Constitution, Code of Ethics, and Membership Policy (MJA/U-01/2022).
+        </p>
+      </section>
+
       {/* Membership Form — this is the anchor */}
       <section className="bg-gray-50 py-16 px-6" id="form">
         <div className="max-w-[640px] mx-auto">

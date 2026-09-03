@@ -31,7 +31,7 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
   const [form, setForm] = useState(EMPTY)
   const [filterYear, setFilterYear] = useState<number | 'all'>('all')
 
-  const years = [...new Set(activities.map(a => a.year))].sort((a, b) => b - a)
+  const years = Array.from(new Set(activities.map(a => a.year))).sort((a, b) => b - a)
   const filtered = filterYear === 'all'
     ? activities
     : activities.filter(a => a.year === filterYear)

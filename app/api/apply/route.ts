@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { sendEmail } from '@/lib/mailer'
 
 const MEMBERSHIP_TYPES = ['Professional', 'Student', 'Corporate']
 
@@ -70,11 +71,9 @@ export async function POST(req: Request) {
     }
 
     // ── Emails (non-blocking: a mail failure must not lose the application) ──
-    const resendKey = process.env.RESEND_API_KEY
     const mjaEmail = process.env.MJA_EMAIL
-    const from = process.env.MJA_FROM_EMAIL || 'MJA Website <onboarding@resend.dev>'
 
-    if (resendKey && mjaEmail) {
+    if (mjaEmail) {
       const rows: [string, string | null][] = [
         [isCorporate ? 'Organisation' : 'Full Name', full_name],
         [isCorporate ? 'Contact Person' : 'Common Name', common_name],
@@ -100,20 +99,9 @@ export async function POST(req: Request) {
         )
         .join('')
 
-      const send = (payload: Record<string, unknown>) =>
-        fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${resendKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        }).catch((e) => console.error('Resend failed:', e))
-
       // Applicant confirmation
-      await send({
-        from,
-        to: [email],
+      await sendEmail({
+        to: [{ email }],
         subject: 'We received your MJA membership application',
         html: `
           <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
@@ -139,9 +127,8 @@ export async function POST(req: Request) {
       })
 
       // Admin notification
-      await send({
-        from,
-        to: [mjaEmail],
+      await sendEmail({
+        to: [{ email: mjaEmail }],
         subject: `New ${membership_type} Application — ${full_name}`,
         html: `
           <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">

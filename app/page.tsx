@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import ArticleCard from '@/components/ArticleCard'
 import MemberMeter from '@/components/MemberMeter'
-import NewsletterForm from '@/components/NewsletterForm'
 import HeroSection from '@/components/HeroSection'
 import GetInvolved from '@/components/GetInvolved'
 
@@ -155,23 +154,6 @@ export default function HomePage() {
       {/* ── Get Involved ── */}
       <GetInvolved />
 
-      {/* ── Newsletter ── */}
-      <motion.section
-        {...fadeUp()}
-        className="py-16 md:py-20 px-4 sm:px-6 border-t border-gray-100"
-      >
-        <div className="max-w-[1280px] mx-auto">
-          <h2
-            className="font-headline font-bold leading-tight mb-8"
-            style={{ fontSize: 'clamp(26px, 3.5vw, 46px)', color: '#0D1B2A' }}
-          >
-            Don&apos;t wait for information being deprived<br />
-            of you to{' '}
-            <span style={{ color: '#E8192C' }}>defend it!</span>
-          </h2>
-          <NewsletterForm />
-        </div>
-      </motion.section>
     </>
   )
 }

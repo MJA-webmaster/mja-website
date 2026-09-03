@@ -132,7 +132,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-white/5 px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-[1280px] mx-auto">
         <p className="text-xs text-white/25">
-          © {new Date().getFullYear()} Maldives Journalists Association · mja.mv
+          © 2026 Maldives Journalists Association · mja.mv
         </p>
         <div className="flex items-center gap-3">
           {socials.map((s) => (

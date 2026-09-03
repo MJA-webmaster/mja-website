@@ -150,3 +150,48 @@ h1, h2, h3, h4, h5, h6 {
 /* Quill indented list fix */
 .prose .ql-indent-1 { padding-left: 2em; }
 .prose .ql-indent-2 { padding-left: 4em; }
+
+/* Tiptap editor body spacing */
+.tiptap.ProseMirror p {
+  margin-top: 0.4em;
+  margin-bottom: 0.4em;
+}
+
+.tiptap.ProseMirror h1,
+.tiptap.ProseMirror h2,
+.tiptap.ProseMirror h3 {
+  margin-top: 1em;
+  margin-bottom: 0.25em;
+}
+
+.tiptap.ProseMirror ul,
+.tiptap.ProseMirror ol {
+  padding-left: 1.5em;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.tiptap.ProseMirror li {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+.tiptap.ProseMirror li > p {
+  margin: 0;
+}
+
+.tiptap.ProseMirror blockquote {
+  border-left: 3px solid #E8192C;
+  padding-left: 1em;
+  color: #6B7280;
+  margin: 0.75em 0;
+}
+
+/* Placeholder */
+.tiptap.ProseMirror p.is-editor-empty:first-child::before {
+  color: #9CA3AF;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

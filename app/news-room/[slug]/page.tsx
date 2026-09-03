@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import NewsletterForm from '@/components/NewsletterForm'
+import ShareButtons from '@/components/ShareButtons'
 import type { Metadata } from 'next'
 
 interface Props {
@@ -45,6 +46,8 @@ export default async function ArticlePage({ params }: Props) {
         weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
       })
     : ''
+
+  const articleUrl = `https://mja.mv/news-room/${article.slug}`
 
   return (
     <>
@@ -108,6 +111,9 @@ export default async function ArticlePage({ params }: Props) {
             prose-strong:text-navy prose-strong:font-bold"
           dangerouslySetInnerHTML={{ __html: article.content ?? '' }}
         />
+
+        {/* Share buttons */}
+        <ShareButtons url={articleUrl} title={article.title} />
       </article>
 
       {/* Related */}

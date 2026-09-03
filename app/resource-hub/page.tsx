@@ -45,7 +45,7 @@ export default async function ResourceHubPage({
     <>
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-14">
         <h1 className="font-headline text-5xl font-black uppercase mb-8" style={{ color: '#0D1B2A' }}>
-          <span style={{ color: '#E8192C' }}>MJA</span> Resource Hub
+          Resource Archive & Publications
         </h1>
         <ResourceHubClient
           resources={resources ?? []}

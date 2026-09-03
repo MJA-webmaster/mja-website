@@ -14,11 +14,11 @@ export default function MemberMeter({ stats }: Props) {
   const isInView = useInView(ref, { once: true })
 
   const rows = [
-    { label: 'Members Total', value: stats.total },
+    { label: 'Members Total', value: stats.total, alwaysShow: true },
     { label: 'Number of Media Outlets', value: stats.media_outlets },
     { label: 'Male', value: stats.male },
     { label: 'Female', value: stats.female },
-  ]
+  ].filter((row) => row.alwaysShow || (row.value ?? 0) > 0)
 
   return (
     <div ref={ref} className="bg-navy rounded-xl p-8 text-white">

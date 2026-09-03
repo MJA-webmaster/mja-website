@@ -1,6 +1,7 @@
 "use client"
 
 import Link from 'next/link'
+import NewsletterForm from '@/components/NewsletterForm'
 
 const footerLinks = {
   about: [
@@ -127,6 +128,14 @@ export default function Footer() {
             </Link>
           ))}
         </div>
+      </div>
+
+      {/* Newsletter */}
+      <div className="border-t border-white/5 px-8 py-8 max-w-[1280px] mx-auto flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
+        <p className="text-[13px] text-white/50">
+          Don&apos;t wait for information to be deprived of you — <span className="text-white font-semibold">defend it.</span>
+        </p>
+        <NewsletterForm variant="dark" compact />
       </div>
 
       {/* Bottom bar */}

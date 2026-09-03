@@ -121,6 +121,7 @@ export type LedgerEntry = {
   type: 'income' | 'expense'
   category: 'Advocacy' | 'Training' | 'Administrative & Others'
   description: string
+  payee: string | null
   amount: number
   created_at: string
 }

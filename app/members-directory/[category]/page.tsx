@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
-import Link from 'next/link'
 import Image from 'next/image'
 import MemberMeter from '@/components/MemberMeter'
 import AssociationSidebar from '@/components/AssociationSidebar'
@@ -28,46 +27,12 @@ export default async function MembersCategoryPage({ params }: { params: { catego
     ? { ...stats, total: stats.local + stats.international + stats.non_member_contributors }
     : { local: 2000, international: 1300, non_member_contributors: 560, total: 3860 }
 
-  const categories = ['category-one', 'category-two', 'category-three']
-
   return (
     <>
-      {/* Mobile category tabs */}
-      <div className="md:hidden sticky top-16 z-40 bg-white border-b border-gray-100">
-        <div className="flex overflow-x-auto px-4 py-3 gap-2" style={{ scrollbarWidth: 'none' }}>
-          {categories.map((cat) => (
-            <Link key={cat} href={`/members-directory/${cat}`}
-              className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap"
-              style={{
-                backgroundColor: params.category === cat ? '#E8192C' : '#F3F4F6',
-                color: params.category === cat ? 'white' : '#6B7280',
-              }}>
-              {categoryLabels[cat]}
-            </Link>
-          ))}
-        </div>
-      </div>
-
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 md:py-14">
         <div className="md:flex md:gap-16">
           {/* Desktop sidebar */}
-          <div className="hidden md:block w-52 flex-shrink-0">
-            <AssociationSidebar />
-            <nav className="mt-6 pt-6 border-t border-gray-100 space-y-1">
-              <Link href="/members-directory" className="block py-2 text-[14px] font-bold transition-colors" style={{ color: '#E8192C' }}>
-                Members Directory
-              </Link>
-              <div className="ml-4 space-y-1 mt-1">
-                {categories.map((cat) => (
-                  <Link key={cat} href={`/members-directory/${cat}`}
-                    className="block py-1.5 text-[13px] transition-colors"
-                    style={params.category === cat ? { color: '#0D1B2A', fontWeight: 600 } : { color: '#9CA3AF' }}>
-                    {categoryLabels[cat]}
-                  </Link>
-                ))}
-              </div>
-            </nav>
-          </div>
+          <AssociationSidebar />
 
           <div className="flex-1 min-w-0">
             {/* Header */}

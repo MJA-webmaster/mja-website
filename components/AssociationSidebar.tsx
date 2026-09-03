@@ -19,6 +19,16 @@ const links = [
   { label: 'Board Members', href: '/the-association/board' },
   { label: 'Code of Conduct', href: '/the-association/code-of-conduct' },
   { label: 'Open Ledger', href: '/the-association/open-ledger' },
+  {
+    label: 'Members Directory',
+    href: '/members-directory',
+    isHeading: true,
+    children: [
+      { label: 'Local', href: '/members-directory/category-one' },
+      { label: 'International', href: '/members-directory/category-two' },
+      { label: 'Non-Member Contributors', href: '/members-directory/category-three' },
+    ],
+  },
 ]
 
 // Flat list for mobile tab bar
@@ -31,6 +41,9 @@ const flatLinks = [
   { label: 'Board Members', href: '/the-association/board' },
   { label: 'Code of Conduct', href: '/the-association/code-of-conduct' },
   { label: 'Open Ledger', href: '/the-association/open-ledger' },
+  { label: 'Local', href: '/members-directory/category-one' },
+  { label: 'International', href: '/members-directory/category-two' },
+  { label: 'Non-Member Contributors', href: '/members-directory/category-three' },
 ]
 
 export default function AssociationSidebar() {

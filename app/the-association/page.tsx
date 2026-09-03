@@ -13,6 +13,10 @@ export default function TheAssociationPage() {
         <div className="md:flex md:gap-16">
           <AssociationSidebar />
           <div className="flex-1 min-w-0">
+            <h1 className="font-headline text-4xl font-black uppercase mb-8" style={{ color: '#0D1B2A' }}>
+              The <span style={{ color: '#E8192C' }}>Association</span>
+            </h1>
+
             <div className="mb-12">
               <p className="text-base font-light text-gray-400 mb-1">
                 <strong style={{ color: '#E8192C' }}>What is</strong> Maldives Journalist Association?

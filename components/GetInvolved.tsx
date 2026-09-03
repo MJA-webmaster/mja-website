@@ -8,22 +8,16 @@ export default function GetInvolved() {
           Get Involved
         </p>
         <h2 className="font-headline text-4xl font-black text-white mb-3">
-          Help defend press freedom
+          Reach out to MJA
         </h2>
         <p className="text-white/40 text-sm mb-10 max-w-md mx-auto leading-relaxed">
-          Support independent journalism and the rights of journalists across the Maldives.
+          Have a press freedom concern, a partnership idea, or a question for the Association? We want to hear from you.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <Link
-            href="/join-mja#form"
+            href="/connect"
             className="text-white px-10 py-3.5 rounded text-sm font-bold transition-opacity hover:opacity-85"
             style={{ backgroundColor: '#E8192C' }}
-          >
-            Become a Member
-          </Link>
-          <Link
-            href="/connect"
-            className="border border-white/20 text-white px-10 py-3.5 rounded text-sm font-bold hover:bg-white/5 transition-colors"
           >
             Contact MJA
           </Link>

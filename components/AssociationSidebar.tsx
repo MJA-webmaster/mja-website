@@ -24,9 +24,10 @@ const links = [
     href: '/members-directory',
     isHeading: true,
     children: [
-      { label: 'Local', href: '/members-directory/category-one' },
-      { label: 'International', href: '/members-directory/category-two' },
-      { label: 'Non-Member Contributors', href: '/members-directory/category-three' },
+      { label: 'Professional', href: '/members-directory/professional' },
+      { label: 'Student', href: '/members-directory/student' },
+      { label: 'Corporate', href: '/members-directory/corporate' },
+      { label: 'Affiliate', href: '/members-directory/affiliate' },
     ],
   },
 ]
@@ -41,9 +42,10 @@ const flatLinks = [
   { label: 'Board Members', href: '/the-association/board' },
   { label: 'Code of Conduct', href: '/the-association/code-of-conduct' },
   { label: 'Open Ledger', href: '/the-association/open-ledger' },
-  { label: 'Local', href: '/members-directory/category-one' },
-  { label: 'International', href: '/members-directory/category-two' },
-  { label: 'Non-Member Contributors', href: '/members-directory/category-three' },
+  { label: 'Professional', href: '/members-directory/professional' },
+  { label: 'Student', href: '/members-directory/student' },
+  { label: 'Corporate', href: '/members-directory/corporate' },
+  { label: 'Affiliate', href: '/members-directory/affiliate' },
 ]
 
 export default function AssociationSidebar() {

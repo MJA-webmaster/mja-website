@@ -20,6 +20,7 @@ export default function HomePage() {
   const [data, setData] = useState<any>({
     articles: [],
     campaign: null,
+    campaigns: [],
     stats: null,
     activities: [],
     dispatch: null,
@@ -29,7 +30,7 @@ export default function HomePage() {
     const supabase = createClient()
     Promise.all([
       supabase.from('articles').select('*').eq('published', true).order('published_at', { ascending: false }).limit(4),
-      supabase.from('campaigns').select('*').eq('published', true).order('created_at', { ascending: false }).limit(1),
+      supabase.from('campaigns').select('*').eq('published', true).order('created_at', { ascending: false }).limit(4),
       supabase.from('member_stats').select('*').single(),
       supabase.from('activities').select('*').eq('year', new Date().getFullYear()).order('order', { ascending: true }).limit(4),
       supabase.from('settings').select('dispatch').single(),
@@ -37,6 +38,7 @@ export default function HomePage() {
       setData({
         articles: articles.data ?? [],
         campaign: campaigns.data?.[0] ?? null,
+        campaigns: campaigns.data ?? [],
         stats: stats.data,
         activities: activities.data ?? [],
         dispatch: settings.data?.dispatch ?? null,
@@ -75,6 +77,50 @@ export default function HomePage() {
                 <ArticleCard article={article} />
               </motion.div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Campaigns ── */}
+      {data.campaigns.length > 0 && (
+        <section className="border-t border-gray-100 py-16 px-4 sm:px-6">
+          <div className="max-w-[1280px] mx-auto">
+            <motion.div {...fadeUp()} className="flex items-center justify-between mb-8">
+              <h2 className="font-headline font-black uppercase text-2xl md:text-3xl" style={{ color: '#0D1B2A' }}>
+                <span style={{ color: '#E8192C' }}>Active</span> Campaigns
+              </h2>
+              <Link
+                href="/campaigns"
+                className="text-xs font-bold tracking-wider uppercase hover:underline"
+                style={{ color: '#E8192C' }}
+              >
+                View all →
+              </Link>
+            </motion.div>
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
+              {data.campaigns.slice(0, 3).map((c: any, i: number) => (
+                <motion.div key={c.id} {...fadeUp(i * 0.07)}>
+                  <Link href={`/campaigns/${c.slug}`} className="group block">
+                    <div className="rounded-xl overflow-hidden aspect-video mb-3 relative" style={{ backgroundColor: '#0D1B2A' }}>
+                      {c.cover_image ? (
+                        <img src={c.cover_image} alt={c.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="font-headline text-white/10 text-6xl font-black">#</span>
+                        </div>
+                      )}
+                    </div>
+                    {c.hashtag && <p className="text-xs font-bold mb-1" style={{ color: '#E8192C' }}>{c.hashtag}</p>}
+                    <h3 className="font-bold text-navy text-sm uppercase leading-snug group-hover:text-red transition-colors">{c.title}</h3>
+                    {c.event_date && (
+                      <p className="text-gray-400 text-xs mt-1">
+                        {new Date(c.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    )}
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
       )}

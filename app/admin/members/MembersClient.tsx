@@ -94,7 +94,7 @@ function ApplicationRow({
   async function handleStatus(status: 'approved' | 'rejected') {
     setUpdating(true)
     const supabase = createClient()
-    const { error } = await supabase.from('membership_applications').update({ status }).eq('id', app.id)
+    const result = await supabase.from("membership_applications").update({ status }).eq("id", app.id); console.log("approval result", result); const { error } = result)
     if (!error) {
       if (status === 'approved' && app.id_card_no) {
         await new Promise((r) => setTimeout(r, 800))

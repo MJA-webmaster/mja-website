@@ -2,19 +2,19 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import type { MemberStats } from '@/lib/types'
 
-type Stats = {
-  local: number
-  international: number
-  non_member_contributors: number
-}
+const FIELDS = [
+  { key: 'total', label: 'Members Total' },
+  { key: 'media_outlets', label: 'Number of Media Outlets' },
+  { key: 'male', label: 'Male' },
+  { key: 'female', label: 'Female' },
+] as const
 
-export default function MemberStatsClient({ stats: initial }: { stats: Stats }) {
+export default function MemberStatsClient({ stats: initial }: { stats: MemberStats }) {
   const [stats, setStats] = useState(initial)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
-
-  const total = stats.local + stats.international + stats.non_member_contributors
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setStats({ ...stats, [e.target.name]: parseInt(e.target.value) || 0 })
@@ -26,7 +26,13 @@ export default function MemberStatsClient({ stats: initial }: { stats: Stats }) 
     const supabase = createClient()
     const { error } = await supabase
       .from('member_stats')
-      .update({ ...stats, updated_at: new Date().toISOString() })
+      .update({
+        total: stats.total,
+        media_outlets: stats.media_outlets,
+        male: stats.male,
+        female: stats.female,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', 1)
 
     setSaving(false)
@@ -34,18 +40,12 @@ export default function MemberStatsClient({ stats: initial }: { stats: Stats }) 
     setTimeout(() => setMessage(''), 3000)
   }
 
-  const segments = [
-    { key: 'local', label: 'Local Members', color: '#00B5AD', pct: total ? (stats.local / total) * 100 : 0 },
-    { key: 'international', label: 'International Members', color: '#60A5FA', pct: total ? (stats.international / total) * 100 : 0 },
-    { key: 'non_member_contributors', label: 'Non-Member Contributors', color: '#F59E0B', pct: total ? (stats.non_member_contributors / total) * 100 : 0 },
-  ]
-
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-xl">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="font-headline text-3xl font-bold text-navy">Member Stats</h1>
-          <p className="text-gray-400 text-sm mt-1">These numbers appear in the Membermeter across the site</p>
+          <p className="text-gray-400 text-sm mt-1">These numbers appear in the Membership widget on the homepage</p>
         </div>
         <div className="flex items-center gap-3">
           {message && (
@@ -64,48 +64,34 @@ export default function MemberStatsClient({ stats: initial }: { stats: Stats }) 
         </div>
       </div>
 
-      {/* Preview meter */}
-      <div className="bg-navy rounded-xl p-6 mb-8" style={{ backgroundColor: '#0D1B2A' }}>
-        <p className="text-xs font-bold tracking-widest uppercase text-teal-400 mb-1">MJA</p>
-        <p className="text-white font-bold text-lg mb-4">Membermeter Preview</p>
-        <div className="h-2.5 bg-white/10 rounded-full overflow-hidden flex mb-5">
-          {segments.map((seg) => (
-            <div key={seg.key} className="h-full transition-all duration-500" style={{ width: `${seg.pct}%`, backgroundColor: seg.color }} />
-          ))}
-        </div>
-        <div className="space-y-2">
-          {segments.map((seg) => (
-            <div key={seg.key} className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: seg.color }} />
-                <span className="text-white/60">{seg.label}</span>
-              </div>
-              <span className="text-white font-bold">{(stats as any)[seg.key].toLocaleString()}</span>
+      {/* Preview */}
+      <div className="rounded-xl p-6 mb-8 text-white" style={{ backgroundColor: '#0D1B2A' }}>
+        <p className="text-[11px] font-bold tracking-widest uppercase text-teal-400 mb-1">MJA</p>
+        <p className="font-headline text-lg font-bold mb-4">Preview</p>
+        <div className="space-y-3">
+          {FIELDS.map((f) => (
+            <div key={f.key} className="flex items-center justify-between border-b border-white/10 pb-3 last:border-0 last:pb-0">
+              <span className="text-white/60 text-sm">{f.label}</span>
+              <span className="font-headline text-2xl font-black">
+                {(stats[f.key] ?? 0).toLocaleString()}
+              </span>
             </div>
           ))}
-          <div className="flex items-center justify-between text-sm border-t border-white/10 pt-2 mt-2">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-white" />
-              <span className="text-white/60">Total</span>
-            </div>
-            <span className="text-white font-bold">{total.toLocaleString()}</span>
-          </div>
         </div>
       </div>
 
       {/* Edit fields */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 space-y-5">
+      <div className="bg-white rounded-xl border border-gray-100 p-6 space-y-4">
         <h2 className="font-semibold text-navy mb-2">Edit Numbers</h2>
-        {segments.map((seg) => (
-          <div key={seg.key}>
-            <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
-              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: seg.color }} />
-              {seg.label}
+        {FIELDS.map((f) => (
+          <div key={f.key}>
+            <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">
+              {f.label}
             </label>
             <input
               type="number"
-              name={seg.key}
-              value={(stats as any)[seg.key]}
+              name={f.key}
+              value={stats[f.key] ?? 0}
               onChange={handleChange}
               min="0"
               className="w-full border border-gray-200 rounded-lg px-4 py-3 text-2xl font-bold text-navy focus:outline-none"
@@ -114,9 +100,6 @@ export default function MemberStatsClient({ stats: initial }: { stats: Stats }) 
             />
           </div>
         ))}
-        <div className="pt-3 border-t border-gray-100">
-          <p className="text-xs text-gray-400">Total members: <span className="font-bold text-navy">{total.toLocaleString()}</span></p>
-        </div>
       </div>
     </div>
   )

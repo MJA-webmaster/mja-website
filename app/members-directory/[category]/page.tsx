@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
-import Image from 'next/image'
-import MemberMeter from '@/components/MemberMeter'
-import AssociationSidebar from '@/components/AssociationSidebar'
+import Link from 'next/link'
+import MembersDirectoryGrid from '@/components/MembersDirectoryGrid'
+import type { Member } from '@/lib/types'
 import type { Metadata } from 'next'
 
 const categoryLabels: Record<string, string> = {
@@ -11,6 +11,8 @@ const categoryLabels: Record<string, string> = {
   'category-two': 'International',
   'category-three': 'Non-Member Contributors',
 }
+
+const categories = ['category-one', 'category-two', 'category-three']
 
 export async function generateMetadata({ params }: { params: { category: string } }): Promise<Metadata> {
   return { title: `Members Directory — ${categoryLabels[params.category] ?? 'Members'}` }
@@ -27,60 +29,50 @@ export default async function MembersCategoryPage({ params }: { params: { catego
     ? { ...stats, total: stats.local + stats.international + stats.non_member_contributors }
     : { local: 2000, international: 1300, non_member_contributors: 560, total: 3860 }
 
+  const outletCount = new Set((members ?? []).map((m: Member) => m.representing).filter(Boolean)).size
+
   return (
-    <>
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 md:py-14">
-        <div className="md:flex md:gap-16">
-          {/* Desktop sidebar */}
-          <AssociationSidebar />
-
-          <div className="flex-1 min-w-0">
-            {/* Header */}
-            <div className="grid md:grid-cols-2 gap-8 mb-10 items-start">
-              <div>
-                <h1 className="font-headline font-black uppercase leading-none mb-2" style={{ color: '#0D1B2A', fontSize: 'clamp(32px, 4vw, 48px)' }}>
-                  <span style={{ color: '#E8192C' }}>Members</span><br />
-                  {categoryLabels[params.category] ?? 'Members'}
-                </h1>
-                <p className="text-gray-500 text-[14px] leading-relaxed mt-3">
-                  MJA members dedicated to press freedom across the Maldives.
-                </p>
-              </div>
-              <MemberMeter stats={memberStats} />
-            </div>
-
-            {/* Members grid */}
-            {members && members.length > 0 ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 gap-6 md:gap-8">
-                {members.map((member) => (
-                  <div key={member.id} className="text-center group">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-gray-100 mx-auto mb-2 md:mb-3 relative"
-                      style={{ border: '3px solid #E5E7EB' }}>
-                      {member.photo ? (
-                        <Image src={member.photo} alt={member.name} width={96} height={96} className="object-cover w-full h-full grayscale group-hover:grayscale-0 transition-all" />
-                      ) : (
-                        <div className="w-full h-full bg-gray-800 flex items-center justify-center text-white font-bold text-xl">
-                          {member.name[0]}
-                        </div>
-                      )}
-                      <div className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: '#E8192C' }} />
-                    </div>
-                    <p className="font-semibold text-xs md:text-sm leading-tight" style={{ color: '#E8192C' }}>{member.name}</p>
-                    {member.representing && (
-                      <p className="text-[10px] md:text-xs text-gray-400 mt-0.5">Rep: {member.representing}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16 text-gray-400">
-                <p className="text-4xl mb-3">👥</p>
-                <p className="font-semibold text-sm">No members in this category yet</p>
-              </div>
-            )}
-          </div>
-        </div>
+    <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 md:py-14">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="font-headline font-black uppercase leading-none mb-2" style={{ color: '#0D1B2A', fontSize: 'clamp(32px, 4vw, 48px)' }}>
+          Members <span style={{ color: '#E8192C' }}>Directory</span>
+        </h1>
+        <p className="text-gray-500 text-[14px] leading-relaxed">
+          The official register of MJA-accredited journalists, editors, and media workers across the Maldives.
+        </p>
       </div>
-    </>
+
+      {/* Metrics ribbon */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-8 text-[13px] font-semibold text-gray-500">
+        <span><span style={{ color: '#0D1B2A' }}>{memberStats.total.toLocaleString()}</span> Members Registered</span>
+        <span className="text-gray-300">•</span>
+        <span><span style={{ color: '#0D1B2A' }}>{memberStats.media_outlets || outletCount}</span> Media Outlets</span>
+        <span className="text-gray-300">•</span>
+        <span>Nationwide Coverage</span>
+      </div>
+
+      {/* Category filter tabs */}
+      <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-100 pb-6">
+        {categories.map((cat) => {
+          const isActive = params.category === cat
+          return (
+            <Link
+              key={cat}
+              href={`/members-directory/${cat}`}
+              className="px-4 py-2 rounded-full text-[13px] font-semibold transition-colors whitespace-nowrap"
+              style={{
+                backgroundColor: isActive ? '#E8192C' : '#F3F4F6',
+                color: isActive ? 'white' : '#6B7280',
+              }}
+            >
+              {categoryLabels[cat]}
+            </Link>
+          )
+        })}
+      </div>
+
+      <MembersDirectoryGrid members={(members as Member[]) ?? []} />
+    </div>
   )
 }

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 interface Props {
   /** 'light' (default) is for white/off-white backgrounds; 'dark' is for the navy footer */
@@ -19,16 +18,17 @@ export default function NewsletterForm({ variant = 'light', compact = false }: P
     if (!email) return
     setStatus('loading')
 
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('newsletter_subscribers')
-      .insert({ email })
-
-    if (error) {
-      setStatus(error.code === '23505' ? 'success' : 'error')
-    } else {
+    try {
+      const res = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      if (!res.ok) throw new Error('Subscribe failed')
       setStatus('success')
       setEmail('')
+    } catch {
+      setStatus('error')
     }
   }
 

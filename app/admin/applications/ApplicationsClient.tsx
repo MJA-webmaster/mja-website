@@ -22,7 +22,6 @@ type Application = {
   photo_url: string | null
   id_card_url: string | null
   portfolio_url: string | null
-  // legacy columns, kept so older rows still display
   type: string | null
   name: string | null
   phone: string | null
@@ -44,12 +43,26 @@ function displayType(a: Application) {
   return a.membership_type || a.type || '—'
 }
 
+function DocLink({ href, label }: { href: string; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => window.open(href, '_blank', 'noopener,noreferrer')}
+      className="block text-sm font-semibold text-left"
+      style={{ color: '#E8192C' }}
+    >
+      {label} ↗
+    </button>
+  )
+}
+
 export default function ApplicationsClient({ applications: initial }: { applications: Application[] }) {
   const [applications, setApplications] = useState(initial)
   const [selected, setSelected] = useState<Application | null>(null)
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
   const [updating, setUpdating] = useState(false)
   const [docLinks, setDocLinks] = useState<Record<string, string>>({})
+  const [toast, setToast] = useState<string | null>(null)
 
   const filtered = filter === 'all' ? applications : applications.filter((a) => a.status === filter)
 
@@ -60,7 +73,6 @@ export default function ApplicationsClient({ applications: initial }: { applicat
     rejected: applications.filter((a) => a.status === 'rejected').length,
   }
 
-  // Sign the private document paths whenever a new application is selected
   useEffect(() => {
     if (!selected) return
 
@@ -91,9 +103,7 @@ export default function ApplicationsClient({ applications: initial }: { applicat
       setDocLinks(Object.fromEntries(pairs.filter(([, url]) => url)))
     })
 
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [selected])
 
   async function updateStatus(id: string, status: 'approved' | 'rejected') {
@@ -107,6 +117,11 @@ export default function ApplicationsClient({ applications: initial }: { applicat
     if (!error) {
       setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)))
       if (selected?.id === id) setSelected((prev) => (prev ? { ...prev, status } : null))
+
+      if (status === 'approved') {
+        setToast('Application approved — member record created. Assign a Member ID in Members.')
+        setTimeout(() => setToast(null), 6000)
+      }
     }
     setUpdating(false)
   }
@@ -131,9 +146,7 @@ export default function ApplicationsClient({ applications: initial }: { applicat
         {
           label: 'Applied',
           value: new Date(selected.created_at).toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
+            day: 'numeric', month: 'long', year: 'numeric',
           }),
         },
       ].filter((r) => Boolean(r.value))
@@ -148,187 +161,192 @@ export default function ApplicationsClient({ applications: initial }: { applicat
     : []
 
   return (
-    <div className="flex gap-6 h-full">
-      {/* Left — list */}
-      <div className="flex-1 min-w-0">
-        <div className="mb-6">
-          <h1 className="font-headline text-3xl font-bold text-navy">Membership Applications</h1>
-          <p className="text-gray-400 text-sm mt-1">{counts.all} total applications</p>
-        </div>
-
-        {/* Filter tabs */}
-        <div className="flex gap-2 mb-5">
-          {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className="px-4 py-2 rounded-lg text-sm font-semibold capitalize transition-colors"
-              style={{
-                backgroundColor: filter === f ? '#0D1B2A' : '#F3F4F6',
-                color: filter === f ? 'white' : '#6B7280',
-              }}
-            >
-              {f} <span className="ml-1 text-xs opacity-60">({counts[f]})</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Table */}
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="grid grid-cols-[1fr_110px_110px_90px] gap-4 px-5 py-3 bg-gray-50 border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-gray-400">
-            <span>Applicant</span>
-            <span>Type</span>
-            <span>Date</span>
-            <span>Status</span>
-          </div>
-
-          <div className="divide-y divide-gray-50">
-            {filtered.map((app) => {
-              const s = statusColors[app.status]
-              return (
-                <button
-                  key={app.id}
-                  onClick={() => setSelected(app)}
-                  className="w-full grid grid-cols-[1fr_110px_110px_90px] gap-4 px-5 py-4 hover:bg-gray-50 transition-colors items-center text-left"
-                  style={selected?.id === app.id ? { backgroundColor: 'rgba(232,25,44,0.03)' } : {}}
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-navy truncate">{displayName(app)}</p>
-                    <p className="text-xs text-gray-400 mt-0.5 truncate">{app.email}</p>
-                  </div>
-                  <span className="text-xs text-gray-500">{displayType(app)}</span>
-                  <span className="text-xs text-gray-400">
-                    {new Date(app.created_at).toLocaleDateString('en-GB', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  </span>
-                  <span
-                    className="text-xs px-2 py-1 rounded-full font-semibold w-fit"
-                    style={{ backgroundColor: s.bg, color: s.color }}
-                  >
-                    {s.label}
-                  </span>
-                </button>
-              )
-            })}
-            {filtered.length === 0 && (
-              <div className="px-5 py-12 text-center text-gray-400 text-sm">
-                No {filter === 'all' ? '' : filter} applications yet.
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Right — detail panel */}
-      {selected && (
-        <div className="w-80 flex-shrink-0">
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden sticky top-6">
-            <div className="p-5 border-b border-gray-100 flex items-start justify-between">
-              <div className="min-w-0">
-                <h2 className="font-bold text-navy truncate">{displayName(selected)}</h2>
-                <p className="text-xs text-gray-400 mt-0.5">{displayType(selected)} membership</p>
-              </div>
-              <button
-                onClick={() => setSelected(null)}
-                className="text-gray-300 hover:text-gray-500 transition-colors text-lg leading-none ml-2"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4 max-h-[50vh] overflow-y-auto">
-              {detailRows.map((item) => (
-                <div key={item.label}>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">
-                    {item.label}
-                  </p>
-                  <p className="text-sm text-navy break-words">{item.value}</p>
-                </div>
-              ))}
-
-              {selected.message && (
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Message</p>
-                  <p className="text-sm text-gray-500 leading-relaxed bg-gray-50 rounded-lg p-3">
-                    {selected.message}
-                  </p>
-                </div>
-              )}
-
-              {docs.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
-                    Documents
-                  </p>
-                  <div className="space-y-1.5">
-                    {docs.map((d) => (
-                      <a
-                        key={d.key}
-                        href={docLinks[d.key]}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-sm font-semibold"
-                        style={{ color: '#E8192C' }}
-                      >
-                        {d.label} ↗
-                      </a>
-                    ))}
-                  </div>
-                  <p className="text-[10px] text-gray-300 mt-1.5">Links expire after 10 minutes.</p>
-                </div>
-              )}
-            </div>
-
-            <div className="px-5 pb-3">
-              <div
-                className="text-xs px-3 py-1.5 rounded-full font-semibold w-fit"
-                style={{
-                  backgroundColor: statusColors[selected.status].bg,
-                  color: statusColors[selected.status].color,
-                }}
-              >
-                {statusColors[selected.status].label}
-              </div>
-            </div>
-
-            {selected.status === 'pending' ? (
-              <div className="p-5 border-t border-gray-100 flex gap-2">
-                <button
-                  onClick={() => updateStatus(selected.id, 'approved')}
-                  disabled={updating}
-                  className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50"
-                  style={{ backgroundColor: '#059669' }}
-                >
-                  Approve
-                </button>
-                <button
-                  onClick={() => updateStatus(selected.id, 'rejected')}
-                  disabled={updating}
-                  className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50"
-                  style={{ backgroundColor: '#E8192C' }}
-                >
-                  Reject
-                </button>
-              </div>
-            ) : (
-              <div className="p-5 border-t border-gray-100">
-                <button
-                  onClick={() =>
-                    updateStatus(selected.id, selected.status === 'approved' ? 'rejected' : 'approved')
-                  }
-                  disabled={updating}
-                  className="w-full py-2.5 rounded-lg text-sm font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  Change to {selected.status === 'approved' ? 'Rejected' : 'Approved'}
-                </button>
-              </div>
-            )}
-          </div>
+    <div>
+      {/* Toast */}
+      {toast && (
+        <div
+          className="mb-4 px-5 py-3 rounded-xl text-sm font-semibold flex items-center justify-between"
+          style={{ backgroundColor: 'rgba(16,185,129,0.1)', color: '#059669', border: '1px solid rgba(16,185,129,0.2)' }}
+        >
+          <span>{toast}</span>
+          <button
+            onClick={() => window.location.href = '/admin/members'}
+            className="ml-4 text-xs font-bold underline flex-shrink-0"
+          >
+            Go to Members →
+          </button>
         </div>
       )}
+
+      <div className="flex gap-6 h-full">
+        {/* Left — list */}
+        <div className="flex-1 min-w-0">
+          <div className="mb-6">
+            <h1 className="font-headline text-3xl font-bold text-navy">Membership Applications</h1>
+            <p className="text-gray-400 text-sm mt-1">{counts.all} total applications</p>
+          </div>
+
+          <div className="flex gap-2 mb-5">
+            {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold capitalize transition-colors"
+                style={{
+                  backgroundColor: filter === f ? '#0D1B2A' : '#F3F4F6',
+                  color: filter === f ? 'white' : '#6B7280',
+                }}
+              >
+                {f} <span className="ml-1 text-xs opacity-60">({counts[f]})</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div className="grid grid-cols-[1fr_110px_110px_90px] gap-4 px-5 py-3 bg-gray-50 border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-gray-400">
+              <span>Applicant</span>
+              <span>Type</span>
+              <span>Date</span>
+              <span>Status</span>
+            </div>
+
+            <div className="divide-y divide-gray-50">
+              {filtered.map((app) => {
+                const s = statusColors[app.status]
+                return (
+                  <button
+                    key={app.id}
+                    onClick={() => setSelected(app)}
+                    className="w-full grid grid-cols-[1fr_110px_110px_90px] gap-4 px-5 py-4 hover:bg-gray-50 transition-colors items-center text-left"
+                    style={selected?.id === app.id ? { backgroundColor: 'rgba(232,25,44,0.03)' } : {}}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-navy truncate">{displayName(app)}</p>
+                      <p className="text-xs text-gray-400 mt-0.5 truncate">{app.email}</p>
+                    </div>
+                    <span className="text-xs text-gray-500">{displayType(app)}</span>
+                    <span className="text-xs text-gray-400">
+                      {new Date(app.created_at).toLocaleDateString('en-GB', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                      })}
+                    </span>
+                    <span
+                      className="text-xs px-2 py-1 rounded-full font-semibold w-fit"
+                      style={{ backgroundColor: s.bg, color: s.color }}
+                    >
+                      {s.label}
+                    </span>
+                  </button>
+                )
+              })}
+              {filtered.length === 0 && (
+                <div className="px-5 py-12 text-center text-gray-400 text-sm">
+                  No {filter === 'all' ? '' : filter} applications yet.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right — detail panel */}
+        {selected && (
+          <div className="w-80 flex-shrink-0">
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden sticky top-6">
+              <div className="p-5 border-b border-gray-100 flex items-start justify-between">
+                <div className="min-w-0">
+                  <h2 className="font-bold text-navy truncate">{displayName(selected)}</h2>
+                  <p className="text-xs text-gray-400 mt-0.5">{displayType(selected)} membership</p>
+                </div>
+                <button
+                  onClick={() => setSelected(null)}
+                  className="text-gray-300 hover:text-gray-500 transition-colors text-lg leading-none ml-2"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4 max-h-[50vh] overflow-y-auto">
+                {detailRows.map((item) => (
+                  <div key={item.label}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">
+                      {item.label}
+                    </p>
+                    <p className="text-sm text-navy break-words">{item.value}</p>
+                  </div>
+                ))}
+
+                {selected.message && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Message</p>
+                    <p className="text-sm text-gray-500 leading-relaxed bg-gray-50 rounded-lg p-3">
+                      {selected.message}
+                    </p>
+                  </div>
+                )}
+
+                {docs.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
+                      Documents
+                    </p>
+                    <div className="space-y-1.5">
+                      {docs.map((d) => (
+                        <DocLink key={d.key} href={docLinks[d.key]} label={d.label} />
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-gray-300 mt-1.5">Links expire after 10 minutes.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="px-5 pb-3">
+                <div
+                  className="text-xs px-3 py-1.5 rounded-full font-semibold w-fit"
+                  style={{
+                    backgroundColor: statusColors[selected.status].bg,
+                    color: statusColors[selected.status].color,
+                  }}
+                >
+                  {statusColors[selected.status].label}
+                </div>
+              </div>
+
+              {selected.status === 'pending' ? (
+                <div className="p-5 border-t border-gray-100 flex gap-2">
+                  <button
+                    onClick={() => updateStatus(selected.id, 'approved')}
+                    disabled={updating}
+                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+                    style={{ backgroundColor: '#059669' }}
+                  >
+                    {updating ? 'Saving...' : 'Approve'}
+                  </button>
+                  <button
+                    onClick={() => updateStatus(selected.id, 'rejected')}
+                    disabled={updating}
+                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+                    style={{ backgroundColor: '#E8192C' }}
+                  >
+                    Reject
+                  </button>
+                </div>
+              ) : (
+                <div className="p-5 border-t border-gray-100">
+                  <button
+                    onClick={() =>
+                      updateStatus(selected.id, selected.status === 'approved' ? 'rejected' : 'approved')
+                    }
+                    disabled={updating}
+                    className="w-full py-2.5 rounded-lg text-sm font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    Change to {selected.status === 'approved' ? 'Rejected' : 'Approved'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

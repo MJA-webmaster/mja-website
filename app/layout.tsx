@@ -2,16 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
-
-// Finlandica Headline for headings
-const finlandicaHeadline = {
-  variable: '--font-finlandica-headline',
-}
-
-// Finlandica for body text
-const finlandicaText = {
-  variable: '--font-finlandica-text',
-}
+import CampaignPrompt from '@/components/CampaignPrompt'
 
 export const metadata: Metadata = {
   title: {
@@ -54,6 +45,7 @@ export default function RootLayout({
         <Nav />
         <main>{children}</main>
         <Footer />
+        <CampaignPrompt />
       </body>
     </html>
   )

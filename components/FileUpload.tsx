@@ -68,7 +68,7 @@ export default function FileUpload({
       const ctx = canvas.getContext('2d')
       if (!ctx) return null
 
-      await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise
+      await page.render({ canvasContext: ctx, viewport: scaledViewport, canvas }).promise
 
       return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9))
     } catch (err) {

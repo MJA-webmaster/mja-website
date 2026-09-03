@@ -93,7 +93,19 @@ export default async function ArticlePage({ params }: Props) {
 
         {/* Content */}
         <div
-          className="article-content prose max-w-none text-[16px] leading-relaxed text-gray-700"
+          className="prose prose-base max-w-none
+            prose-headings:font-headline prose-headings:text-navy
+            prose-h1:text-3xl prose-h1:font-black
+            prose-h2:text-2xl prose-h2:font-bold
+            prose-h3:text-xl prose-h3:font-bold
+            prose-p:text-gray-700 prose-p:leading-relaxed prose-p:my-3
+            prose-a:text-red prose-a:no-underline hover:prose-a:underline
+            prose-blockquote:border-l-red prose-blockquote:text-gray-500
+            prose-ul:list-disc prose-ul:pl-6
+            prose-ol:list-decimal prose-ol:pl-6
+            prose-li:my-1 prose-li:text-gray-700
+            prose-img:rounded-xl prose-img:my-6
+            prose-strong:text-navy prose-strong:font-bold"
           dangerouslySetInnerHTML={{ __html: article.content ?? '' }}
         />
       </article>
@@ -107,12 +119,25 @@ export default async function ArticlePage({ params }: Props) {
               {related.map((r) => (
                 <div key={r.id}>
                   {r.cover_image && (
-                    <Image src={r.cover_image} alt={r.title} width={400} height={200} className="rounded-lg object-cover w-full h-48 mb-3" />
+                    <Image
+                      src={r.cover_image}
+                      alt={r.title}
+                      width={400}
+                      height={200}
+                      className="rounded-lg object-cover w-full h-48 mb-3"
+                    />
                   )}
                   <p className="text-xs text-red font-bold mb-1">
-                    {r.published_at ? new Date(r.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                    {r.published_at
+                      ? new Date(r.published_at).toLocaleDateString('en-US', {
+                          month: 'short', day: 'numeric', year: 'numeric',
+                        })
+                      : ''}
                   </p>
-                  <Link href={`/news-room/${r.slug}`} className="font-semibold text-navy hover:text-red transition-colors text-sm line-clamp-2">
+                  <Link
+                    href={`/news-room/${r.slug}`}
+                    className="font-semibold text-navy hover:text-red transition-colors text-sm line-clamp-2"
+                  >
                     {r.title}
                   </Link>
                 </div>
@@ -126,7 +151,7 @@ export default async function ArticlePage({ params }: Props) {
       <section className="py-14 px-6 border-t border-gray-100">
         <div className="max-w-[1280px] mx-auto">
           <h2 className="font-headline text-4xl font-bold text-navy mb-6">
-            Don't wait for information being deprived<br />
+            Don&apos;t wait for information being deprived<br />
             of you to <span className="text-red">defend it!</span>
           </h2>
           <NewsletterForm />

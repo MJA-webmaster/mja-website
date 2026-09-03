@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Member } from '@/lib/types'
 import { MEMBERSHIP_TYPES } from '@/lib/membership'
@@ -51,7 +51,7 @@ const emptyForm = {
   member_id: '', id_card_no: '', representing: '', years_in_journalism: '',
   photo: '', bio: '', facebook: '', instagram: '', linkedin: '', twitter: '',
   member_since: '', fee_status: 'unpaid' as Member['fee_status'],
-  fee_paid_until: '', is_active: true,
+  fee_paid_until: '', is_active: true, sort_order: '0',
 }
 
 const inputClass = 'w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-navy focus:outline-none'
@@ -266,11 +266,43 @@ function MembersTab({ members: initial }: { members: Member[] }) {
   const [search, setSearch] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const filtered = members.filter((m) => {
-    const matchCat = filter === 'all' || m.membership_type === filter
+  const [sort, setSort] = useState<'custom' | 'name-asc' | 'name-desc' | 'joined-newest' | 'joined-oldest'>('name-asc')
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 20
+
+  const filtered = useMemo(() => {
     const term = search.toLowerCase()
-    return matchCat && (m.name.toLowerCase().includes(term) || (m.member_id ?? '').toLowerCase().includes(term) || (m.id_card_no ?? '').toLowerCase().includes(term))
-  })
+    const list = members.filter((m) => {
+      const matchCat = filter === 'all' || m.membership_type === filter
+      return matchCat && (m.name.toLowerCase().includes(term) || (m.member_id ?? '').toLowerCase().includes(term) || (m.id_card_no ?? '').toLowerCase().includes(term))
+    })
+    const sorted = [...list]
+    const joinedTime = (m: Member) => new Date(m.member_since ?? m.created_at).getTime()
+    switch (sort) {
+      case 'name-desc':
+        sorted.sort((a, b) => b.name.localeCompare(a.name))
+        break
+      case 'joined-newest':
+        sorted.sort((a, b) => joinedTime(b) - joinedTime(a))
+        break
+      case 'joined-oldest':
+        sorted.sort((a, b) => joinedTime(a) - joinedTime(b))
+        break
+      case 'custom':
+        sorted.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name.localeCompare(b.name))
+        break
+      case 'name-asc':
+      default:
+        sorted.sort((a, b) => a.name.localeCompare(b.name))
+        break
+    }
+    return sorted
+  }, [members, filter, search, sort])
+
+  useEffect(() => { setPage(1) }, [filter, search, sort])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const val = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value
     setForm({ ...form, [e.target.name]: val })
@@ -301,6 +333,7 @@ function MembersTab({ members: initial }: { members: Member[] }) {
       fee_status: member.fee_status,
       fee_paid_until: member.fee_paid_until ?? '',
       is_active: member.is_active,
+      sort_order: member.sort_order != null ? String(member.sort_order) : '0',
     })
     setError(null)
     setShowForm(true)
@@ -325,6 +358,7 @@ function MembersTab({ members: initial }: { members: Member[] }) {
       linkedin: form.linkedin || null, twitter: form.twitter || null,
       member_since: form.member_since || null, fee_status: form.fee_status,
       fee_paid_until: form.fee_paid_until || null, is_active: form.is_active,
+      sort_order: form.sort_order ? parseInt(form.sort_order) : 0,
     }
     if (editingId) {
       const { data, error } = await supabase.from('members').update(payload).eq('id', editingId).select().single()
@@ -400,6 +434,10 @@ function MembersTab({ members: initial }: { members: Member[] }) {
                 </select>
               </div>
               <div><label className={labelClass}>Fee Paid Until</label><input type="date" name="fee_paid_until" value={form.fee_paid_until} onChange={handleChange} className={inputClass} /></div>
+              <div><label className={labelClass}>Display Order</label>
+                <input type="number" name="sort_order" value={form.sort_order} onChange={handleChange} placeholder="0" className={inputClass} />
+                <p className="text-[11px] text-gray-400 mt-1">Lower numbers show first when "Custom" sort is selected.</p>
+              </div>
             </div>
           </div>
           {error && <p className="text-sm mb-4" style={{ color: '#E8192C' }}>{error}</p>}
@@ -422,6 +460,14 @@ function MembersTab({ members: initial }: { members: Member[] }) {
             </button>
           ))}
         </div>
+        <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-navy focus:outline-none bg-white ml-auto">
+          <option value="name-asc">Name (A–Z)</option>
+          <option value="name-desc">Name (Z–A)</option>
+          <option value="joined-newest">Last Joined</option>
+          <option value="joined-oldest">First Joined</option>
+          <option value="custom">Custom Order</option>
+        </select>
       </div>
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden overflow-x-auto">
         <div className="min-w-[800px]">
@@ -429,7 +475,7 @@ function MembersTab({ members: initial }: { members: Member[] }) {
             <span>Member</span><span>Member ID</span><span>Type</span><span>Representing</span><span>Fee</span><span>Status</span><span></span><span></span>
           </div>
           <div className="divide-y divide-gray-50">
-            {filtered.map((member) => (
+            {paged.map((member) => (
               <div key={member.id} className="grid grid-cols-[1fr_110px_110px_110px_90px_80px_60px_60px] gap-4 px-6 py-3.5 items-center">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
@@ -463,6 +509,19 @@ function MembersTab({ members: initial }: { members: Member[] }) {
           </div>
         </div>
       </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-5">
+          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
+            className="px-3.5 py-2 rounded-lg text-xs font-semibold border border-gray-200 disabled:opacity-40 hover:bg-gray-50">
+            Previous
+          </button>
+          <span className="text-xs text-gray-400 px-2">Page {page} of {totalPages}</span>
+          <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+            className="px-3.5 py-2 rounded-lg text-xs font-semibold border border-gray-200 disabled:opacity-40 hover:bg-gray-50">
+            Next
+          </button>
+        </div>
+      )}
     </div>
   )
 }

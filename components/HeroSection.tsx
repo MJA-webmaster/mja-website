@@ -30,7 +30,7 @@ export default function HeroSection({ campaign, dispatch }: Props) {
           backgroundImage: `url('/hero-bg.jpg')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          opacity: 0.35,
+          opacity: 0.90,
           zIndex: 0,
         }}
       />

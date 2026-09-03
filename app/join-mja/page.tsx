@@ -78,32 +78,6 @@ export default async function JoinMJAPage() {
         </div>
       </section>
 
-      <hr className="border-gray-100 mx-6" />
-
-      {/* Benefits */}
-      <section className="max-w-[760px] mx-auto px-6 py-12">
-        <p className="text-lg font-light text-gray-400 mb-6">
-          <strong style={{ color: '#E8192C' }}>What do I</strong> receive as a member?
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
-          {[
-            { icon: '🎫', title: 'Membership Card', body: 'Official MJA membership card recognizing your commitment to press freedom.' },
-            { icon: '🗺️', title: 'Press Freedom Map', body: 'Annual publication showing the state of journalism and press freedom.' },
-            { icon: '📰', title: 'Resource Access', body: 'Exclusive access to MJA publications, directories, and press freedom reports.' },
-          ].map((card) => (
-            <div
-              key={card.title}
-              className="bg-white rounded-xl p-6 border-t-4 shadow-sm"
-              style={{ borderTopColor: '#E8192C' }}
-            >
-              <div className="text-3xl mb-3">{card.icon}</div>
-              <h4 className="font-bold text-navy text-[15px] mb-2">{card.title}</h4>
-              <p className="text-gray-400 text-[13px] leading-relaxed">{card.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Membership Form — this is the anchor */}
       <section className="bg-gray-50 py-16 px-6" id="form">
         <div className="max-w-[640px] mx-auto">
@@ -117,16 +91,6 @@ export default async function JoinMJAPage() {
             Our team will review your application and respond within 3 business days.
           </p>
           <JoinForm />
-        </div>
-      </section>
-
-      {/* Newsletter */}
-      <section className="py-14 px-6 border-t border-gray-100">
-        <div className="max-w-[1280px] mx-auto">
-          <h2 className="font-headline text-4xl font-bold mb-6" style={{ color: '#0D1B2A' }}>
-            Don&apos;t wait for information being deprived<br />
-            of you to <span style={{ color: '#E8192C' }}>defend it!</span>
-          </h2>
         </div>
       </section>
     </>

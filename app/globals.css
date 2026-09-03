@@ -134,3 +134,19 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-track { background: #f1f1f1; }
 ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--red); }
+
+/* Fix Quill-generated content: nested p inside li */
+.prose li > p {
+  margin: 0;
+  display: inline;
+}
+
+.prose ul li,
+.prose ol li {
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+}
+
+/* Quill indented list fix */
+.prose .ql-indent-1 { padding-left: 2em; }
+.prose .ql-indent-2 { padding-left: 4em; }

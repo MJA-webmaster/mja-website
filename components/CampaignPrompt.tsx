@@ -10,7 +10,6 @@ export default function CampaignPrompt() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    // Only show once per session
     if (sessionStorage.getItem('campaign-prompt-dismissed')) return
 
     const supabase = createClient()
@@ -18,13 +17,13 @@ export default function CampaignPrompt() {
       .from('campaigns')
       .select('*')
       .eq('published', true)
+      .eq('show_prompt', true)
       .order('created_at', { ascending: false })
       .limit(1)
       .single()
       .then(({ data }) => {
         if (data) {
           setCampaign(data)
-          // Small delay so it doesn't flash immediately on load
           setTimeout(() => setVisible(true), 1800)
         }
       })
@@ -42,16 +41,12 @@ export default function CampaignPrompt() {
       className="fixed bottom-0 left-0 right-0 z-50 transition-transform duration-500 ease-out"
       style={{ transform: visible ? 'translateY(0)' : 'translateY(110%)' }}
     >
-      <div
-        className="max-w-2xl mx-auto mb-4 mx-4 rounded-2xl shadow-2xl overflow-hidden"
-        style={{ margin: '0 1rem 1rem' }}
-      >
-        <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4 px-6 py-5"
-          style={{ backgroundColor: '#0D1B2A' }}>
-
-          {/* Red accent bar */}
+      <div className="max-w-2xl rounded-2xl shadow-2xl overflow-hidden" style={{ margin: '0 1rem 1rem' }}>
+        <div
+          className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4 px-6 py-5"
+          style={{ backgroundColor: '#0D1B2A' }}
+        >
           <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ backgroundColor: '#E8192C' }} />
-
           <div className="flex-1 min-w-0 pl-2">
             {campaign.hashtag && (
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#E8192C' }}>
@@ -75,7 +70,6 @@ export default function CampaignPrompt() {
               </p>
             )}
           </div>
-
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => {

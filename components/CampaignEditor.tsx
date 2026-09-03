@@ -1,30 +1,41 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Image from '@tiptap/extension-image'
+import Link from '@tiptap/extension-link'
+import Placeholder from '@tiptap/extension-placeholder'
+import Underline from '@tiptap/extension-underline'
+import TextAlign from '@tiptap/extension-text-align'
+import ImageUpload from '@/components/ImageUpload'
 import type { Campaign } from '@/lib/types'
-import dynamic from 'next/dynamic'
-
-const ReactQuill = dynamic(() => import('react-quill'), {
-  ssr: false,
-  loading: () => <div className="border border-gray-200 rounded-lg h-64 flex items-center justify-center text-gray-400 text-sm">Loading editor...</div>
-})
-import 'react-quill/dist/quill.snow.css'
-
-const quillModules = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ['bold', 'italic', 'underline'],
-    ['blockquote'],
-    [{ list: 'ordered' }, { list: 'bullet' }],
-    ['link', 'image'],
-    ['clean'],
-  ],
-}
+import {
+  Bold, Italic, Underline as UnderlineIcon,
+  List, ListOrdered, Quote, Heading2, Heading3,
+  Image as ImageIcon, AlignLeft, AlignCenter, AlignRight,
+} from 'lucide-react'
 
 function slugify(text: string) {
   return text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
+}
+
+function ToolbarButton({ onClick, active, title, children }: {
+  onClick: () => void; active?: boolean; title: string; children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button" onClick={onClick} title={title}
+      className="w-8 h-8 flex items-center justify-center rounded transition-colors"
+      style={{ backgroundColor: active ? '#0D1B2A' : 'transparent', color: active ? 'white' : '#6B7280' }}
+      onMouseEnter={(e) => { if (!active) e.currentTarget.style.backgroundColor = '#F3F4F6' }}
+      onMouseLeave={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'transparent' }}
+    >
+      {children}
+    </button>
+  )
 }
 
 export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
@@ -38,37 +49,78 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
     event_location: campaign?.event_location ?? '',
     cover_image: campaign?.cover_image ?? '',
     published: campaign?.published ?? false,
+    show_prompt: (campaign as any)?.show_prompt ?? false,
   })
-  const [content, setContent] = useState(campaign?.content ?? '')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [slugManual, setSlugManual] = useState(Boolean(campaign))
 
-  useEffect(() => {
-    if (!campaign && form.title) {
-      setForm(prev => ({ ...prev, slug: slugify(form.title) }))
-    }
-  }, [form.title, campaign])
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      Image.configure({ inline: false, allowBase64: false }),
+      Link.configure({ openOnClick: false }),
+      Placeholder.configure({ placeholder: 'Full campaign content...' }),
+    ],
+    content: campaign?.content ?? '',
+    editorProps: {
+      attributes: { class: 'prose prose-sm max-w-none focus:outline-none min-h-[280px] px-5 py-4' },
+    },
+  })
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    const val = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value
-    setForm({ ...form, [e.target.name]: val })
+    const target = e.target
+    const val = target.type === 'checkbox' ? (target as HTMLInputElement).checked : target.value
+    if (target.name === 'title' && !slugManual) {
+      setForm(f => ({ ...f, title: val as string, slug: slugify(val as string) }))
+    } else {
+      setForm(f => ({ ...f, [target.name]: val }))
+    }
+  }
+
+  function uploadAndInsertImage(file: File) {
+    const supabase = createClient()
+    const ext = file.name.split('.').pop()
+    const path = `campaigns/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+    supabase.storage.from('public-images').upload(path, file).then(({ error }) => {
+      if (error) return
+      const { data } = supabase.storage.from('public-images').getPublicUrl(path)
+      editor?.chain().focus().setImage({ src: data.publicUrl }).run()
+    })
+  }
+
+  function handleImageToolbar() {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (file) uploadAndInsertImage(file)
+    }
+    input.click()
   }
 
   async function handleSave(publishNow?: boolean) {
+    if (!form.title) return
     setSaving(true)
     setMessage('')
     const supabase = createClient()
     const shouldPublish = publishNow !== undefined ? publishNow : form.published
 
     const payload = {
-      ...form,
-      content,
-      published: shouldPublish,
-      cover_image: form.cover_image || null,
+      title: form.title,
+      slug: form.slug,
       hashtag: form.hashtag || null,
+      description: form.description || null,
+      content: editor?.getHTML() ?? '',
+      cover_image: form.cover_image || null,
       event_date: form.event_date || null,
       event_location: form.event_location || null,
-      description: form.description || null,
+      published: shouldPublish,
+      show_prompt: form.show_prompt,
+      updated_at: new Date().toISOString(),
     }
 
     let error
@@ -76,7 +128,7 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
       const { error: e } = await supabase.from('campaigns').update(payload).eq('id', campaign.id)
       error = e
     } else {
-      const { error: e } = await supabase.from('campaigns').insert(payload)
+      const { error: e } = await supabase.from('campaigns').insert({ ...payload, created_at: new Date().toISOString() })
       error = e
     }
 
@@ -85,10 +137,13 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
       setMessage(`Error: ${error.message}`)
     } else {
       setMessage(shouldPublish ? 'Published!' : 'Draft saved.')
-      setForm(prev => ({ ...prev, published: shouldPublish }))
+      setForm(f => ({ ...f, published: shouldPublish }))
       if (!campaign) setTimeout(() => router.push('/admin/campaigns'), 1200)
     }
   }
+
+  const inputClass = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none text-navy focus:border-gray-400 transition-colors'
+  const labelClass = 'text-xs font-bold uppercase tracking-wide text-gray-500 block mb-1.5'
 
   return (
     <div className="grid grid-cols-[1fr_300px] gap-6 items-start">
@@ -98,7 +153,6 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
           name="title" value={form.title} onChange={handleChange}
           placeholder="Campaign title..."
           className="w-full font-headline text-3xl font-bold text-navy border-0 border-b-2 border-gray-100 pb-3 focus:outline-none placeholder:text-gray-200"
-          style={{ '--tw-border-opacity': 1 } as React.CSSProperties}
           onFocus={(e) => e.target.style.borderColor = '#E8192C'}
           onBlur={(e) => e.target.style.borderColor = '#F3F4F6'}
         />
@@ -117,47 +171,73 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
           onFocus={(e) => e.target.style.borderColor = '#E8192C'}
           onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
         />
-        <ReactQuill
-          theme="snow" value={content} onChange={setContent}
-          modules={quillModules}
-          placeholder="Full campaign content..."
-        />
+
+        {/* Tiptap editor */}
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-gray-100 bg-gray-50">
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive('heading', { level: 2 })} title="Heading 2"><Heading2 size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive('heading', { level: 3 })} title="Heading 3"><Heading3 size={15} /></ToolbarButton>
+            <div className="w-px h-5 bg-gray-200 mx-1" />
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive('bold')} title="Bold"><Bold size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive('italic')} title="Italic"><Italic size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive('underline')} title="Underline"><UnderlineIcon size={15} /></ToolbarButton>
+            <div className="w-px h-5 bg-gray-200 mx-1" />
+            <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('left').run()} active={editor?.isActive({ textAlign: 'left' })} title="Align left"><AlignLeft size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('center').run()} active={editor?.isActive({ textAlign: 'center' })} title="Align center"><AlignCenter size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('right').run()} active={editor?.isActive({ textAlign: 'right' })} title="Align right"><AlignRight size={15} /></ToolbarButton>
+            <div className="w-px h-5 bg-gray-200 mx-1" />
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive('bulletList')} title="Bullet list"><List size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive('orderedList')} title="Numbered list"><ListOrdered size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive('blockquote')} title="Quote"><Quote size={15} /></ToolbarButton>
+            <div className="w-px h-5 bg-gray-200 mx-1" />
+            <ToolbarButton onClick={handleImageToolbar} active={false} title="Insert image"><ImageIcon size={15} /></ToolbarButton>
+          </div>
+          <EditorContent editor={editor} />
+        </div>
       </div>
 
       {/* Sidebar */}
       <div className="space-y-4 sticky top-6">
-        {/* Publish */}
+        {/* Publishing */}
         <div className="bg-white rounded-xl border border-gray-100 p-5">
           <h3 className="font-semibold text-navy text-sm mb-4">Publishing</h3>
           <div className="space-y-3 mb-5">
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Status</label>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${form.published ? 'bg-green-500' : 'bg-gray-300'}`} />
-                <span className="text-sm text-gray-600">{form.published ? 'Published' : 'Draft'}</span>
-              </div>
+            <div className="flex items-center justify-between">
+              <span className={`text-xs px-2 py-1 rounded-full font-medium ${form.published ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                {form.published ? 'Published' : 'Draft'}
+              </span>
             </div>
+
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Slug</label>
+              <label className={labelClass}>Slug</label>
               <input
-                name="slug" value={form.slug} onChange={handleChange}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none font-mono text-navy"
+                name="slug" value={form.slug} onChange={(e) => { setSlugManual(true); handleChange(e) }}
+                className={inputClass + ' font-mono text-xs'}
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Event Date</label>
-              <input
-                type="date" name="event_date" value={form.event_date} onChange={handleChange}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none text-navy"
-              />
+              <label className={labelClass}>Event Date</label>
+              <input type="date" name="event_date" value={form.event_date} onChange={handleChange} className={inputClass} />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Event Location</label>
-              <input
-                name="event_location" value={form.event_location} onChange={handleChange}
-                placeholder="e.g. Malé, Republic Square"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none text-navy"
-              />
+              <label className={labelClass}>Event Location</label>
+              <input name="event_location" value={form.event_location} onChange={handleChange} placeholder="e.g. Malé, Republic Square" className={inputClass} />
+            </div>
+
+            {/* Show prompt toggle */}
+            <div className="pt-2 border-t border-gray-100">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox" name="show_prompt" checked={form.show_prompt} onChange={handleChange}
+                  className="mt-0.5" style={{ accentColor: '#E8192C' }}
+                />
+                <div>
+                  <p className="text-sm font-semibold text-navy">Show as popup</p>
+                  <p className="text-[11px] text-gray-400 leading-relaxed mt-0.5">
+                    Displays a prompt to site visitors once per session when enabled.
+                  </p>
+                </div>
+              </label>
             </div>
           </div>
 
@@ -187,16 +267,10 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
         {/* Cover image */}
         <div className="bg-white rounded-xl border border-gray-100 p-5">
           <h3 className="font-semibold text-navy text-sm mb-3">Cover Image</h3>
-          {form.cover_image && (
-            <div className="mb-3 relative">
-              <img src={form.cover_image} alt="Cover" className="w-full h-32 object-cover rounded-lg" />
-              <button onClick={() => setForm(prev => ({ ...prev, cover_image: '' }))} className="absolute top-2 right-2 bg-black/50 text-white w-6 h-6 rounded-full text-xs">×</button>
-            </div>
-          )}
-          <input
-            name="cover_image" value={form.cover_image} onChange={handleChange}
-            placeholder="Paste image URL..."
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none text-navy"
+          <ImageUpload
+            value={form.cover_image}
+            folder="campaigns"
+            onChange={(url) => setForm(f => ({ ...f, cover_image: url }))}
           />
         </div>
       </div>

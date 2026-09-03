@@ -10,6 +10,7 @@ export type Article = {
   published_at: string | null
   created_at: string
   updated_at: string
+  show_prompt: boolean
 }
 
 export type Campaign = {
@@ -25,6 +26,7 @@ export type Campaign = {
   published: boolean
   created_at: string
   updated_at: string
+  show_prompt: boolean
 }
 
 export type Member = {

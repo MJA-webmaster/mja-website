@@ -131,7 +131,7 @@ export default function HeroSection({ campaign }: Props) {
       {/* Right panel — always Be the Voice */}
       <div
         className="relative flex flex-col justify-center p-10 md:p-14 overflow-hidden text-white"
-        style={{ backgroundColor: campaign ? '#0D1B2A' : '#E8192C' }}
+        style={{ backgroundColor: "#0D1B2A" }}
       >
         <div className="absolute right-8 bottom-4 pointer-events-none select-none" style={{ opacity: 0.06 }}>
           <svg viewBox="0 0 140 220" className="w-36 h-52" fill="none">
@@ -155,7 +155,7 @@ export default function HeroSection({ campaign }: Props) {
             style={{ fontSize: 'clamp(38px, 5vw, 62px)' }}
           >
             Be the{' '}
-            <span style={{ color: campaign ? '#E8192C' : 'white', textDecoration: campaign ? 'none' : 'underline' }}>
+            <span style={{ color: '#E8192C' }}>
               voice
             </span>
             <br />for freedom

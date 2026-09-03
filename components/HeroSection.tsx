@@ -23,6 +23,25 @@ export default function HeroSection({ campaign, dispatch }: Props) {
   return (
     <section style={{ backgroundColor: '#0A1520', position: 'relative', overflow: 'hidden' }}>
 
+      {/* ── Background photo + dark overlay for text legibility ── */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `url('/hero-bg.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: 0.35,
+          zIndex: 0,
+        }}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(180deg, rgba(10,21,32,0.75) 0%, rgba(10,21,32,0.92) 70%, #0A1520 100%)',
+          zIndex: 0,
+        }}
+      />
+
       {/* ── Grain texture overlay ── */}
       <div
         className="absolute inset-0 pointer-events-none"

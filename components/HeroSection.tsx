@@ -6,172 +6,174 @@ import type { Campaign } from '@/lib/types'
 
 interface Props {
   campaign?: Campaign | null
+  dispatch?: string | null
 }
 
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 20 },
+const fade = (delay = 0) => ({
+  initial: { opacity: 0, y: 16 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] },
+  transition: { duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] },
 })
 
-export default function HeroSection({ campaign }: Props) {
+export default function HeroSection({ campaign, dispatch }: Props) {
+  const today = new Date().toLocaleDateString('en-US', {
+    day: '2-digit', month: 'short', year: 'numeric'
+  }).toUpperCase()
+
   return (
-    <section className="grid md:grid-cols-2" style={{ minHeight: 'clamp(460px, 58vh, 580px)' }}>
+    <section style={{ backgroundColor: '#0A1520', position: 'relative', overflow: 'hidden' }}>
 
-      {/* Left panel — campaign if exists, else press freedom CTA */}
-      {campaign ? (
-        <div
-          className="relative flex flex-col justify-between p-10 md:p-14 overflow-hidden text-white"
-          style={{ backgroundColor: '#E8192C' }}
-        >
-          <div
-            className="absolute bottom-0 right-0 font-headline font-black leading-none select-none pointer-events-none"
-            style={{ fontSize: 'clamp(200px, 28vw, 340px)', color: 'rgba(0,0,0,0.1)', lineHeight: 0.8, transform: 'translateX(20%)' }}
+      {/* ── Grain texture overlay ── */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E")`,
+          opacity: 0.6,
+          zIndex: 0,
+        }}
+      />
+
+      {/* ── Editorial hairlines ── */}
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+        <div className="absolute left-0 right-0" style={{ top: 0, height: '1px', backgroundColor: 'rgba(255,255,255,0.06)' }} />
+        <div className="absolute top-0 bottom-0" style={{ left: '33.333%', width: '1px', backgroundColor: 'rgba(255,255,255,0.04)' }} />
+        <div className="absolute top-0 bottom-0" style={{ right: '33.333%', width: '1px', backgroundColor: 'rgba(255,255,255,0.04)' }} />
+      </div>
+
+      {/* ── Main editorial block ── */}
+      <div className="relative z-10 max-w-[1280px] mx-auto px-6 sm:px-8 pt-16 pb-0">
+
+        {/* Dateline */}
+        <motion.div {...fade(0)} className="flex items-center gap-4 mb-10">
+          <span
+            className="text-[10px] font-bold tracking-[0.25em] uppercase"
+            style={{ color: '#E8192C' }}
           >
-            M
-          </div>
+            Maldives Journalists Association
+          </span>
+          <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
+          <span className="text-[10px] tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.2)' }}>
+            Est. 2009
+          </span>
+        </motion.div>
 
-          <div className="relative z-10">
-            <motion.p {...fadeUp(0)} className="text-[10px] font-bold tracking-[0.22em] uppercase text-white/60 mb-5">
-              Upcoming Campaign
-            </motion.p>
-            <motion.h1
-              {...fadeUp(0.08)}
-              className="font-headline font-black uppercase leading-[0.92] mb-5"
-              style={{ fontSize: 'clamp(30px, 3.8vw, 48px)' }}
-            >
+        {/* Monumental headline */}
+        <motion.h1
+          {...fade(0.08)}
+          className="font-headline font-black uppercase leading-[0.88] mb-8"
+          style={{
+            fontSize: 'clamp(52px, 9vw, 128px)',
+            color: 'white',
+            letterSpacing: '-0.02em',
+          }}
+        >
+          {campaign ? (
+            <>
               {campaign.hashtag && (
-                <span className="block mb-1" style={{ fontSize: '0.65em', color: 'rgba(255,255,255,0.75)' }}>
+                <span className="block text-[0.3em] tracking-widest font-bold mb-2" style={{ color: '#E8192C', letterSpacing: '0.15em' }}>
                   {campaign.hashtag}
                 </span>
               )}
-              {campaign.title}
-            </motion.h1>
-            <motion.p {...fadeUp(0.16)} className="text-sm leading-relaxed mb-2 max-w-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
-              {campaign.description}
-            </motion.p>
-            {campaign.event_date && (
-              <motion.p {...fadeUp(0.2)} className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                {new Date(campaign.event_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
-                {campaign.event_location && ` — ${campaign.event_location}`}
-              </motion.p>
-            )}
-          </div>
+              <span style={{ color: '#E8192C' }}>{campaign.title.split(' ').slice(0, 2).join(' ')}</span>
+              <br />
+              {campaign.title.split(' ').slice(2).join(' ')}
+            </>
+          ) : (
+            <>
+              Defending<br />
+              <span style={{ color: '#E8192C' }}>The Truth</span><br />
+              Is Not<br />A Crime.
+            </>
+          )}
+        </motion.h1>
 
-          <motion.div {...fadeUp(0.28)} className="relative z-10 flex gap-3 flex-wrap mt-8">
+        {/* Body copy */}
+        <motion.p
+          {...fade(0.18)}
+          className="max-w-xl mb-10 leading-relaxed"
+          style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8 }}
+        >
+          {campaign?.description ?? (
+            'The independent union of working reporters, photojournalists, and editors across the archipelago—standing against censorship, harassment, and legal intimidation since 2009.'
+          )}
+        </motion.p>
+
+        {/* Action row */}
+        <motion.div {...fade(0.26)} className="flex flex-wrap items-center gap-3 mb-14">
+          <Link
+            href="/join-mja"
+            className="font-bold text-sm px-8 py-3.5 rounded transition-opacity hover:opacity-85"
+            style={{ backgroundColor: '#E8192C', color: 'white', letterSpacing: '0.04em' }}
+          >
+            {campaign ? 'Join the Campaign' : 'Become a Member'}
+          </Link>
+          <Link
+            href="/connect"
+            className="font-semibold text-sm px-8 py-3.5 rounded transition-colors flex items-center gap-2"
+            style={{ border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'
+              e.currentTarget.style.color = 'white'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'
+              e.currentTarget.style.color = 'rgba(255,255,255,0.7)'
+            }}
+          >
+            Report an Attack / Legal Hotline
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+              <path d="M3 13L13 3M13 3H6M13 3v7" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </Link>
+          {campaign && (
             <Link
               href={`/campaigns/${campaign.slug}`}
-              className="font-bold px-7 py-3 rounded text-sm transition-all hover:opacity-90"
-              style={{ backgroundColor: 'white', color: '#E8192C' }}
+              className="font-semibold text-sm px-8 py-3.5 rounded transition-colors"
+              style={{ border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'
+                e.currentTarget.style.color = 'white'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'
+                e.currentTarget.style.color = 'rgba(255,255,255,0.7)'
+              }}
             >
-              Learn More
+              Read More →
             </Link>
-            <Link
-              href="/join-mja"
-              className="font-semibold px-7 py-3 rounded text-sm transition-all"
-              style={{ border: '1.5px solid rgba(255,255,255,0.4)', color: 'white' }}
-              onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.12)'}
-              onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'}
-            >
-              Join MJA
-            </Link>
-          </motion.div>
-        </div>
-      ) : (
-        <div
-          className="relative flex flex-col justify-between p-10 md:p-14 overflow-hidden text-white"
-          style={{ backgroundColor: '#0D1B2A' }}
-        >
-          <div
-            className="absolute bottom-0 right-0 font-headline font-black leading-none select-none pointer-events-none"
-            style={{ fontSize: 'clamp(200px, 28vw, 340px)', color: 'rgba(255,255,255,0.04)', lineHeight: 0.8, transform: 'translateX(20%)' }}
-          >
-            M
-          </div>
-
-          <div className="relative z-10">
-            <motion.p {...fadeUp(0)} className="text-[10px] font-bold tracking-[0.22em] uppercase mb-5" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Maldives Journalists Association
-            </motion.p>
-            <motion.h1
-              {...fadeUp(0.08)}
-              className="font-headline font-black uppercase leading-[0.92] mb-5"
-              style={{ fontSize: 'clamp(30px, 3.8vw, 48px)' }}
-            >
-              Defending<br />
-              <span style={{ color: '#E8192C' }}>Press Freedom</span><br />
-              in the Maldives
-            </motion.h1>
-            <motion.p {...fadeUp(0.16)} className="text-sm leading-relaxed max-w-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              MJA represents Maldivian journalists and advocates for a free, independent and responsible press.
-            </motion.p>
-          </div>
-
-          <motion.div {...fadeUp(0.28)} className="relative z-10 flex gap-3 flex-wrap mt-8">
-            <Link
-              href="/join-mja"
-              className="font-bold px-7 py-3 rounded text-sm transition-all hover:opacity-90"
-              style={{ backgroundColor: '#E8192C', color: 'white' }}
-            >
-              Become a Member
-            </Link>
-            <Link
-              href="/news-room"
-              className="font-semibold px-7 py-3 rounded text-sm transition-all"
-              style={{ border: '1.5px solid rgba(255,255,255,0.2)', color: 'white' }}
-              onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.08)'}
-              onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'}
-            >
-              Latest News
-            </Link>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Right panel — always Be the Voice */}
-      <div
-        className="relative flex flex-col justify-center p-10 md:p-14 overflow-hidden text-white"
-        style={{ backgroundColor: "#0D1B2A" }}
-      >
-        <div className="absolute right-8 bottom-4 pointer-events-none select-none" style={{ opacity: 0.06 }}>
-          <svg viewBox="0 0 140 220" className="w-36 h-52" fill="none">
-            <rect x="40" y="8" width="60" height="110" rx="30" fill="white"/>
-            <line x1="70" y1="118" x2="70" y2="160" stroke="white" strokeWidth="7"/>
-            <line x1="40" y1="160" x2="100" y2="160" stroke="white" strokeWidth="7" strokeLinecap="round"/>
-          </svg>
-        </div>
-
-        <div className="relative z-10">
-          <motion.p
-            {...fadeUp(0.1)}
-            className="text-[10px] font-bold tracking-[0.22em] uppercase mb-5"
-            style={{ color: campaign ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.7)' }}
-          >
-            Maldives Journalists Association
-          </motion.p>
-          <motion.h2
-            {...fadeUp(0.18)}
-            className="font-headline font-black leading-[0.92] mb-8"
-            style={{ fontSize: 'clamp(38px, 5vw, 62px)' }}
-          >
-            Be the{' '}
-            <span style={{ color: '#E8192C' }}>
-              voice
-            </span>
-            <br />for freedom
-            <br />of press
-          </motion.h2>
-          <motion.div {...fadeUp(0.28)}>
-            <Link
-              href="/join-mja"
-              className="inline-block text-white font-semibold px-8 py-3.5 rounded text-sm transition-opacity hover:opacity-85"
-              style={{ backgroundColor: campaign ? '#E8192C' : 'rgba(0,0,0,0.25)' }}
-            >
-              Become a Member
-            </Link>
-          </motion.div>
-        </div>
+          )}
+        </motion.div>
       </div>
+
+      {/* ── Live dispatch ticker ── */}
+      <motion.div
+        {...fade(0.35)}
+        className="relative z-10 border-t"
+        style={{ borderColor: 'rgba(255,255,255,0.08)' }}
+      >
+        <div className="max-w-[1280px] mx-auto px-6 sm:px-8 py-3 flex items-center gap-4">
+          <span
+            className="text-[9px] font-black tracking-[0.2em] uppercase flex-shrink-0 px-2 py-1 rounded"
+            style={{ backgroundColor: '#E8192C', color: 'white' }}
+          >
+            Live
+          </span>
+          <span className="text-[11px] tracking-wide flex-shrink-0" style={{ color: 'rgba(255,255,255,0.25)' }}>
+            {`MALÉ — ${today}`}
+          </span>
+          <div className="w-px h-3 flex-shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+          <p className="text-[12px] truncate flex-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
+            {dispatch ?? 'MJA monitors press freedom conditions across the Maldives archipelago — reporting threats, supporting journalists, and advocating for the right to inform.'}
+          </p>
+          <Link
+            href="/news-room"
+            className="text-[11px] font-bold tracking-widest uppercase flex-shrink-0 hover:opacity-70 transition-opacity"
+            style={{ color: '#E8192C' }}
+          >
+            Read Brief →
+          </Link>
+        </div>
+      </motion.div>
     </section>
   )
 }

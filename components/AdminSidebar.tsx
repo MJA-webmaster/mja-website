@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import {
+import { BookOpen, usePathname, useRouter } from 'next/navigation'
+import { BookOpen, createClient } from '@/lib/supabase/client'
+import { BookOpen,
   LayoutDashboard, FileText, Megaphone, Users, Award,
   UserCheck, FolderOpen, Mail, Settings, LogOut,
 } from 'lucide-react'

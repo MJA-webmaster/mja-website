@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/mailer'
+import { wrapEmail, button, detailRow } from '@/lib/emailTemplates'
 
 const MEMBERSHIP_TYPES = ['Professional', 'Student', 'Corporate']
 
@@ -90,62 +91,44 @@ export async function POST(req: Request) {
 
       const detailRows = rows
         .filter(([, value]) => Boolean(value))
-        .map(
-          ([label, value]) => `
-            <div style="display:flex;padding:8px 0;border-bottom:1px solid #f3f4f6;">
-              <span style="color:#9CA3AF;font-size:13px;width:150px;flex-shrink:0;">${label}</span>
-              <span style="color:#0D1B2A;font-size:13px;font-weight:500;">${value}</span>
-            </div>`
-        )
+        .map(([label, value]) => detailRow(label, value as string))
         .join('')
 
       // Applicant confirmation
       await sendEmail({
         to: [{ email }],
         subject: 'We received your MJA membership application',
-        html: `
-          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
-            <div style="background:#0D1B2A;padding:28px;border-radius:8px 8px 0 0;">
-              <h1 style="color:white;margin:0;font-size:20px;">Application Received</h1>
-            </div>
-            <div style="background:#f9fafb;padding:28px;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;">
-              <p style="color:#0D1B2A;font-size:14px;line-height:1.6;margin-top:0;">
-                Thank you for applying for ${membership_type} membership with the Maldives
-                Journalists Association. Our team will review your application and respond
-                within 3 business days.
-              </p>
-              <div style="margin-top:20px;">${detailRows}</div>
-              <p style="color:#9CA3AF;font-size:12px;margin-top:24px;line-height:1.6;">
-                Questions? Contact us at
-                <a href="mailto:${mjaEmail}" style="color:#E8192C;">${mjaEmail}</a>
-              </p>
-            </div>
-            <p style="text-align:center;color:#9CA3AF;font-size:11px;margin-top:20px;">
-              © ${new Date().getFullYear()} Maldives Journalists Association · mja.mv
+        html: wrapEmail({
+          preheader: `Thank you for applying for ${membership_type} membership.`,
+          body: `
+            <h1 style="margin:0 0 16px 0;font-size:20px;color:#0D1B2A;font-weight:800;">Application Received</h1>
+            <p style="margin:0 0 24px 0;font-size:14px;line-height:1.7;color:#374151;">
+              Thank you for applying for <strong>${membership_type}</strong> membership with the Maldives
+              Journalists Association. Our team will review your application and respond
+              within 3 business days.
             </p>
-          </div>`,
+            <div style="margin-bottom:24px;">${detailRows}</div>
+            <p style="margin:0;font-size:12px;color:#9CA3AF;line-height:1.6;">
+              Questions? Contact us at
+              <a href="mailto:${mjaEmail}" style="color:#E8192C;text-decoration:none;">${mjaEmail}</a>
+            </p>
+          `,
+        }),
       })
 
       // Admin notification
       await sendEmail({
         to: [{ email: mjaEmail }],
         subject: `New ${membership_type} Application — ${full_name}`,
-        html: `
-          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
-            <div style="background:#E8192C;padding:24px;border-radius:8px 8px 0 0;">
-              <h1 style="color:white;margin:0;font-size:20px;">New Membership Application</h1>
-            </div>
-            <div style="background:#f9fafb;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;">
-              ${detailRows}
-              ${message ? `<p style="color:#6B7280;font-size:13px;margin-top:16px;">${message}</p>` : ''}
-              <p style="margin-top:24px;">
-                <a href="https://mja.mv/admin/applications"
-                   style="background:#E8192C;color:white;text-decoration:none;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:600;">
-                  Review in Admin
-                </a>
-              </p>
-            </div>
-          </div>`,
+        html: wrapEmail({
+          preheader: `New ${membership_type} application from ${full_name}`,
+          body: `
+            <h1 style="margin:0 0 20px 0;font-size:20px;color:#0D1B2A;font-weight:800;">New Membership Application</h1>
+            <div style="margin-bottom:20px;">${detailRows}</div>
+            ${message ? `<p style="margin:0 0 24px 0;font-size:13px;color:#6B7280;line-height:1.6;">${message}</p>` : ''}
+            ${button('Review in Admin', 'https://mja.mv/admin/applications')}
+          `,
+        }),
       })
     }
 

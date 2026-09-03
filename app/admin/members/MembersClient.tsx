@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { Member } from '@/lib/types'
 import { MEMBERSHIP_TYPES } from '@/lib/membership'
 import ImageUpload from '@/components/ImageUpload'
-import { Plus, Trash2, ChevronDown, ChevronUp, Check, X } from 'lucide-react'
+import { Plus, Trash2, Pencil, ChevronDown, ChevronUp, Check, X } from 'lucide-react'
 
 type Application = {
   id: string
@@ -265,6 +265,7 @@ function MembersTab({ members: initial }: { members: Member[] }) {
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [form, setForm] = useState(emptyForm)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const filtered = members.filter((m) => {
     const matchCat = filter === 'all' || m.membership_type === filter
     const term = search.toLowerCase()
@@ -274,11 +275,47 @@ function MembersTab({ members: initial }: { members: Member[] }) {
     const val = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value
     setForm({ ...form, [e.target.name]: val })
   }
+  function openAddForm() {
+    setEditingId(null)
+    setForm(emptyForm)
+    setError(null)
+    setShowForm(true)
+  }
+  function openEditForm(member: Member) {
+    setEditingId(member.id)
+    setForm({
+      name: member.name,
+      category: member.category,
+      membership_type: member.membership_type,
+      member_id: member.member_id ?? '',
+      id_card_no: member.id_card_no ?? '',
+      representing: member.representing ?? '',
+      years_in_journalism: member.years_in_journalism != null ? String(member.years_in_journalism) : '',
+      photo: member.photo ?? '',
+      bio: member.bio ?? '',
+      facebook: member.facebook ?? '',
+      instagram: member.instagram ?? '',
+      linkedin: member.linkedin ?? '',
+      twitter: member.twitter ?? '',
+      member_since: member.member_since ?? '',
+      fee_status: member.fee_status,
+      fee_paid_until: member.fee_paid_until ?? '',
+      is_active: member.is_active,
+    })
+    setError(null)
+    setShowForm(true)
+  }
+  function closeForm() {
+    setShowForm(false)
+    setEditingId(null)
+    setForm(emptyForm)
+    setError(null)
+  }
   async function handleSave() {
     if (!form.name) return
     setSaving(true); setError(null)
     const supabase = createClient()
-    const { data, error } = await supabase.from('members').insert({
+    const payload = {
       name: form.name, category: form.category, membership_type: form.membership_type,
       member_id: form.member_id || null, id_card_no: form.id_card_no || null,
       representing: form.representing || null,
@@ -288,9 +325,22 @@ function MembersTab({ members: initial }: { members: Member[] }) {
       linkedin: form.linkedin || null, twitter: form.twitter || null,
       member_since: form.member_since || null, fee_status: form.fee_status,
       fee_paid_until: form.fee_paid_until || null, is_active: form.is_active,
-    }).select().single()
-    if (error) { setError(error.message) }
-    else if (data) { setMembers((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name))); setForm(emptyForm); setShowForm(false) }
+    }
+    if (editingId) {
+      const { data, error } = await supabase.from('members').update(payload).eq('id', editingId).select().single()
+      if (error) { setError(error.message) }
+      else if (data) {
+        setMembers((prev) => prev.map((m) => (m.id === editingId ? data : m)).sort((a, b) => a.name.localeCompare(b.name)))
+        closeForm()
+      }
+    } else {
+      const { data, error } = await supabase.from('members').insert(payload).select().single()
+      if (error) { setError(error.message) }
+      else if (data) {
+        setMembers((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+        closeForm()
+      }
+    }
     setSaving(false)
   }
   async function handleDelete(id: string) {
@@ -314,15 +364,15 @@ function MembersTab({ members: initial }: { members: Member[] }) {
     <div>
       <div className="flex items-center justify-between mb-5">
         <p className="text-gray-400 text-sm">{members.length} total · {members.filter((m) => m.fee_status === 'paid').length} paid</p>
-        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 text-white px-5 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#E8192C' }}>
+        <button onClick={() => (showForm ? closeForm() : openAddForm())} className="flex items-center gap-2 text-white px-5 py-2.5 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#E8192C' }}>
           <Plus size={16} /> Add Member
         </button>
       </div>
       {showForm && (
         <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-navy">New Member</h2>
-            <button onClick={() => { setShowForm(false); setError(null) }} className="text-gray-400 text-lg">×</button>
+            <h2 className="font-semibold text-navy">{editingId ? 'Edit Member' : 'New Member'}</h2>
+            <button onClick={closeForm} className="text-gray-400 text-lg">×</button>
           </div>
           <div className="flex gap-6 mb-4">
             <div className="w-40 flex-shrink-0">
@@ -355,9 +405,9 @@ function MembersTab({ members: initial }: { members: Member[] }) {
           {error && <p className="text-sm mb-4" style={{ color: '#E8192C' }}>{error}</p>}
           <div className="flex gap-3">
             <button onClick={handleSave} disabled={saving || !form.name} className="text-white px-6 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50" style={{ backgroundColor: '#E8192C' }}>
-              {saving ? 'Saving...' : 'Save Member'}
+              {saving ? 'Saving...' : editingId ? 'Update Member' : 'Save Member'}
             </button>
-            <button onClick={() => { setShowForm(false); setError(null) }} className="border border-gray-200 text-gray-500 px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50">Cancel</button>
+            <button onClick={closeForm} className="border border-gray-200 text-gray-500 px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50">Cancel</button>
           </div>
         </div>
       )}
@@ -375,12 +425,12 @@ function MembersTab({ members: initial }: { members: Member[] }) {
       </div>
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden overflow-x-auto">
         <div className="min-w-[800px]">
-          <div className="grid grid-cols-[1fr_110px_110px_110px_90px_80px_60px] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-gray-400">
-            <span>Member</span><span>Member ID</span><span>Type</span><span>Representing</span><span>Fee</span><span>Status</span><span></span>
+          <div className="grid grid-cols-[1fr_110px_110px_110px_90px_80px_60px_60px] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-gray-400">
+            <span>Member</span><span>Member ID</span><span>Type</span><span>Representing</span><span>Fee</span><span>Status</span><span></span><span></span>
           </div>
           <div className="divide-y divide-gray-50">
             {filtered.map((member) => (
-              <div key={member.id} className="grid grid-cols-[1fr_110px_110px_110px_90px_80px_60px] gap-4 px-6 py-3.5 items-center">
+              <div key={member.id} className="grid grid-cols-[1fr_110px_110px_110px_90px_80px_60px_60px] gap-4 px-6 py-3.5 items-center">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
                     {member.photo ? <img src={member.photo} alt={member.name} className="w-full h-full object-cover" />
@@ -401,7 +451,10 @@ function MembersTab({ members: initial }: { members: Member[] }) {
                     {member.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </button>
-                <button onClick={() => handleDelete(member.id)} className="text-gray-300 hover:text-red-500 transition-colors flex justify-center">
+                <button onClick={() => openEditForm(member)} className="text-gray-300 hover:text-navy transition-colors flex justify-center" title="Edit member">
+                  <Pencil size={15} />
+                </button>
+                <button onClick={() => handleDelete(member.id)} className="text-gray-300 hover:text-red-500 transition-colors flex justify-center" title="Delete member">
                   <Trash2 size={15} />
                 </button>
               </div>

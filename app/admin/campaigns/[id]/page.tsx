@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 export default async function EditCampaignPage({ params }: { params: { id: string } }) {
   const supabase = createClient()
-  const { data: campaign } = await supabase.from('campaigns').select('*').eq('id', params.id).single()
+  const { data: campaign } = await supabase.from('campaigns').select('*').eq('id', params.id).maybeSingle()
   if (!campaign) notFound()
 
   return (

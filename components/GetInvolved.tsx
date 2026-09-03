@@ -15,7 +15,7 @@ export default function GetInvolved() {
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <Link
-            href="/join-mja"
+            href="/join-mja#form"
             className="text-white px-10 py-3.5 rounded text-sm font-bold transition-opacity hover:opacity-85"
             style={{ backgroundColor: '#E8192C' }}
           >

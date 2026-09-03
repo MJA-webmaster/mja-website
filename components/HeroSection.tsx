@@ -101,7 +101,7 @@ export default function HeroSection({ campaign, dispatch }: Props) {
         {/* Action row */}
         <motion.div {...fade(0.26)} className="flex flex-wrap items-center gap-3 mb-14">
           <Link
-            href="/join-mja"
+            href="/join-mja#form"
             className="font-bold text-sm px-8 py-3.5 rounded transition-opacity hover:opacity-85"
             style={{ backgroundColor: '#E8192C', color: 'white', letterSpacing: '0.04em' }}
           >

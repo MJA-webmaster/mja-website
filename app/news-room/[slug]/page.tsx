@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import NewsletterForm from '@/components/NewsletterForm'
 import ShareButtons from '@/components/ShareButtons'
 import type { Metadata } from 'next'
 
@@ -164,16 +163,6 @@ export default async function ArticlePage({ params }: Props) {
         </section>
       )}
 
-      {/* Newsletter */}
-      <section className="py-14 px-6 border-t border-gray-100">
-        <div className="max-w-[1280px] mx-auto">
-          <h2 className="font-headline text-4xl font-bold text-navy mb-6">
-            Don&apos;t wait for information being deprived<br />
-            of you to <span className="text-red">defend it!</span>
-          </h2>
-          <NewsletterForm />
-        </div>
-      </section>
     </>
   )
 }

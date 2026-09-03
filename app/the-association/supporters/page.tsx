@@ -78,15 +78,6 @@ export default async function SupportersPage() {
           </div>
         </div>
       </div>
-
-      <section className="py-14 px-6 border-t border-gray-100">
-        <div className="max-w-[1280px] mx-auto">
-          <h2 className="font-headline text-4xl font-bold mb-6" style={{ color: '#0D1B2A' }}>
-            Don't wait for information being deprived<br />
-            of you to <span style={{ color: '#E8192C' }}>defend it!</span>
-          </h2>
-        </div>
-      </section>
     </>
   )
 }

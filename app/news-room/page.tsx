@@ -70,14 +70,6 @@ export default async function NewsRoomPage() {
       </section>
 
       {/* Newsletter */}
-      <section className="py-14 px-6 border-t border-gray-100">
-        <div className="max-w-[1280px] mx-auto">
-          <h2 className="font-headline text-4xl font-bold text-navy mb-6">
-            Don't wait for information being deprived<br />
-            of you to <span className="text-red">defend it!</span>
-          </h2>
-        </div>
-      </section>
     </>
   )
 }

@@ -23,6 +23,7 @@ export default function HomePage() {
     campaign: null,
     stats: null,
     activities: [],
+    dispatch: null,
   })
 
   useEffect(() => {
@@ -32,12 +33,14 @@ export default function HomePage() {
       supabase.from('campaigns').select('*').eq('published', true).order('created_at', { ascending: false }).limit(1),
       supabase.from('member_stats').select('*').single(),
       supabase.from('activities').select('*').eq('year', new Date().getFullYear()).order('order', { ascending: true }).limit(4),
-    ]).then(([articles, campaigns, stats, activities]) => {
+      supabase.from('settings').select('dispatch').single(),
+    ]).then(([articles, campaigns, stats, activities, settings]) => {
       setData({
         articles: articles.data ?? [],
         campaign: campaigns.data?.[0] ?? null,
         stats: stats.data,
         activities: activities.data ?? [],
+        dispatch: settings.data?.dispatch ?? null,
       })
     })
   }, [])
@@ -50,7 +53,7 @@ export default function HomePage() {
   return (
     <>
       {/* ── Hero ── */}
-      <HeroSection campaign={data.campaign} />
+      <HeroSection campaign={data.campaign} dispatch={data.dispatch} />
 
       {/* ── Latest News ── */}
       {data.articles.length > 0 && (
@@ -100,10 +103,7 @@ export default function HomePage() {
                   {...fadeUp(i * 0.07)}
                   className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-sm transition-shadow"
                 >
-                  <div
-                    className="text-[10px] font-bold uppercase tracking-widest mb-2"
-                    style={{ color: '#E8192C' }}
-                  >
+                  <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#E8192C' }}>
                     {activity.year}
                   </div>
                   <h3 className="font-bold text-navy text-[14px] leading-snug mb-1">

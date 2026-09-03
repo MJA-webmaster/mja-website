@@ -21,62 +21,126 @@ interface Props {
   currentSearch: string
 }
 
-function DocIcon({ category }: { category: string }) {
-  if (category === 'multimedia') return <Film size={28} style={{ color: '#E8192C' }} />
-  return <FileText size={28} style={{ color: '#E8192C' }} />
+function inferYear(resource: Resource): string {
+  const date = resource.created_at
+  return date ? new Date(date).getFullYear().toString() : ''
+}
+
+function inferType(resource: Resource): string {
+  if (resource.subcategory) return resource.subcategory.toUpperCase()
+  const map: Record<string, string> = {
+    'publications': 'REPORT',
+    'annual-reports': 'ANNUAL REPORT',
+    'financials': 'FINANCIAL',
+    'multimedia': 'MEDIA',
+  }
+  return map[resource.category] ?? 'DOCUMENT'
+}
+
+function DocumentPlaceholder({ resource }: { resource: Resource }) {
+  const year = inferYear(resource)
+  const type = inferType(resource)
+  const isMultimedia = resource.category === 'multimedia'
+
+  return (
+    <div
+      className="w-full h-full flex flex-col justify-between p-4 relative overflow-hidden"
+      style={{ backgroundColor: '#0D1B2A' }}
+    >
+      {/* Background watermark */}
+      <div
+        className="absolute bottom-0 right-0 font-headline font-black leading-none select-none pointer-events-none"
+        style={{
+          fontSize: '7rem',
+          color: 'rgba(255,255,255,0.04)',
+          lineHeight: 1,
+          transform: 'translate(20%, 10%)',
+        }}
+      >
+        MJA
+      </div>
+
+      {/* Top: type badge */}
+      <div>
+        <span
+          className="text-[8px] font-black tracking-widest uppercase px-2 py-1 rounded inline-block"
+          style={{ backgroundColor: '#E8192C', color: 'white' }}
+        >
+          {type}
+        </span>
+      </div>
+
+      {/* Middle: icon */}
+      <div className="flex justify-center">
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(232,25,44,0.15)' }}
+        >
+          {isMultimedia
+            ? <Film size={22} style={{ color: '#E8192C' }} />
+            : <FileText size={22} style={{ color: '#E8192C' }} />
+          }
+        </div>
+      </div>
+
+      {/* Bottom: title + year */}
+      <div>
+        <p className="text-white font-bold text-[11px] leading-snug line-clamp-2 mb-1">
+          {resource.title}
+        </p>
+        {year && (
+          <p className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            {year}
+          </p>
+        )}
+        {resource.file_size && (
+          <p className="text-[9px] font-mono mt-0.5" style={{ color: 'rgba(255,255,255,0.2)' }}>
+            PDF · {resource.file_size}
+          </p>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function DocumentCard({ resource, onView }: { resource: Resource; onView: (r: Resource) => void }) {
   const hasCover = Boolean(resource.cover_image)
   const isImageFile = resource.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-  const isPdf = resource.file_url?.endsWith('.pdf')
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-      {/* Cover — A4 ratio */}
+      {/* Cover — enforced A4 ratio */}
       <div
-        className="relative flex items-center justify-center overflow-hidden cursor-pointer"
-        style={{ backgroundColor: '#F3F4F6', aspectRatio: '1 / 1.414' }}
-        onClick={() => resource.file_url && onView(resource)}
+        className="relative overflow-hidden"
+        style={{ aspectRatio: '1 / 1.414' }}
       >
         {hasCover ? (
-          <img src={resource.cover_image!} alt={resource.title} className="w-full h-full object-cover object-top" />
+          <img
+            src={resource.cover_image!}
+            alt={resource.title}
+            className="w-full h-full object-cover object-top"
+          />
         ) : isImageFile && resource.file_url ? (
-          <img src={resource.file_url} alt={resource.title} className="w-full h-full object-cover object-top" />
+          <img
+            src={resource.file_url}
+            alt={resource.title}
+            className="w-full h-full object-cover object-top"
+          />
         ) : (
-          <div className="flex flex-col items-center gap-2">
-            <div
-              className="w-14 h-14 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(232,25,44,0.08)' }}
+          <DocumentPlaceholder resource={resource} />
+        )}
+
+        {/* Category tag — only when cover image is present */}
+        {(hasCover || isImageFile) && (
+          <div className="absolute top-3 left-3">
+            <span
+              className="text-[9px] font-black tracking-widest uppercase px-2 py-1 rounded"
+              style={{ backgroundColor: '#E8192C', color: 'white' }}
             >
-              <DocIcon category={resource.category} />
-            </div>
-            {resource.file_size && (
-              <span className="text-[10px] text-gray-400 font-mono">{resource.file_size}</span>
-            )}
+              {resource.subcategory ?? resource.category.replace('-', ' ')}
+            </span>
           </div>
         )}
-
-        {/* Hover overlay for PDFs */}
-        {isPdf && (
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
-            style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
-            <div className="flex items-center gap-2 text-white text-xs font-bold">
-              <Eye size={16} />
-              Preview
-            </div>
-          </div>
-        )}
-
-        {/* Category tag */}
-        <div className="absolute top-3 left-3">
-          <span
-            className="text-[9px] font-black tracking-widest uppercase px-2 py-1 rounded"
-            style={{ backgroundColor: '#E8192C', color: 'white' }}
-          >
-            {resource.subcategory ?? resource.category.replace('-', ' ')}
-          </span>
-        </div>
       </div>
 
       {/* Content */}
@@ -111,7 +175,7 @@ function DocumentCard({ resource, onView }: { resource: Resource; onView: (r: Re
                     const blobUrl = URL.createObjectURL(blob)
                     const a = document.createElement('a')
                     a.href = blobUrl
-                    a.download = resource.title + (isPdf ? '.pdf' : '')
+                    a.download = resource.title + (resource.file_url!.endsWith('.pdf') ? '.pdf' : '')
                     a.click()
                     URL.revokeObjectURL(blobUrl)
                   } catch {
@@ -180,7 +244,7 @@ export default function ResourceHubClient({
         />
       )}
 
-      {/* Integrated search */}
+      {/* Search */}
       <form onSubmit={handleSearch} className="flex items-center mb-8 border border-gray-200 rounded-xl overflow-hidden bg-white">
         <div className="pl-5 text-gray-300 flex-shrink-0">
           <Search size={17} />
@@ -201,7 +265,7 @@ export default function ResourceHubClient({
         </button>
       </form>
 
-      {/* Horizontal tab strip */}
+      {/* Tab strip */}
       <div className="flex flex-wrap gap-2 mb-2 pb-4 border-b border-gray-100">
         {tabs.map((cat) => {
           const isActive = currentCategory === cat.slug
@@ -261,14 +325,14 @@ export default function ResourceHubClient({
 
       {/* Count */}
       {resources.length > 0 && (
-        <div className="flex items-center justify-between mb-5 mt-4">
+        <div className="mb-5 mt-4">
           <p className="text-xs text-gray-400">
             Showing <span className="font-semibold text-navy">{resources.length}</span> document{resources.length !== 1 ? 's' : ''}
           </p>
         </div>
       )}
 
-      {/* Document grid */}
+      {/* Grid */}
       {resources.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {resources.map((resource) => (
@@ -298,16 +362,14 @@ export default function ResourceHubClient({
             Independent reporting needs defending<br className="hidden md:block" /> before it is silenced.
           </h3>
         </div>
-        <div className="flex gap-3 flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => window.location.href = '/join-mja#form'}
-            className="font-bold text-sm px-7 py-3 rounded-lg transition-opacity hover:opacity-85"
-            style={{ backgroundColor: '#E8192C', color: 'white' }}
-          >
-            Join the Union →
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => window.location.href = '/join-mja#form'}
+          className="font-bold text-sm px-7 py-3 rounded-lg transition-opacity hover:opacity-85 flex-shrink-0"
+          style={{ backgroundColor: '#E8192C', color: 'white' }}
+        >
+          Join the Union →
+        </button>
       </div>
     </div>
   )

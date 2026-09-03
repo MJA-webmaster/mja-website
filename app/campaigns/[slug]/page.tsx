@@ -8,7 +8,7 @@ interface Props { params: { slug: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient()
-  const { data } = await supabase.from('campaigns').select('title, description, cover_image').eq('slug', params.slug).single()
+  const { data } = await supabase.from('campaigns').select('title, description, cover_image').eq('slug', params.slug).maybeSingle()
   return {
     title: data?.title ?? 'Campaign',
     description: data?.description ?? '',
@@ -33,7 +33,7 @@ export default async function CampaignPage({ params }: Props) {
     .select('*')
     .eq('slug', params.slug)
     .eq('published', true)
-    .single()
+    .maybeSingle()
 
   if (!campaign) notFound()
 

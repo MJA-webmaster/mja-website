@@ -6,22 +6,29 @@ import MembersDirectoryGrid from '@/components/MembersDirectoryGrid'
 import type { Member } from '@/lib/types'
 import type { Metadata } from 'next'
 
-const categoryLabels: Record<string, string> = {
-  'category-one': 'Local',
-  'category-two': 'International',
-  'category-three': 'Non-Member Contributors',
+// Directory tabs mirror MJA's actual membership categories (see lib/membership.ts)
+const categorySlugToType: Record<string, Member['membership_type']> = {
+  professional: 'Professional',
+  student: 'Student',
+  corporate: 'Corporate',
+  affiliate: 'Affiliate',
 }
 
-const categories = ['category-one', 'category-two', 'category-three']
+const categories = Object.keys(categorySlugToType)
 
 export async function generateMetadata({ params }: { params: { category: string } }): Promise<Metadata> {
-  return { title: `Members Directory — ${categoryLabels[params.category] ?? 'Members'}` }
+  const label = categorySlugToType[params.category]
+  return { title: `Members Directory — ${label ?? 'Members'}` }
 }
 
 export default async function MembersCategoryPage({ params }: { params: { category: string } }) {
   const supabase = createClient()
+  const membershipType = categorySlugToType[params.category]
+
   const [{ data: members }, { data: stats }] = await Promise.all([
-    supabase.from('members').select('*').eq('category', params.category).eq('is_active', true).order('name'),
+    membershipType
+      ? supabase.from('members').select('*').eq('membership_type', membershipType).eq('is_active', true).order('name')
+      : Promise.resolve({ data: [] as Member[] }),
     supabase.from('member_stats').select('*').single(),
   ])
 
@@ -66,7 +73,7 @@ export default async function MembersCategoryPage({ params }: { params: { catego
                 color: isActive ? 'white' : '#6B7280',
               }}
             >
-              {categoryLabels[cat]}
+              {categorySlugToType[cat]}
             </Link>
           )
         })}

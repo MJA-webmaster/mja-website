@@ -106,3 +106,21 @@ export type MemberStats = {
   male: number
   female: number
 }
+
+export type PageContent = {
+  id: string
+  slug: string
+  title: string
+  content: string | null
+  updated_at: string
+}
+
+export type LedgerEntry = {
+  id: string
+  entry_date: string
+  type: 'income' | 'expense'
+  category: 'Advocacy' | 'Training' | 'Administrative & Others'
+  description: string
+  amount: number
+  created_at: string
+}

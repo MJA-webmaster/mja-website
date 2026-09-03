@@ -4,12 +4,13 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import Image from 'next/image'
 import MemberMeter from '@/components/MemberMeter'
+import AssociationSidebar from '@/components/AssociationSidebar'
 import type { Metadata } from 'next'
 
 const categoryLabels: Record<string, string> = {
-  'category-one': 'Category One',
-  'category-two': 'Category Two',
-  'category-three': 'Category Three',
+  'category-one': 'Local',
+  'category-two': 'International',
+  'category-three': 'Non-Member Contributors',
 }
 
 export async function generateMetadata({ params }: { params: { category: string } }): Promise<Metadata> {
@@ -50,36 +51,31 @@ export default async function MembersCategoryPage({ params }: { params: { catego
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 md:py-14">
         <div className="md:flex md:gap-16">
           {/* Desktop sidebar */}
-          <aside className="hidden md:block w-52 flex-shrink-0">
-            <nav className="space-y-1 sticky top-24">
-              <Link href="/the-association" className="block py-2 text-[14px] text-gray-400 hover:text-navy transition-colors">The Association</Link>
-              <Link href="/the-association/governance" className="block py-2 text-[14px] text-gray-400 hover:text-navy transition-colors">Governance</Link>
-              <div>
-                <Link href="/members-directory" className="block py-2 text-[14px] font-bold transition-colors" style={{ color: '#E8192C' }}>
-                  Members Directory
-                </Link>
-                <div className="ml-4 space-y-1 mt-1">
-                  {categories.map((cat) => (
-                    <Link key={cat} href={`/members-directory/${cat}`}
-                      className="block py-1.5 text-[13px] transition-colors"
-                      style={params.category === cat ? { color: '#0D1B2A', fontWeight: 600 } : { color: '#9CA3AF' }}>
-                      {categoryLabels[cat]}
-                    </Link>
-                  ))}
-                </div>
+          <div className="hidden md:block w-52 flex-shrink-0">
+            <AssociationSidebar />
+            <nav className="mt-6 pt-6 border-t border-gray-100 space-y-1">
+              <Link href="/members-directory" className="block py-2 text-[14px] font-bold transition-colors" style={{ color: '#E8192C' }}>
+                Members Directory
+              </Link>
+              <div className="ml-4 space-y-1 mt-1">
+                {categories.map((cat) => (
+                  <Link key={cat} href={`/members-directory/${cat}`}
+                    className="block py-1.5 text-[13px] transition-colors"
+                    style={params.category === cat ? { color: '#0D1B2A', fontWeight: 600 } : { color: '#9CA3AF' }}>
+                    {categoryLabels[cat]}
+                  </Link>
+                ))}
               </div>
-              <Link href="/the-association/team" className="block py-2 text-[14px] text-gray-400 hover:text-navy transition-colors">MJA Team</Link>
-              <Link href="/the-association/code-of-conduct" className="block py-2 text-[14px] text-gray-400 hover:text-navy transition-colors">Code of Conduct</Link>
             </nav>
-          </aside>
+          </div>
 
           <div className="flex-1 min-w-0">
             {/* Header */}
             <div className="grid md:grid-cols-2 gap-8 mb-10 items-start">
               <div>
                 <h1 className="font-headline font-black uppercase leading-none mb-2" style={{ color: '#0D1B2A', fontSize: 'clamp(32px, 4vw, 48px)' }}>
-                  <span style={{ color: '#E8192C' }}>Category</span><br />
-                  {categoryLabels[params.category]?.split(' ')[1] ?? 'One'}
+                  <span style={{ color: '#E8192C' }}>Members</span><br />
+                  {categoryLabels[params.category] ?? 'Members'}
                 </h1>
                 <p className="text-gray-500 text-[14px] leading-relaxed mt-3">
                   MJA members dedicated to press freedom across the Maldives.

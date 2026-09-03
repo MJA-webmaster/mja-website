@@ -40,9 +40,9 @@ const statusColors = {
 }
 
 const categories = [
-  { value: 'category-one', label: 'Category One' },
-  { value: 'category-two', label: 'Category Two' },
-  { value: 'category-three', label: 'Category Three' },
+  { value: 'category-one', label: 'Local' },
+  { value: 'category-two', label: 'International' },
+  { value: 'category-three', label: 'Non-Member Contributors' },
 ]
 
 const emptyForm = {
@@ -94,7 +94,8 @@ function ApplicationRow({
   async function handleStatus(status: 'approved' | 'rejected') {
     setUpdating(true)
     const supabase = createClient()
-    const result = await supabase.from("membership_applications").update({ status }).eq("id", app.id); console.log("approval result", result); const { error } = result)
+    const result = await supabase.from("membership_applications").update({ status }).eq("id", app.id)
+    const { error } = result
     if (!error) {
       if (status === 'approved' && app.id_card_no) {
         await new Promise((r) => setTimeout(r, 800))

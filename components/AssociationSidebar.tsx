@@ -12,11 +12,13 @@ const links = [
       { label: 'Our Values', href: '/the-association/values' },
       { label: 'Our Supporters', href: '/the-association/supporters' },
       { label: 'Our Activities', href: '/the-association/activities' },
+      { label: 'MJA Charter', href: '/the-association/charter' },
     ],
   },
   { label: 'Governance', href: '/the-association/governance' },
   { label: 'Board Members', href: '/the-association/board' },
   { label: 'Code of Conduct', href: '/the-association/code-of-conduct' },
+  { label: 'Open Ledger', href: '/the-association/open-ledger' },
 ]
 
 // Flat list for mobile tab bar
@@ -24,9 +26,11 @@ const flatLinks = [
   { label: 'Values', href: '/the-association/values' },
   { label: 'Supporters', href: '/the-association/supporters' },
   { label: 'Activities', href: '/the-association/activities' },
+  { label: 'Charter', href: '/the-association/charter' },
   { label: 'Governance', href: '/the-association/governance' },
   { label: 'Board Members', href: '/the-association/board' },
   { label: 'Code of Conduct', href: '/the-association/code-of-conduct' },
+  { label: 'Open Ledger', href: '/the-association/open-ledger' },
 ]
 
 export default function AssociationSidebar() {

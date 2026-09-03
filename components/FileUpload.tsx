@@ -8,6 +8,7 @@ interface Props {
   value: string
   onChange: (url: string, size: string) => void
   onClear: () => void
+  onCoverGenerated?: (url: string) => void
   folder?: string
   label?: string
   accept?: string
@@ -30,11 +31,13 @@ export default function FileUpload({
   value,
   onChange,
   onClear,
+  onCoverGenerated,
   folder = 'misc',
   label,
   accept = 'application/pdf,image/*',
 }: Props) {
   const [uploading, setUploading] = useState(false)
+  const [generatingCover, setGeneratingCover] = useState(false)
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -42,6 +45,36 @@ export default function FileUpload({
   function formatSize(bytes: number): string {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  async function generatePdfCover(file: File): Promise<Blob | null> {
+    try {
+      const pdfjsLib = await import('pdfjs-dist')
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+
+      const arrayBuffer = await file.arrayBuffer()
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+      const page = await pdf.getPage(1)
+
+      // Render at A4 proportions — 595 x 842px
+      const viewport = page.getViewport({ scale: 1 })
+      const scale = 595 / viewport.width
+      const scaledViewport = page.getViewport({ scale })
+
+      const canvas = document.createElement('canvas')
+      canvas.width = scaledViewport.width
+      canvas.height = scaledViewport.height
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return null
+
+      await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise
+
+      return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9))
+    } catch (err) {
+      console.error('PDF cover generation failed:', err)
+      return null
+    }
   }
 
   async function upload(file: File) {
@@ -73,6 +106,30 @@ export default function FileUpload({
     const { data } = supabase.storage.from('resources').getPublicUrl(path)
     onChange(data.publicUrl, formatSize(file.size))
     setUploading(false)
+
+    // Auto-generate cover for PDFs
+    if (file.type === 'application/pdf' && onCoverGenerated) {
+      setGeneratingCover(true)
+      try {
+        const coverBlob = await generatePdfCover(file)
+        if (coverBlob) {
+          const coverPath = `resource-covers/${Date.now()}-cover.jpg`
+          const { error: coverErr } = await supabase.storage
+            .from('public-images')
+            .upload(coverPath, coverBlob, { contentType: 'image/jpeg' })
+
+          if (!coverErr) {
+            const { data: coverData } = supabase.storage
+              .from('public-images')
+              .getPublicUrl(coverPath)
+            onCoverGenerated(coverData.publicUrl)
+          }
+        }
+      } catch (err) {
+        console.error('Cover upload failed:', err)
+      }
+      setGeneratingCover(false)
+    }
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -130,11 +187,18 @@ export default function FileUpload({
           }}
         >
           <Upload size={18} strokeWidth={1.75} className="text-gray-300 mb-1.5" />
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 text-center px-2">
             {uploading ? 'Uploading...' : 'Click or drag a file here'}
           </p>
           <p className="text-[10px] text-gray-300 mt-0.5">PDF or image, max 20MB</p>
         </div>
+      )}
+
+      {generatingCover && (
+        <p className="text-[11px] text-gray-400 mt-1.5 flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin" />
+          Generating cover from PDF...
+        </p>
       )}
 
       <input

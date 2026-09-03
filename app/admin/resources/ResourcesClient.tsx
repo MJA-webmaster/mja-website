@@ -126,7 +126,8 @@ function ResourceForm({
               value={form.file_url}
               folder={form.category}
               onChange={(url, size) => setForm({ ...form, file_url: url, file_size: size })}
-              onClear={() => setForm({ ...form, file_url: '', file_size: '' })}
+              onClear={() => setForm({ ...form, file_url: "", file_size: "" })}
+                  onCoverGenerated={(url) => setForm((f) => ({ ...f, cover_image: url }))}
             />
           )}
           <div>

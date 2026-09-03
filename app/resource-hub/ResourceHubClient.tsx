@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import type { Resource } from '@/lib/types'
-import { Download, ExternalLink, Search, FileText, Image as ImageIcon, Film } from 'lucide-react'
+import { Download, ExternalLink, Search, FileText, Film, Eye } from 'lucide-react'
 
 interface Category {
   slug: string
@@ -22,23 +22,32 @@ interface Props {
 
 function DocIcon({ category }: { category: string }) {
   if (category === 'multimedia') return <Film size={28} style={{ color: '#E8192C' }} />
-  if (category === 'annual-reports') return <FileText size={28} style={{ color: '#E8192C' }} />
   return <FileText size={28} style={{ color: '#E8192C' }} />
 }
 
 function DocumentCard({ resource }: { resource: Resource }) {
-  const isImage = resource.cover_image || resource.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-  const url = resource.file_url || resource.external_url
+  const hasCover = Boolean(resource.cover_image)
+  const isImageFile = resource.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-      {/* Cover area */}
+      {/* Cover — A4 ratio */}
       <div
-        className="relative flex items-center justify-center"
-        style={{ backgroundColor: '#F8F9FA', height: 140 }}
+        className="relative flex items-center justify-center overflow-hidden"
+        style={{ backgroundColor: '#F3F4F6', aspectRatio: '1 / 1.414' }}
       >
-        {isImage && resource.file_url ? (
-          <img src={resource.file_url} alt={resource.title} className="w-full h-full object-cover" />
+        {hasCover ? (
+          <img
+            src={resource.cover_image!}
+            alt={resource.title}
+            className="w-full h-full object-cover object-top"
+          />
+        ) : isImageFile && resource.file_url ? (
+          <img
+            src={resource.file_url}
+            alt={resource.title}
+            className="w-full h-full object-cover object-top"
+          />
         ) : (
           <div className="flex flex-col items-center gap-2">
             <div
@@ -52,6 +61,7 @@ function DocumentCard({ resource }: { resource: Resource }) {
             )}
           </div>
         )}
+
         {/* Category tag */}
         <div className="absolute top-3 left-3">
           <span
@@ -75,31 +85,54 @@ function DocumentCard({ resource }: { resource: Resource }) {
         )}
 
         {/* Actions */}
-        {url && (
-          <div className="flex gap-2 mt-auto pt-3 border-t border-gray-50">
-            {resource.file_url && (
+        <div className="flex gap-2 mt-auto pt-3 border-t border-gray-50">
+          {resource.file_url && (
+            <>
+              {/* View — opens inline */}
               <button
                 type="button"
                 onClick={() => window.open(resource.file_url!, '_blank', 'noopener,noreferrer')}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-bold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                <Eye size={12} />
+                View
+              </button>
+              {/* Download — forces download */}
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch(resource.file_url!)
+                    const blob = await res.blob()
+                    const blobUrl = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = blobUrl
+                    a.download = resource.title + (resource.file_url!.endsWith('.pdf') ? '.pdf' : '')
+                    a.click()
+                    URL.revokeObjectURL(blobUrl)
+                  } catch {
+                    window.open(resource.file_url!, '_blank', 'noopener,noreferrer')
+                  }
+                }}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-bold transition-colors"
                 style={{ backgroundColor: '#E8192C', color: 'white' }}
               >
                 <Download size={12} />
                 Download
               </button>
-            )}
-            {resource.external_url && (
-              <button
-                type="button"
-                onClick={() => window.open(resource.external_url!, '_blank', 'noopener,noreferrer')}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-bold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
-              >
-                <ExternalLink size={12} />
-                View Online
-              </button>
-            )}
-          </div>
-        )}
+            </>
+          )}
+          {!resource.file_url && resource.external_url && (
+            <button
+              type="button"
+              onClick={() => window.open(resource.external_url!, '_blank', 'noopener,noreferrer')}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-bold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              <ExternalLink size={12} />
+              View Online
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -135,7 +168,7 @@ export default function ResourceHubClient({
   return (
     <div>
       {/* Integrated search */}
-      <form onSubmit={handleSearch} className="flex items-center gap-0 mb-8 border border-gray-200 rounded-xl overflow-hidden bg-white">
+      <form onSubmit={handleSearch} className="flex items-center mb-8 border border-gray-200 rounded-xl overflow-hidden bg-white">
         <div className="pl-5 text-gray-300 flex-shrink-0">
           <Search size={17} />
         </div>
@@ -213,7 +246,7 @@ export default function ResourceHubClient({
         )
       })()}
 
-      {/* Count + sort header */}
+      {/* Count */}
       {resources.length > 0 && (
         <div className="flex items-center justify-between mb-5 mt-4">
           <p className="text-xs text-gray-400">

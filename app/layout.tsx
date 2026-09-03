@@ -5,12 +5,21 @@ import Footer from '@/components/Footer'
 import CampaignPrompt from '@/components/CampaignPrompt'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://mja.mv'),
   title: {
     default: 'Maldives Journalist Association',
     template: '%s | MJA',
   },
   description: 'Be the voice for freedom of press. Maldives Journalist Association — defending freedom of information across every corner of the globe.',
   keywords: ['MJA', 'Maldives Journalist Association', 'press freedom', 'journalism', 'Maldives'],
+  icons: {
+    icon: [
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+  manifest: '/site.webmanifest',
   openGraph: {
     title: 'Maldives Journalist Association',
     description: 'Be the voice for freedom of press.',
@@ -18,6 +27,13 @@ export const metadata: Metadata = {
     siteName: 'MJA',
     locale: 'en_US',
     type: 'website',
+    images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Maldives Journalists Association' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Maldives Journalist Association',
+    description: 'Be the voice for freedom of press.',
+    images: ['/og-image.jpg'],
   },
 }
 

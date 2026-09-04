@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import type { Campaign } from '@/lib/types'
+import { STATUS_EYEBROW } from '@/lib/campaigns'
 
 interface Props {
   campaign?: Campaign | null
@@ -19,6 +20,9 @@ export default function HeroSection({ campaign, dispatch }: Props) {
   const today = new Date().toLocaleDateString('en-US', {
     day: '2-digit', month: 'short', year: 'numeric'
   }).toUpperCase()
+
+  const primaryLabel = campaign?.cta_primary_label || (campaign ? 'Join the Campaign' : 'Become a Member')
+  const primaryUrl = campaign?.cta_primary_url || '/join-mja#form'
 
   return (
     <section style={{ backgroundColor: '#0A1520', position: 'relative', overflow: 'hidden' }}>
@@ -68,7 +72,7 @@ export default function HeroSection({ campaign, dispatch }: Props) {
             className="text-[10px] font-bold tracking-[0.25em] uppercase"
             style={{ color: '#E8192C' }}
           >
-            Maldives Journalists Association
+            {campaign ? STATUS_EYEBROW.active : 'Maldives Journalists Association'}
           </span>
           <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
           <span className="text-[10px] tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.2)' }}>
@@ -120,11 +124,11 @@ export default function HeroSection({ campaign, dispatch }: Props) {
         {/* Action row */}
         <motion.div {...fade(0.26)} className="flex flex-wrap items-center gap-3 mb-14">
           <Link
-            href="/join-mja#form"
+            href={primaryUrl}
             className="font-bold text-sm px-8 py-3.5 rounded transition-opacity hover:opacity-85"
             style={{ backgroundColor: '#E8192C', color: 'white', letterSpacing: '0.04em' }}
           >
-            {campaign ? 'Join the Campaign' : 'Become a Member'}
+            {primaryLabel}
           </Link>
           <Link
             href="/connect"

@@ -208,7 +208,7 @@ export default async function CampaignPage({ params }: Props) {
           )}
 
           {campaign.media_kit_url && (
-            
+            <a
               href={campaign.media_kit_url}
               target="_blank"
               rel="noopener noreferrer"

@@ -155,7 +155,7 @@ export default async function CampaignPage({ params }: Props) {
             {campaign.media_kit_url && (
               <div>
                 <h2 className="font-headline text-xl font-bold text-navy mb-4">Media kit</h2>
-                
+                <a
                   href={campaign.media_kit_url}
                   target="_blank"
                   rel="noopener noreferrer"

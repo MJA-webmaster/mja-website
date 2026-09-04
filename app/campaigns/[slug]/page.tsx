@@ -1,3 +1,40 @@
+import { createClient } from '@/lib/supabase/server'
+import { notFound } from 'next/navigation'
+import Image from 'next/image'
+import Link from 'next/link'
+import type { Metadata } from 'next'
+import { getCampaignStatus, STATUS_EYEBROW, STATUS_BADGE_STYLE } from '@/lib/campaigns'
+import CampaignTwitterFeed from '@/components/CampaignTwitterFeed'
+
+interface Props {
+  params: { slug: string }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('campaigns')
+    .select('title, description, cover_image')
+    .eq('slug', params.slug)
+    .maybeSingle()
+
+  return {
+    title: data?.title ?? 'Campaign',
+    description: data?.description ?? '',
+    openGraph: {
+      title: data?.title ?? 'Campaign',
+      description: data?.description ?? '',
+      images: data?.cover_image ? [{ url: data.cover_image, width: 1200, height: 630 }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: data?.title ?? 'Campaign',
+      description: data?.description ?? '',
+      images: data?.cover_image ? [data.cover_image] : undefined,
+    },
+  }
+}
+
 export default async function CampaignPage({ params }: Props) {
   const supabase = createClient()
   const { data: campaign } = await supabase
@@ -72,7 +109,7 @@ export default async function CampaignPage({ params }: Props) {
               </div>
             )}
 
-            {/* CTAs */}
+            {/* Call to Actions */}
             {(campaign.cta_primary_label || campaign.cta_secondary_label) && (
               <div className="flex gap-3 flex-wrap pt-2">
                 {campaign.cta_primary_label && campaign.cta_primary_url && (
@@ -96,7 +133,7 @@ export default async function CampaignPage({ params }: Props) {
             )}
           </div>
 
-          {/* Hero Image */}
+          {/* Hero Visual */}
           <div className="md:col-span-5 relative h-full min-h-[360px] md:min-h-[440px] flex items-end justify-center">
             {campaign.cover_image ? (
               <Image 
@@ -118,7 +155,7 @@ export default async function CampaignPage({ params }: Props) {
       {/* Main Two-Column Layout */}
       <div className="max-w-[1280px] mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 items-start">
         
-        {/* Left: Editorial Content */}
+        {/* Left: Campaign Editorial Article */}
         <main className="min-w-0">
           {campaign.content ? (
             <article 
@@ -130,7 +167,7 @@ export default async function CampaignPage({ params }: Props) {
           )}
         </main>
 
-        {/* Right: Timeline & Secondary Cards */}
+        {/* Right: Key Timeline & Supplementary Modules */}
         <aside className="space-y-6 lg:sticky lg:top-8">
           {sortedMilestones.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-200/80 p-6 shadow-sm">

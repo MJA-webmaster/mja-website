@@ -38,6 +38,8 @@ function ToolbarButton({ onClick, active, title, children }: {
   )
 }
 
+type StatusValue = '' | 'upcoming' | 'active' | 'past'
+
 export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
   const router = useRouter()
   const [form, setForm] = useState({
@@ -50,6 +52,12 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
     cover_image: campaign?.cover_image ?? '',
     published: campaign?.published ?? false,
     show_prompt: (campaign as any)?.show_prompt ?? false,
+    status: (campaign?.status ?? '') as StatusValue,
+    is_hero_featured: campaign?.is_hero_featured ?? false,
+    cta_primary_label: campaign?.cta_primary_label ?? '',
+    cta_primary_url: campaign?.cta_primary_url ?? '',
+    cta_secondary_label: campaign?.cta_secondary_label ?? '',
+    cta_secondary_url: campaign?.cta_secondary_url ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -70,9 +78,11 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
     },
   })
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const target = e.target
-    const val = target.type === 'checkbox' ? (target as HTMLInputElement).checked : target.value
+    const val = (target as HTMLInputElement).type === 'checkbox'
+      ? (target as HTMLInputElement).checked
+      : target.value
     if (target.name === 'title' && !slugManual) {
       setForm(f => ({ ...f, title: val as string, slug: slugify(val as string) }))
     } else {
@@ -120,6 +130,12 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
       event_location: form.event_location || null,
       published: shouldPublish,
       show_prompt: form.show_prompt,
+      status: form.status || null,
+      is_hero_featured: form.is_hero_featured,
+      cta_primary_label: form.cta_primary_label || null,
+      cta_primary_url: form.cta_primary_url || null,
+      cta_secondary_label: form.cta_secondary_label || null,
+      cta_secondary_url: form.cta_secondary_url || null,
       updated_at: new Date().toISOString(),
     }
 
@@ -224,6 +240,35 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
               <input name="event_location" value={form.event_location} onChange={handleChange} placeholder="e.g. Malé, Republic Square" className={inputClass} />
             </div>
 
+            <div>
+              <label className={labelClass}>Status</label>
+              <select name="status" value={form.status} onChange={handleChange} className={inputClass}>
+                <option value="">Auto (based on event date)</option>
+                <option value="upcoming">Upcoming</option>
+                <option value="active">Active</option>
+                <option value="past">Past</option>
+              </select>
+              <p className="text-[11px] text-gray-400 leading-relaxed mt-1">
+                Leave on Auto unless you need to override — e.g. mark a resolved campaign as Past.
+              </p>
+            </div>
+
+            {/* Hero feature toggle */}
+            <div className="pt-2 border-t border-gray-100">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox" name="is_hero_featured" checked={form.is_hero_featured} onChange={handleChange}
+                  className="mt-0.5" style={{ accentColor: '#E8192C' }}
+                />
+                <div>
+                  <p className="text-sm font-semibold text-navy">Feature in homepage hero</p>
+                  <p className="text-[11px] text-gray-400 leading-relaxed mt-0.5">
+                    Only takes effect while this campaign's status is Active.
+                  </p>
+                </div>
+              </label>
+            </div>
+
             {/* Show prompt toggle */}
             <div className="pt-2 border-t border-gray-100">
               <label className="flex items-start gap-3 cursor-pointer">
@@ -261,6 +306,32 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
             >
               Save Draft
             </button>
+          </div>
+        </div>
+
+        {/* Call to action buttons */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 className="font-semibold text-navy text-sm mb-1">Call to Action</h3>
+          <p className="text-[11px] text-gray-400 leading-relaxed mb-4">
+            Shown on the listing card and the campaign page. Leave blank to hide a button.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className={labelClass}>Primary label</label>
+              <input name="cta_primary_label" value={form.cta_primary_label} onChange={handleChange} placeholder="e.g. Join the Rally" className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Primary URL</label>
+              <input name="cta_primary_url" value={form.cta_primary_url} onChange={handleChange} placeholder="/join-mja" className={inputClass} />
+            </div>
+            <div className="pt-2 border-t border-gray-100">
+              <label className={labelClass}>Secondary label</label>
+              <input name="cta_secondary_label" value={form.cta_secondary_label} onChange={handleChange} placeholder="e.g. Contribute" className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Secondary URL</label>
+              <input name="cta_secondary_url" value={form.cta_secondary_url} onChange={handleChange} placeholder="/join-mja" className={inputClass} />
+            </div>
           </div>
         </div>
 

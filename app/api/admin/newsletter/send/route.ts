@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { sendBulkEmail } from '@/lib/mailer'
-import { wrapEmail } from '@/lib/emailTemplates'
+import { wrapEmail, blocksToHtml, type NewsletterBlock } from '@/lib/emailTemplates'
 
 export async function POST(request: Request) {
   try {
@@ -13,13 +13,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not authorized.' }, { status: 401 })
     }
 
-    const { subject, message, recipientIds } = await request.json()
+    const { subject, blocks, message, recipientIds } = await request.json()
 
-    if (!subject || !message) {
-      return NextResponse.json({ error: 'Subject and message are required.' }, { status: 400 })
+    if (!subject) {
+      return NextResponse.json({ error: 'Subject is required.' }, { status: 400 })
     }
     if (!Array.isArray(recipientIds) || recipientIds.length === 0) {
       return NextResponse.json({ error: 'Select at least one recipient.' }, { status: 400 })
+    }
+
+    // Prefer the block editor's structured content. Fall back to a plain
+    // message (paragraphs split on blank lines) for older callers.
+    let bodyHtml: string
+    if (Array.isArray(blocks) && blocks.length > 0) {
+      bodyHtml = blocksToHtml(blocks as NewsletterBlock[])
+    } else if (message) {
+      bodyHtml = String(message)
+        .split(/\n{2,}/)
+        .map((para) => `<p style="margin:0 0 16px 0;font-size:14px;line-height:1.7;color:#374151;white-space:pre-wrap;">${para}</p>`)
+        .join('')
+    } else {
+      return NextResponse.json({ error: 'Add at least one block or a message.' }, { status: 400 })
     }
 
     const supabase = createServiceClient(
@@ -39,11 +53,6 @@ export async function POST(request: Request) {
     if (!subscribers || subscribers.length === 0) {
       return NextResponse.json({ error: 'No matching subscribers found.' }, { status: 400 })
     }
-
-    const bodyHtml = String(message)
-      .split(/\n{2,}/)
-      .map((para) => `<p style="margin:0 0 16px 0;font-size:14px;line-height:1.7;color:#374151;">${para.replace(/\n/g, '<br/>')}</p>`)
-      .join('')
 
     const messages = subscribers.map((s) => ({
       to: [{ email: s.email }],

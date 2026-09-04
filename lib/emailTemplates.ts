@@ -91,3 +91,69 @@ export function detailRow(label: string, value: string) {
     <span style="color:#0D1B2A;font-size:13px;font-weight:500;">${value}</span>
   </div>`
 }
+
+// ── Newsletter block editor ──
+// Lets an admin compose a newsletter as a sequence of typed sections
+// (heading, paragraph, image, button, divider) rather than one plain
+// text box, so a "monthly recap" can actually look like one.
+
+export type NewsletterBlock =
+  | { type: 'heading'; text: string }
+  | { type: 'paragraph'; text: string }
+  | { type: 'image'; url: string; caption?: string }
+  | { type: 'button'; label: string; url: string }
+  | { type: 'divider' }
+  | { type: 'article'; title: string; excerpt?: string; image?: string; url: string }
+  | { type: 'publication'; title: string; description?: string; image?: string; url: string }
+
+function escapeHtml(s: string) {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+export function blocksToHtml(blocks: NewsletterBlock[]): string {
+  return blocks
+    .map((block) => {
+      switch (block.type) {
+        case 'heading':
+          return `<h2 style="margin:28px 0 12px 0;font-size:18px;color:#0D1B2A;font-weight:800;">${escapeHtml(block.text)}</h2>`
+        case 'paragraph':
+          return `<p style="margin:0 0 16px 0;font-size:14px;line-height:1.7;color:#374151;white-space:pre-wrap;">${escapeHtml(block.text)}</p>`
+        case 'image':
+          return `
+            <div style="margin:0 0 16px 0;">
+              <img src="${block.url}" alt="${escapeHtml(block.caption ?? '')}" style="width:100%;max-width:100%;border-radius:8px;display:block;" />
+              ${block.caption ? `<p style="margin:8px 0 0 0;font-size:12px;color:#9CA3AF;text-align:center;">${escapeHtml(block.caption)}</p>` : ''}
+            </div>`
+        case 'button':
+          return `<div style="margin:0 0 20px 0;">${button(block.label, block.url)}</div>`
+        case 'divider':
+          return `<hr style="border:none;border-top:1px solid #F3F4F6;margin:24px 0;" />`
+        case 'article':
+          return `
+            <div style="margin:0 0 20px 0;border:1px solid #F3F4F6;border-radius:10px;overflow:hidden;">
+              ${block.image ? `<img src="${block.image}" alt="${escapeHtml(block.title)}" style="width:100%;display:block;" />` : ''}
+              <div style="padding:16px;">
+                <p style="margin:0 0 6px 0;font-size:15px;font-weight:800;color:#0D1B2A;line-height:1.4;">${escapeHtml(block.title)}</p>
+                ${block.excerpt ? `<p style="margin:0 0 12px 0;font-size:13px;color:#6B7280;line-height:1.6;">${escapeHtml(block.excerpt)}</p>` : ''}
+                ${button('Read More', block.url)}
+              </div>
+            </div>`
+        case 'publication':
+          return `
+            <div style="margin:0 0 20px 0;border:1px solid #F3F4F6;border-radius:10px;overflow:hidden;">
+              ${block.image ? `<img src="${block.image}" alt="${escapeHtml(block.title)}" style="width:100%;display:block;" />` : ''}
+              <div style="padding:16px;">
+                <p style="margin:0 0 6px 0;font-size:15px;font-weight:800;color:#0D1B2A;line-height:1.4;">${escapeHtml(block.title)}</p>
+                ${block.description ? `<p style="margin:0 0 12px 0;font-size:13px;color:#6B7280;line-height:1.6;">${escapeHtml(block.description)}</p>` : ''}
+                ${button('View Publication', block.url)}
+              </div>
+            </div>`
+        default:
+          return ''
+      }
+    })
+    .join('')
+}

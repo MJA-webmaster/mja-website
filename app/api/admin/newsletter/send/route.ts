@@ -4,6 +4,16 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { sendBulkEmail } from '@/lib/mailer'
 import { wrapEmail, blocksToHtml, type NewsletterBlock } from '@/lib/emailTemplates'
 
+// Sending to a full subscriber list means several sequential calls to
+// MailerSend's bulk endpoint. Vercel's default serverless timeout (10s on
+// Hobby) can be shorter than that, in which case Vercel kills the function
+// and returns its own HTML timeout page instead of our JSON response — the
+// browser then fails to parse it ("The string did not match the expected
+// pattern." in Safari, a generic JSON parse error elsewhere). Raising the
+// limit here gives real sends enough room to finish and get a proper
+// JSON response back.
+export const maxDuration = 60
+
 export async function POST(request: Request) {
   try {
     // Only a logged-in admin (the same session the /admin pages require) may send.

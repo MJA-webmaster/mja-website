@@ -39,9 +39,6 @@ export function wrapEmail({
                 <img src="${LOGO_URL}" alt="MJA" height="40" style="height:40px;width:auto;display:inline-block;" />
               </td>
             </tr>
-                </table>
-              </td>
-            </tr>
 
             <!-- Red accent bar -->
             <tr>

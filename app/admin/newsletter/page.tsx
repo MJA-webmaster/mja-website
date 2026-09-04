@@ -5,7 +5,7 @@ import NewsletterClient from './NewsletterClient'
 
 export default async function AdminNewsletterPage() {
   const supabase = createClient()
-  const [{ data: subscribers, count }, { data: articles }, { data: publications }] = await Promise.all([
+  const [{ data: subscribers, count }, { data: articles }, { data: publications }, { data: drafts }] = await Promise.all([
     supabase
       .from('newsletter_subscribers')
       .select('*', { count: 'exact' })
@@ -23,6 +23,10 @@ export default async function AdminNewsletterPage() {
       .eq('category', 'publications')
       .order('created_at', { ascending: false })
       .limit(50),
+    supabase
+      .from('newsletter_drafts')
+      .select('*')
+      .order('updated_at', { ascending: false }),
   ])
 
   return (
@@ -31,6 +35,7 @@ export default async function AdminNewsletterPage() {
       count={count ?? 0}
       articles={articles ?? []}
       publications={publications ?? []}
+      drafts={drafts ?? []}
     />
   )
 }

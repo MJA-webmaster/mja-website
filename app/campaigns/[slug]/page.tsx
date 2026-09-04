@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { getCampaignStatus, STATUS_EYEBROW } from '@/lib/campaigns'
 
 interface Props { params: { slug: string } }
 
@@ -44,6 +45,9 @@ export default async function CampaignPage({ params }: Props) {
     .neq('id', campaign.id)
     .limit(3)
 
+  const status = getCampaignStatus(campaign)
+  const eyebrow = STATUS_EYEBROW[status]
+
   return (
     <>
       {/* Hero */}
@@ -51,9 +55,9 @@ export default async function CampaignPage({ params }: Props) {
         <div className="flex flex-col justify-center p-12 text-white relative overflow-hidden" style={{ backgroundColor: '#E8192C' }}>
           <div className="absolute font-headline font-black text-white/10 text-[200px] leading-none -bottom-8 -left-4 select-none">M</div>
           <div className="relative z-10">
-            {campaign.hashtag && (
-              <p className="text-white/70 text-sm font-bold tracking-wider mb-2">{campaign.hashtag}</p>
-            )}
+            <p className="text-white/70 text-sm font-bold tracking-wider mb-2">
+              {eyebrow}{campaign.hashtag ? ` · ${campaign.hashtag}` : ''}
+            </p>
             <h1 className="font-headline text-4xl md:text-5xl font-black uppercase leading-tight mb-4">
               {campaign.title}
             </h1>
@@ -71,14 +75,20 @@ export default async function CampaignPage({ params }: Props) {
                 )}
               </div>
             )}
-            <div className="flex gap-3 flex-wrap">
-              <Link href="/join-mja" className="bg-white font-semibold px-7 py-3 rounded text-sm hover:bg-white/90 transition-colors" style={{ color: '#E8192C' }}>
-                Join the Rally
-              </Link>
-              <Link href="/join-mja" className="border border-white/40 text-white px-7 py-3 rounded text-sm font-semibold hover:bg-white/10 transition-colors">
-                Contribute
-              </Link>
-            </div>
+            {(campaign.cta_primary_label || campaign.cta_secondary_label) && (
+              <div className="flex gap-3 flex-wrap">
+                {campaign.cta_primary_label && campaign.cta_primary_url && (
+                  <Link href={campaign.cta_primary_url} className="bg-white font-semibold px-7 py-3 rounded text-sm hover:bg-white/90 transition-colors" style={{ color: '#E8192C' }}>
+                    {campaign.cta_primary_label}
+                  </Link>
+                )}
+                {campaign.cta_secondary_label && campaign.cta_secondary_url && (
+                  <Link href={campaign.cta_secondary_url} className="border border-white/40 text-white px-7 py-3 rounded text-sm font-semibold hover:bg-white/10 transition-colors">
+                    {campaign.cta_secondary_label}
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

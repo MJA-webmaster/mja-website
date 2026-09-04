@@ -5,7 +5,7 @@
 // same header, footer, and look.
 
 const SITE_URL = 'https://mja.mv'
-const LOGO_URL = `${SITE_URL}/mjalogo.png`
+const LOGO_URL = `${SITE_URL}/mjalogo-white.png`
 
 export function wrapEmail({
   preheader,
@@ -35,13 +35,10 @@ export function wrapEmail({
 
             <!-- Header -->
             <tr>
-              <td style="background-color:#0D1B2A;padding:24px 32px;text-align:center;">
-                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;background-color:#ffffff;border-radius:8px;">
-                  <tr>
-                    <td style="padding:10px 18px;">
-                      <img src="${LOGO_URL}" alt="MJA" height="36" style="height:36px;width:auto;display:block;" />
-                    </td>
-                  </tr>
+              <td style="background-color:#0D1B2A;padding:28px 32px;text-align:center;">
+                <img src="${LOGO_URL}" alt="MJA" height="40" style="height:40px;width:auto;display:inline-block;" />
+              </td>
+            </tr>
                 </table>
               </td>
             </tr>

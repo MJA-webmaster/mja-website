@@ -32,6 +32,8 @@ export type Campaign = {
   cta_primary_url: string | null
   cta_secondary_label: string | null
   cta_secondary_url: string | null
+  media_kit_url: string | null
+  milestones: { date: string; title: string; description?: string }[]
 }
 
 export type Member = {

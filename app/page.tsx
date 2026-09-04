@@ -40,11 +40,12 @@ export default function HomePage() {
       const heroCampaign = allCampaigns.find(
         (c: any) => c.is_hero_featured && getCampaignStatus(c) === 'active'
       ) ?? null
+      const activeCampaigns = allCampaigns.filter((c: any) => getCampaignStatus(c) === 'active')
 
       setData({
         articles: articles.data ?? [],
         heroCampaign,
-        campaigns: allCampaigns,
+        campaigns: activeCampaigns,
         stats: stats.data,
         activities: activities.data ?? [],
         dispatch: settings.data?.dispatch ?? null,

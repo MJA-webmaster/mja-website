@@ -8,6 +8,7 @@ import ArticleCard from '@/components/ArticleCard'
 import MemberMeter from '@/components/MemberMeter'
 import HeroSection from '@/components/HeroSection'
 import GetInvolved from '@/components/GetInvolved'
+import { getCampaignStatus, STATUS_BADGE_STYLE } from '@/lib/campaigns'
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 24 },
@@ -19,7 +20,7 @@ const fadeUp = (delay = 0) => ({
 export default function HomePage() {
   const [data, setData] = useState<any>({
     articles: [],
-    campaign: null,
+    heroCampaign: null,
     campaigns: [],
     stats: null,
     activities: [],
@@ -30,15 +31,20 @@ export default function HomePage() {
     const supabase = createClient()
     Promise.all([
       supabase.from('articles').select('*').eq('published', true).order('published_at', { ascending: false }).limit(4),
-      supabase.from('campaigns').select('*').eq('published', true).order('created_at', { ascending: false }).limit(4),
+      supabase.from('campaigns').select('*').eq('published', true).order('created_at', { ascending: false }).limit(6),
       supabase.from('member_stats').select('*').single(),
       supabase.from('activities').select('*').eq('year', new Date().getFullYear()).order('order', { ascending: true }).limit(4),
       supabase.from('settings').select('dispatch').single(),
     ]).then(([articles, campaigns, stats, activities, settings]) => {
+      const allCampaigns = campaigns.data ?? []
+      const heroCampaign = allCampaigns.find(
+        (c: any) => c.is_hero_featured && getCampaignStatus(c) === 'active'
+      ) ?? null
+
       setData({
         articles: articles.data ?? [],
-        campaign: campaigns.data?.[0] ?? null,
-        campaigns: campaigns.data ?? [],
+        heroCampaign,
+        campaigns: allCampaigns,
         stats: stats.data,
         activities: activities.data ?? [],
         dispatch: settings.data?.dispatch ?? null,
@@ -54,7 +60,7 @@ export default function HomePage() {
   return (
     <>
       {/* ── Hero ── */}
-      <HeroSection campaign={data.campaign} dispatch={data.dispatch} />
+      <HeroSection campaign={data.heroCampaign} dispatch={data.dispatch} />
 
       {/* ── Latest News ── */}
       {data.articles.length > 0 && (
@@ -98,28 +104,38 @@ export default function HomePage() {
               </Link>
             </motion.div>
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
-              {data.campaigns.slice(0, 3).map((c: any, i: number) => (
-                <motion.div key={c.id} {...fadeUp(i * 0.07)}>
-                  <Link href={`/campaigns/${c.slug}`} className="group block">
-                    <div className="rounded-xl overflow-hidden aspect-video mb-3 relative" style={{ backgroundColor: '#0D1B2A' }}>
-                      {c.cover_image ? (
-                        <img src={c.cover_image} alt={c.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="font-headline text-white/10 text-6xl font-black">#</span>
-                        </div>
+              {data.campaigns.slice(0, 3).map((c: any, i: number) => {
+                const status = getCampaignStatus(c)
+                const badge = STATUS_BADGE_STYLE[status]
+                return (
+                  <motion.div key={c.id} {...fadeUp(i * 0.07)}>
+                    <Link href={`/campaigns/${c.slug}`} className="group block">
+                      <div className="rounded-xl overflow-hidden aspect-video mb-3 relative" style={{ backgroundColor: '#0D1B2A' }}>
+                        {c.cover_image ? (
+                          <img src={c.cover_image} alt={c.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <span className="font-headline text-white/10 text-6xl font-black">#</span>
+                          </div>
+                        )}
+                        <span
+                          className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full"
+                          style={{ backgroundColor: badge.bg, color: badge.text }}
+                        >
+                          {badge.label}
+                        </span>
+                      </div>
+                      {c.hashtag && <p className="text-xs font-bold mb-1" style={{ color: '#E8192C' }}>{c.hashtag}</p>}
+                      <h3 className="font-bold text-navy text-sm uppercase leading-snug group-hover:text-red transition-colors">{c.title}</h3>
+                      {c.event_date && (
+                        <p className="text-gray-400 text-xs mt-1">
+                          {new Date(c.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
                       )}
-                    </div>
-                    {c.hashtag && <p className="text-xs font-bold mb-1" style={{ color: '#E8192C' }}>{c.hashtag}</p>}
-                    <h3 className="font-bold text-navy text-sm uppercase leading-snug group-hover:text-red transition-colors">{c.title}</h3>
-                    {c.event_date && (
-                      <p className="text-gray-400 text-xs mt-1">
-                        {new Date(c.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </p>
-                    )}
-                  </Link>
-                </motion.div>
-              ))}
+                    </Link>
+                  </motion.div>
+                )
+              })}
             </div>
           </div>
         </section>

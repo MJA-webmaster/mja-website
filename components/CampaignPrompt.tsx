@@ -9,26 +9,26 @@ export default function CampaignPrompt() {
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [visible, setVisible] = useState(false)
 
-  useEffect(() => {
-    if (sessionStorage.getItem('campaign-prompt-dismissed')) return
+useEffect(() => {
+  if (sessionStorage.getItem('campaign-prompt-dismissed')) return
 
-    const supabase = createClient()
-    supabase
-      .from('campaigns')
-      .select('*')
-      .eq('published', true)
-      .eq('show_prompt', true)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setCampaign(data)
-          setTimeout(() => setVisible(true), 1800)
-        }
-      })
-  }, [])
-
+  const supabase = createClient()
+  supabase
+    .from('campaigns')
+    .select('*')
+    .eq('published', true)
+    .eq('show_prompt', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+    .then(({ data }) => {
+      if (data) {
+        setCampaign(data)
+        setTimeout(() => setVisible(true), 1800)
+      }
+    })
+}, [])
+  
   function dismiss() {
     setVisible(false)
     sessionStorage.setItem('campaign-prompt-dismissed', '1')

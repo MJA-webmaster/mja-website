@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Send, X, Plus, Trash2, ChevronUp, ChevronDown, Eye } from 'lucide-react'
+import { Send, X, Plus, Trash2, ChevronUp, ChevronDown, Eye, FileEdit, Save, Pencil } from 'lucide-react'
 import ImageUpload from '@/components/ImageUpload'
+import { createClient } from '@/lib/supabase/client'
 import { wrapEmail, blocksToHtml, type NewsletterBlock } from '@/lib/emailTemplates'
 
 type Subscriber = {
@@ -29,6 +30,13 @@ type PublicationOption = {
 }
 
 type Block = NewsletterBlock & { id: string }
+
+type Draft = {
+  id: string
+  subject: string
+  blocks: NewsletterBlock[]
+  updated_at: string
+}
 
 const inputClass = 'w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-navy focus:outline-none'
 const labelClass = 'block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5'
@@ -210,11 +218,12 @@ function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, artic
   )
 }
 
-export default function NewsletterClient({ subscribers, count, articles, publications }: {
+export default function NewsletterClient({ subscribers, count, articles, publications, drafts: initialDrafts }: {
   subscribers: Subscriber[]
   count: number
   articles: ArticleOption[]
   publications: PublicationOption[]
+  drafts: Draft[]
 }) {
   const [showCompose, setShowCompose] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
@@ -224,6 +233,11 @@ export default function NewsletterClient({ subscribers, count, articles, publica
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const [drafts, setDrafts] = useState<Draft[]>(initialDrafts)
+  const [draftId, setDraftId] = useState<string | null>(null)
+  const [savingDraft, setSavingDraft] = useState(false)
+  const [draftNotice, setDraftNotice] = useState<string | null>(null)
 
   const allSelected = selected.size > 0 && selected.size === subscribers.length
   const hasContent = blocks.some((b) => {
@@ -248,6 +262,8 @@ export default function NewsletterClient({ subscribers, count, articles, publica
   function openCompose() {
     setResult(null)
     setError(null)
+    setDraftId(null)
+    setDraftNotice(null)
     setShowCompose(true)
   }
   function closeCompose() {
@@ -256,6 +272,68 @@ export default function NewsletterClient({ subscribers, count, articles, publica
     setSubject('')
     setBlocks([])
     setError(null)
+    setDraftId(null)
+    setDraftNotice(null)
+  }
+
+  function openDraft(draft: Draft) {
+    setResult(null)
+    setError(null)
+    setSubject(draft.subject)
+    setBlocks(draft.blocks.map((b) => ({ ...b, id: Math.random().toString(36).slice(2) })))
+    setDraftId(draft.id)
+    setDraftNotice(null)
+    setShowCompose(true)
+  }
+
+  async function saveDraft() {
+    if (!subject && blocks.length === 0) return
+    setSavingDraft(true)
+    setDraftNotice(null)
+    setError(null)
+    try {
+      const supabase = createClient()
+      const payload = {
+        subject,
+        blocks: blocks.map(({ id, ...rest }) => rest),
+        updated_at: new Date().toISOString(),
+      }
+
+      if (draftId) {
+        const { error: upErr } = await supabase.from('newsletter_drafts').update(payload).eq('id', draftId)
+        if (upErr) throw upErr
+        setDrafts((prev) =>
+          prev
+            .map((d) => (d.id === draftId ? { ...d, subject: payload.subject, blocks: payload.blocks, updated_at: payload.updated_at } : d))
+            .sort((a, b) => +new Date(b.updated_at) - +new Date(a.updated_at))
+        )
+      } else {
+        const { data, error: insErr } = await supabase.from('newsletter_drafts').insert(payload).select().single()
+        if (insErr) throw insErr
+        setDraftId(data.id)
+        setDrafts((prev) => [{ id: data.id, subject: data.subject, blocks: data.blocks, updated_at: data.updated_at }, ...prev])
+      }
+      setDraftNotice('Draft saved.')
+    } catch (e: any) {
+      setError(e.message || 'Could not save draft.')
+    }
+    setSavingDraft(false)
+  }
+
+  async function deleteDraft(id: string) {
+    if (!confirm('Delete this draft? This cannot be undone.')) return
+    try {
+      const supabase = createClient()
+      const { error: delErr } = await supabase.from('newsletter_drafts').delete().eq('id', id)
+      if (delErr) throw delErr
+      setDrafts((prev) => prev.filter((d) => d.id !== id))
+      if (draftId === id) {
+        setDraftId(null)
+        setDraftNotice(null)
+      }
+    } catch (e: any) {
+      setError(e.message || 'Could not delete draft.')
+    }
   }
 
   function addBlock(type: Block['type']) {
@@ -308,8 +386,17 @@ export default function NewsletterClient({ subscribers, count, articles, publica
       }
       if (!res.ok) throw new Error(data?.error || 'Failed to send.')
       setResult(`Sent to ${data.sent} of ${data.total} recipients.`)
+
+      // A sent newsletter is no longer a draft — clean it up if it came from one.
+      if (draftId) {
+        const supabase = createClient()
+        await supabase.from('newsletter_drafts').delete().eq('id', draftId)
+        setDrafts((prev) => prev.filter((d) => d.id !== draftId))
+      }
       setSubject('')
       setBlocks([])
+      setDraftId(null)
+      setDraftNotice(null)
     } catch (e: any) {
       setError(e.message || 'Something went wrong.')
     }
@@ -374,11 +461,43 @@ export default function NewsletterClient({ subscribers, count, articles, publica
         </div>
       </div>
 
+      {/* Drafts */}
+      {!showCompose && drafts.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden mb-6">
+          <div className="px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-gray-400">
+            Drafts ({drafts.length})
+          </div>
+          <div className="divide-y divide-gray-50">
+            {drafts.map((draft) => (
+              <div key={draft.id} className="flex items-center justify-between gap-4 px-6 py-3.5">
+                <button onClick={() => openDraft(draft)} className="min-w-0 flex-1 text-left flex items-center gap-2 group">
+                  <FileEdit size={14} className="text-gray-300 flex-shrink-0" />
+                  <span className="text-sm text-navy font-medium truncate group-hover:underline">
+                    {draft.subject || 'Untitled draft'}
+                  </span>
+                  <span className="text-xs text-gray-400 flex-shrink-0">
+                    · saved {new Date(draft.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </button>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button onClick={() => openDraft(draft)} className="text-gray-400 hover:text-navy p-1.5" aria-label="Edit draft">
+                    <Pencil size={14} />
+                  </button>
+                  <button onClick={() => deleteDraft(draft.id)} className="text-gray-400 hover:text-red-500 p-1.5" aria-label="Delete draft">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Compose panel */}
       {showCompose && (
         <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-navy">Compose Newsletter</h2>
+            <h2 className="font-semibold text-navy">{draftId ? 'Edit Draft' : 'Compose Newsletter'}</h2>
             <button onClick={closeCompose} className="text-gray-400 text-lg"><X size={18} /></button>
           </div>
 
@@ -459,6 +578,7 @@ export default function NewsletterClient({ subscribers, count, articles, publica
 
               {error && <p className="text-sm mb-4" style={{ color: '#E8192C' }}>{error}</p>}
               {result && <p className="text-sm mb-4 text-green-600">{result}</p>}
+              {draftNotice && <p className="text-sm mb-4 text-gray-500">{draftNotice}</p>}
 
               <div className="flex gap-3">
                 <button
@@ -468,6 +588,13 @@ export default function NewsletterClient({ subscribers, count, articles, publica
                   style={{ backgroundColor: '#E8192C' }}
                 >
                   {sending ? 'Sending...' : `Send to ${selected.size || 0}`}
+                </button>
+                <button
+                  onClick={saveDraft}
+                  disabled={savingDraft || (!subject && blocks.length === 0)}
+                  className="flex items-center gap-1.5 border border-gray-200 text-navy px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50"
+                >
+                  <Save size={14} /> {savingDraft ? 'Saving...' : draftId ? 'Update Draft' : 'Save Draft'}
                 </button>
                 <button onClick={closeCompose} className="border border-gray-200 text-gray-500 px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50">
                   Cancel

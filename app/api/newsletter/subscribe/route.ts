@@ -34,25 +34,25 @@ export async function POST(request: Request) {
       const unsubscribeUrl = `https://mja.mv/api/newsletter/unsubscribe?id=${data.id}`
       await sendEmail({
         to: [{ email }],
-        subject: 'Welcome to the Maldives Journalists Association',
+        subject: "You're subscribed to MJA updates",
         html: wrapEmail({
-          preheader: 'Your MJA membership registration has been confirmed.',
+          preheader: "Thanks for subscribing to MJA updates.",
           unsubscribeUrl,
           body: `
-            <h1 style="margin:0 0 16px 0;font-size:20px;color:#0D1B2A;font-weight:800;">Welcome to MJA</h1>
+            <h1 style="margin:0 0 16px 0;font-size:20px;color:#0D1B2A;font-weight:800;">You're on the list</h1>
             <p style="margin:0 0 20px 0;font-size:14px;line-height:1.7;color:#374151;">
-              Welcome to the Maldives Journalists Association (MJA). Your membership registration has been confirmed.
+              Thanks for subscribing to updates from the Maldives Journalists Association (MJA).
             </p>
             <p style="margin:0 0 12px 0;font-size:14px;line-height:1.7;color:#374151;">
-              Here is what you can expect:
+              From time to time, you'll hear from us about:
             </p>
             <ul style="margin:0 0 24px 0;padding-left:20px;font-size:14px;line-height:1.9;color:#374151;">
-              <li>Updates on upcoming journalism workshops and events</li>
-              <li>Occasional newsletters and industry updates</li>
-              <li>Important notices regarding press freedom and member resources</li>
+              <li>Journalism workshops and events</li>
+              <li>News and updates from the association</li>
+              <li>Notices regarding press freedom in the Maldives</li>
             </ul>
             <p style="margin:0 0 28px 0;font-size:14px;line-height:1.7;color:#374151;">
-              You can manage your membership preferences or view upcoming programs anytime on our website.
+              Interested in joining MJA as a member? You can apply anytime on our website.
             </p>
             ${button('Visit mja.mv', 'https://mja.mv')}
             <p style="margin:28px 0 0 0;font-size:14px;line-height:1.7;color:#374151;">

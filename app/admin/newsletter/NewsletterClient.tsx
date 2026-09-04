@@ -293,8 +293,20 @@ export default function NewsletterClient({ subscribers, count, articles, publica
           recipientIds: Array.from(selected),
         }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to send.')
+
+      // A slow send (large recipient list, or MailerSend running slow) can
+      // outlast the server's request timeout, in which case the response
+      // is an HTML error page rather than JSON. Guard the parse so that
+      // shows up as a clear message instead of a cryptic browser error.
+      let data: any = null
+      try {
+        data = await res.json()
+      } catch {
+        throw new Error(
+          `The server didn't return a valid response (status ${res.status}). It may have timed out — try again, or send to fewer recipients at once.`
+        )
+      }
+      if (!res.ok) throw new Error(data?.error || 'Failed to send.')
       setResult(`Sent to ${data.sent} of ${data.total} recipients.`)
       setSubject('')
       setBlocks([])

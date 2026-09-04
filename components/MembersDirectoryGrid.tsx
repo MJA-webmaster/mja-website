@@ -6,13 +6,6 @@ import Image from 'next/image'
 import type { Member } from '@/lib/types'
 import { Search } from 'lucide-react'
 
-const badgeCopy: Record<Member['membership_type'], string> = {
-  Professional: 'Accredited Journalist',
-  Student: 'Student Member',
-  Corporate: 'Corporate Member',
-  Affiliate: 'Affiliate Member',
-}
-
 const selectClass = 'border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-navy focus:outline-none bg-white'
 
 const PAGE_SIZE = 24
@@ -125,12 +118,6 @@ export default function MembersDirectoryGrid({ members }: { members: Member[] })
                   )}
                 </div>
                 <p className="font-bold text-sm text-navy leading-tight mb-1.5">{member.name}</p>
-                <span
-                  className="inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wide mb-2"
-                  style={{ backgroundColor: 'rgba(232,25,44,0.08)', color: '#E8192C' }}
-                >
-                  {badgeCopy[member.membership_type] ?? member.membership_type}
-                </span>
                 {member.representing && (
                   <p className="text-xs text-gray-500">{member.representing}</p>
                 )}

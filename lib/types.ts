@@ -126,3 +126,13 @@ export type LedgerEntry = {
   amount: number
   created_at: string
 }
+
+export interface Campaign {
+  // ...existing fields
+  status: 'upcoming' | 'active' | 'past' | null
+  is_hero_featured: boolean
+  cta_primary_label: string | null
+  cta_primary_url: string | null
+  cta_secondary_label: string | null
+  cta_secondary_url: string | null
+}

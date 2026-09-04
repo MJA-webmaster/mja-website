@@ -26,6 +26,12 @@ export type Campaign = {
   show_prompt: boolean
   created_at: string
   updated_at: string
+  status: 'upcoming' | 'active' | 'past' | null
+  is_hero_featured: boolean
+  cta_primary_label: string | null
+  cta_primary_url: string | null
+  cta_secondary_label: string | null
+  cta_secondary_url: string | null
 }
 
 export type Member = {
@@ -125,14 +131,4 @@ export type LedgerEntry = {
   payee: string | null
   amount: number
   created_at: string
-}
-
-export interface Campaign {
-  // ...existing fields
-  status: 'upcoming' | 'active' | 'past' | null
-  is_hero_featured: boolean
-  cta_primary_label: string | null
-  cta_primary_url: string | null
-  cta_secondary_label: string | null
-  cta_secondary_url: string | null
 }

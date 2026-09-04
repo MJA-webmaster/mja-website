@@ -93,16 +93,19 @@ function ApplicationRow({
 
   async function handleStatus(status: 'approved' | 'rejected') {
     setUpdating(true)
-    const supabase = createClient()
-    const result = await supabase.from("membership_applications").update({ status }).eq("id", app.id)
-    const { error } = result
-    if (!error) {
-      if (status === 'approved' && app.id_card_no) {
-        await new Promise((r) => setTimeout(r, 800))
-        const { data } = await supabase.from('members').select('*').eq('id_card_no', app.id_card_no).single()
-        if (data) onApproved(data as Member)
+    try {
+      const res = await fetch('/api/admin/applications/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: app.id, status }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        if (data.member) onApproved(data.member as Member)
+        onStatusChange(app.id, status)
       }
-      onStatusChange(app.id, status)
+    } catch (e) {
+      console.error('Failed to update application status:', e)
     }
     setUpdating(false)
   }

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { getCampaignStatus, STATUS_EYEBROW } from '@/lib/campaigns'
+import { getCampaignStatus, STATUS_EYEBROW, STATUS_BADGE_STYLE } from '@/lib/campaigns'
 import CampaignTwitterFeed from '@/components/CampaignTwitterFeed'
 
 interface Props { params: { slug: string } }
@@ -48,7 +48,9 @@ export default async function CampaignPage({ params }: Props) {
 
   const status = getCampaignStatus(campaign)
   const eyebrow = STATUS_EYEBROW[status]
-  const milestones = campaign.milestones ?? []
+  const badge = STATUS_BADGE_STYLE[status]
+  const milestones = (campaign.milestones ?? []) as { date: string; title: string; description?: string }[]
+  const sortedMilestones = [...milestones].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
   return (
     <>
@@ -105,73 +107,120 @@ export default async function CampaignPage({ params }: Props) {
         )}
       </section>
 
-      {/* Content */}
-      {campaign.content && (
-        <section className="max-w-[800px] mx-auto px-6 py-14">
-          <div
-            className="article-content prose max-w-none text-[15px] leading-relaxed text-gray-600"
-            dangerouslySetInnerHTML={{ __html: campaign.content }}
-          />
-        </section>
-      )}
+      {/* Three-column body */}
+      <div className="max-w-[1280px] mx-auto px-6 py-14 grid grid-cols-1 md:grid-cols-[200px_1fr_300px] gap-10 items-start">
 
-      {/* Milestones */}
-      {milestones.length > 0 && (
-        <section className="max-w-[800px] mx-auto px-6 pb-14">
-          <h2 className="font-headline text-2xl font-bold text-navy mb-8">Timeline</h2>
-          <div className="relative pl-6 space-y-8">
-            <div className="absolute left-[5px] top-1 bottom-1 w-px bg-gray-200" />
-            {[...milestones]
-              .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-              .map((m: any, i: number) => (
-                <div key={i} className="relative">
-                  <div
-                    className="absolute -left-[26px] top-1 w-2.5 h-2.5 rounded-full border-2 border-white"
-                    style={{ backgroundColor: '#E8192C' }}
-                  />
-                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-1">
-                    {new Date(m.date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </p>
-                  <h3 className="font-headline font-bold text-navy text-base mb-1">{m.title}</h3>
-                  {m.description && (
-                    <p className="text-sm text-gray-500 leading-relaxed">{m.description}</p>
-                  )}
-                </div>
-              ))}
-          </div>
-        </section>
-      )}
-
-      {/* Toolkit: media kit + hashtag feed */}
-      {(campaign.media_kit_url || campaign.hashtag) && (
-        <section className="border-t border-gray-100 py-14 px-6">
-          <div className="max-w-[800px] mx-auto grid md:grid-cols-2 gap-8">
+        {/* Left: quick facts */}
+        <aside className="md:sticky md:top-6 space-y-4 order-2 md:order-1">
+          <div className="bg-white rounded-xl border border-gray-100 p-5">
+            <span
+              className="inline-block text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full mb-4"
+              style={{ backgroundColor: badge.bg, color: badge.text }}
+            >
+              {badge.label}
+            </span>
+            {campaign.event_date && (
+              <div className="mb-4">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1">Event Date</p>
+                <p className="text-sm font-semibold text-navy">
+                  {new Date(campaign.event_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+            )}
+            {campaign.event_location && (
+              <div className="mb-4">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1">Location</p>
+                <p className="text-sm text-gray-600">{campaign.event_location}</p>
+              </div>
+            )}
             {campaign.hashtag && (
               <div>
-                <h2 className="font-headline text-xl font-bold text-navy mb-4">On social</h2>
-                <CampaignTwitterFeed hashtag={campaign.hashtag} />
-              </div>
-            )}
-            {campaign.media_kit_url && (
-              <div>
-                <h2 className="font-headline text-xl font-bold text-navy mb-4">Media kit</h2>
-                <a
-                  href={campaign.media_kit_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between rounded-xl border border-gray-100 p-5 hover:border-gray-300 transition-colors"
-                >
-                  <div>
-                    <p className="font-semibold text-navy text-sm">Download press assets</p>
-                    <p className="text-xs text-gray-400 mt-1">Logos, photos, and factsheet for this campaign</p>
-                  </div>
-                  <span style={{ color: '#E8192C' }}>→</span>
-                </a>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1">Hashtag</p>
+                <p className="text-sm font-semibold" style={{ color: '#E8192C' }}>{campaign.hashtag}</p>
               </div>
             )}
           </div>
-        </section>
-      )}
+
+          {(campaign.cta_primary_label || campaign.cta_secondary_label) && (
+            <div className="space-y-2">
+              {campaign.cta_primary_label && campaign.cta_primary_url && (
+                <Link
+                  href={campaign.cta_primary_url}
+                  className="block text-center text-white font-semibold px-4 py-2.5 rounded text-sm"
+                  style={{ backgroundColor: '#E8192C' }}
+                >
+                  {campaign.cta_primary_label}
+                </Link>
+              )}
+              {campaign.cta_secondary_label && campaign.cta_secondary_url && (
+                <Link
+                  href={campaign.cta_secondary_url}
+                  className="block text-center border border-gray-200 text-navy font-semibold px-4 py-2.5 rounded text-sm hover:bg-gray-50"
+                >
+                  {campaign.cta_secondary_label}
+                </Link>
+              )}
+            </div>
+          )}
+        </aside>
+
+        {/* Center: article content */}
+        <main className="order-1 md:order-2 min-w-0">
+          {campaign.content && (
+            <div
+              className="article-content prose max-w-none text-[15px] leading-relaxed text-gray-600"
+              dangerouslySetInnerHTML={{ __html: campaign.content }}
+            />
+          )}
+        </main>
+
+        {/* Right: timeline + social + media kit */}
+        <aside className="md:sticky md:top-6 space-y-6 order-3">
+          {sortedMilestones.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-100 p-5">
+              <h2 className="font-headline text-base font-bold text-navy mb-4">Timeline</h2>
+              <div className="relative pl-5 space-y-5 max-h-[420px] overflow-y-auto pr-1">
+                <div className="absolute left-[4px] top-1 bottom-1 w-px bg-gray-200" />
+                {sortedMilestones.map((m, i) => (
+                  <div key={i} className="relative">
+                    <div
+                      className="absolute -left-[21px] top-1 w-2 h-2 rounded-full border-2 border-white"
+                      style={{ backgroundColor: '#E8192C' }}
+                    />
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-0.5">
+                      {new Date(m.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                    <h3 className="font-semibold text-navy text-sm mb-1 leading-snug">{m.title}</h3>
+                    {m.description && (
+                      <p className="text-xs text-gray-500 leading-relaxed">{m.description}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {campaign.hashtag && (
+            <div className="bg-white rounded-xl border border-gray-100 p-5">
+              <h2 className="font-headline text-base font-bold text-navy mb-4">On social</h2>
+              <CampaignTwitterFeed hashtag={campaign.hashtag} />
+            </div>
+          )}
+
+          {campaign.media_kit_url && (
+            
+              href={campaign.media_kit_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-white rounded-xl border border-gray-100 p-5 hover:border-gray-300 transition-colors"
+            >
+              <h2 className="font-headline text-base font-bold text-navy mb-1">Media kit</h2>
+              <p className="text-xs text-gray-400 leading-relaxed mb-2">Logos, photos, and factsheet for this campaign</p>
+              <span className="text-xs font-semibold" style={{ color: '#E8192C' }}>Download →</span>
+            </a>
+          )}
+        </aside>
+      </div>
 
       {/* Related campaigns */}
       {related && related.length > 0 && (

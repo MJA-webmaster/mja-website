@@ -127,7 +127,7 @@ export default async function CampaignPage({ params }: Props) {
         </div>
       </section>
 
-      {/* 2. Horizontal Timeline Rail */}
+      {/* 2. Horizontal Timeline Rail (Scrollbar Hidden) */}
       {sortedMilestones.length > 0 && (
         <section className="bg-white border-b border-gray-200 shadow-xs py-7 overflow-hidden">
           <div className="max-w-[1240px] mx-auto px-6">
@@ -138,7 +138,7 @@ export default async function CampaignPage({ params }: Props) {
               <span className="text-[11px] text-gray-400 font-medium">Scroll to explore →</span>
             </div>
 
-            <div className="overflow-x-auto pb-4 pt-2 -mx-6 px-6 no-scrollbar snap-x snap-mandatory">
+            <div className="overflow-x-auto pb-4 pt-2 -mx-6 px-6 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <div className="inline-flex gap-8 relative min-w-full">
                 {/* Connecting track line */}
                 <div className="absolute top-[6px] left-2 right-2 h-[2px] bg-gray-200" />
@@ -179,7 +179,7 @@ export default async function CampaignPage({ params }: Props) {
             {campaign.content && (
               <div className="bg-white rounded-2xl border border-gray-200/80 p-8 sm:p-10 shadow-xs">
                 <article
-                  className="prose prose-slate max-w-none text-base sm:text-lg leading-relaxed prose-headings:font-headline prose-headings:font-bold prose-a:text-[#E8192C] prose-strong:text-slate-900 prose-li:my-1.5"
+                  className="article-content prose prose-slate max-w-none text-base sm:text-lg leading-relaxed prose-headings:font-headline prose-headings:font-bold prose-a:text-[#E8192C] prose-strong:text-slate-900 prose-li:my-1.5"
                   dangerouslySetInnerHTML={{ __html: campaign.content }}
                 />
               </div>

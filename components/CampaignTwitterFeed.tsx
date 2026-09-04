@@ -21,7 +21,7 @@ export default function CampaignTwitterFeed({ hashtag }: { hashtag: string }) {
 
   return (
     <div ref={ref} className="rounded-xl border border-gray-100 overflow-hidden" style={{ maxHeight: 600 }}>
-      
+      <a
         className="twitter-timeline"
         data-height="600"
         data-theme="light"

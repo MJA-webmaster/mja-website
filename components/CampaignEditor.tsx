@@ -39,6 +39,7 @@ function ToolbarButton({ onClick, active, title, children }: {
 }
 
 type StatusValue = '' | 'upcoming' | 'active' | 'past'
+type Milestone = { date: string; title: string; description?: string }
 
 export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
   const router = useRouter()
@@ -58,6 +59,8 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
     cta_primary_url: campaign?.cta_primary_url ?? '',
     cta_secondary_label: campaign?.cta_secondary_label ?? '',
     cta_secondary_url: campaign?.cta_secondary_url ?? '',
+    media_kit_url: campaign?.media_kit_url ?? '',
+    milestones: (campaign?.milestones ?? []) as Milestone[],
   })
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -88,6 +91,20 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
     } else {
       setForm(f => ({ ...f, [target.name]: val }))
     }
+  }
+
+  function addMilestone() {
+    setForm(f => ({ ...f, milestones: [...f.milestones, { date: '', title: '', description: '' }] }))
+  }
+  function updateMilestone(i: number, field: keyof Milestone, value: string) {
+    setForm(f => {
+      const next = [...f.milestones]
+      next[i] = { ...next[i], [field]: value }
+      return { ...f, milestones: next }
+    })
+  }
+  function removeMilestone(i: number) {
+    setForm(f => ({ ...f, milestones: f.milestones.filter((_, idx) => idx !== i) }))
   }
 
   function uploadAndInsertImage(file: File) {
@@ -136,6 +153,8 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
       cta_primary_url: form.cta_primary_url || null,
       cta_secondary_label: form.cta_secondary_label || null,
       cta_secondary_url: form.cta_secondary_url || null,
+      media_kit_url: form.media_kit_url || null,
+      milestones: form.milestones.filter(m => m.date && m.title),
       updated_at: new Date().toISOString(),
     }
 
@@ -332,6 +351,59 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
               <label className={labelClass}>Secondary URL</label>
               <input name="cta_secondary_url" value={form.cta_secondary_url} onChange={handleChange} placeholder="/join-mja" className={inputClass} />
             </div>
+          </div>
+        </div>
+
+        {/* Media kit */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 className="font-semibold text-navy text-sm mb-3">Media Kit</h3>
+          <input
+            name="media_kit_url"
+            value={form.media_kit_url}
+            onChange={handleChange}
+            placeholder="Link to press kit / assets folder"
+            className={inputClass}
+          />
+        </div>
+
+        {/* Milestones */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-navy text-sm">Milestones</h3>
+            <button type="button" onClick={addMilestone} className="text-xs font-semibold" style={{ color: '#E8192C' }}>
+              + Add
+            </button>
+          </div>
+          <div className="space-y-3">
+            {form.milestones.length === 0 && (
+              <p className="text-[11px] text-gray-400">No milestones yet. Add key dates as the campaign develops.</p>
+            )}
+            {form.milestones.map((m, i) => (
+              <div key={i} className="border border-gray-100 rounded-lg p-3 space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={m.date}
+                    onChange={(e) => updateMilestone(i, 'date', e.target.value)}
+                    className={inputClass + ' text-xs'}
+                  />
+                  <button type="button" onClick={() => removeMilestone(i)} className="text-gray-300 hover:text-red-500 text-xs px-1">✕</button>
+                </div>
+                <input
+                  value={m.title}
+                  onChange={(e) => updateMilestone(i, 'title', e.target.value)}
+                  placeholder="Milestone title"
+                  className={inputClass + ' text-xs'}
+                />
+                <textarea
+                  value={m.description ?? ''}
+                  onChange={(e) => updateMilestone(i, 'description', e.target.value)}
+                  placeholder="Short note (optional)"
+                  rows={2}
+                  className={inputClass + ' text-xs resize-none'}
+                />
+              </div>
+            ))}
           </div>
         </div>
 

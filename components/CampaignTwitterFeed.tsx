@@ -16,15 +16,21 @@ export default function CampaignTwitterFeed({ hashtag }: { hashtag: string }) {
       'Posts tagged #' + tag +
       '</a>'
 
-    const existing = document.getElementById('twitter-wjs')
-    if (existing) {
+    function loadWidget() {
       ;(window as any).twttr?.widgets?.load(el)
+    }
+
+    const existing = document.getElementById('twitter-wjs') as HTMLScriptElement | null
+    if (existing) {
+      loadWidget()
       return
     }
+
     const script = document.createElement('script')
     script.id = 'twitter-wjs'
     script.src = 'https://platform.twitter.com/widgets.js'
     script.async = true
+    script.onload = loadWidget
     document.body.appendChild(script)
   }, [tag])
 

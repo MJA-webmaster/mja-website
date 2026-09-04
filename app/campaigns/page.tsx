@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
+import { getCampaignStatus, STATUS_BADGE_STYLE, STATUS_DOT_COLOR } from '@/lib/campaigns'
+import type { Campaign } from '@/lib/types'
 
 export const metadata: Metadata = {
   title: 'Campaigns',
@@ -18,8 +20,13 @@ export default async function CampaignsPage() {
     .eq('published', true)
     .order('created_at', { ascending: false })
 
-  const featured = campaigns?.[0]
-  const rest = campaigns?.slice(1)
+  const timelineItems = campaigns
+    ? [...campaigns].sort((a, b) => {
+        const dateA = new Date(a.event_date || a.created_at).getTime()
+        const dateB = new Date(b.event_date || b.created_at).getTime()
+        return dateA - dateB
+      })
+    : []
 
   return (
     <>
@@ -28,60 +35,64 @@ export default async function CampaignsPage() {
           <span style={{ color: '#E8192C' }}>MJA</span> Campaigns
         </h1>
 
-        {featured ? (
+        {timelineItems.length > 0 ? (
           <>
-            {/* Featured campaign */}
-            <Link href={`/campaigns/${featured.slug}`} className="group block mb-12">
-              <div className="grid md:grid-cols-2 rounded-2xl overflow-hidden min-h-[360px]">
-                <div className="flex flex-col justify-center p-10 text-white" style={{ backgroundColor: '#E8192C' }}>
-                  <div className="absolute font-headline font-black text-white/10 text-[180px] leading-none select-none">M</div>
-                  <div className="relative z-10">
-                    {featured.hashtag && (
-                      <p className="text-white/70 text-sm font-bold mb-2">{featured.hashtag}</p>
-                    )}
-                    <h2 className="font-headline text-3xl md:text-4xl font-black uppercase leading-tight mb-4">
-                      {featured.title}
-                    </h2>
-                    {featured.description && (
-                      <p className="text-white/70 text-sm leading-relaxed mb-6 max-w-sm">{featured.description}</p>
-                    )}
-                    {featured.event_date && (
-                      <p className="text-white/60 text-xs mb-6">
-                        {new Date(featured.event_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        {featured.event_location && ` — ${featured.event_location}`}
-                      </p>
-                    )}
-                    <div className="flex gap-3">
-                      <span className="bg-white font-semibold px-6 py-2.5 rounded text-sm" style={{ color: '#E8192C' }}>
-                        Join the Rally
-                      </span>
-                      <span className="border border-white/40 text-white px-6 py-2.5 rounded text-sm font-semibold">
-                        Contribute
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {featured.cover_image ? (
-                  <div className="relative overflow-hidden">
-                    <Image
-                      src={featured.cover_image}
-                      alt={featured.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                ) : (
-                  <div className="bg-navy-mid flex items-center justify-center" style={{ backgroundColor: '#162234' }}>
-                    <span className="font-headline text-white/10 text-[120px] font-black">#</span>
-                  </div>
-                )}
-              </div>
-            </Link>
+            {/* Timeline hero */}
+            <div className="overflow-x-auto pb-4 mb-16 -mx-6 px-6">
+              <div className="relative flex items-center min-w-max" style={{ minHeight: 260 }}>
+                <div className="absolute left-0 right-0 top-1/2 h-px bg-gray-200" />
+                {timelineItems.map((campaign: Campaign, i: number) => {
+                  const status = getCampaignStatus(campaign)
+                  const isTop = i % 2 === 0
+                  const dotColor = STATUS_DOT_COLOR[status]
+                  return (
+                    <div key={campaign.id} className="relative flex-shrink-0" style={{ width: 220 }}>
+                      {isTop && (
+                        <Link href={`/campaigns/${campaign.slug}`} className="group block absolute left-1/2 -translate-x-1/2 bottom-[calc(50%+22px)] w-48 text-center">
+                          {status === 'active' && (
+                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: dotColor }}>Active now</p>
+                          )}
+                          <p className="font-headline font-bold text-navy text-sm uppercase leading-snug group-hover:text-red transition-colors">
+                            {campaign.title}
+                          </p>
+                          <p className="text-[11px] text-gray-400 mt-1">
+                            {new Date(campaign.event_date || campaign.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                          </p>
+                        </Link>
+                      )}
 
-            {/* Rest of campaigns */}
-            {rest && rest.length > 0 && (
-              <div className="grid md:grid-cols-3 gap-6">
-                {rest.map((campaign) => (
+                      <Link href={`/campaigns/${campaign.slug}`} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                        <span
+                          className="flex items-center justify-center rounded-full border-2 border-white"
+                          style={{ width: 20, height: 20, backgroundColor: dotColor, boxShadow: '0 0 0 2px ' + dotColor + '33' }}
+                        />
+                      </Link>
+
+                      {!isTop && (
+                        <Link href={`/campaigns/${campaign.slug}`} className="group block absolute left-1/2 -translate-x-1/2 top-[calc(50%+22px)] w-48 text-center">
+                          {status === 'active' && (
+                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: dotColor }}>Active now</p>
+                          )}
+                          <p className="font-headline font-bold text-navy text-sm uppercase leading-snug group-hover:text-red transition-colors">
+                            {campaign.title}
+                          </p>
+                          <p className="text-[11px] text-gray-400 mt-1">
+                            {new Date(campaign.event_date || campaign.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                          </p>
+                        </Link>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Campaign cards */}
+            <div className="grid md:grid-cols-3 gap-6">
+              {campaigns!.map((campaign: Campaign) => {
+                const status = getCampaignStatus(campaign)
+                const badge = STATUS_BADGE_STYLE[status]
+                return (
                   <Link key={campaign.id} href={`/campaigns/${campaign.slug}`} className="group block">
                     <div className="rounded-xl overflow-hidden mb-4 aspect-video bg-gray-100 relative">
                       {campaign.cover_image ? (
@@ -96,6 +107,12 @@ export default async function CampaignsPage() {
                           <span className="font-headline text-white/20 text-6xl font-black">#</span>
                         </div>
                       )}
+                      <span
+                        className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full"
+                        style={{ backgroundColor: badge.bg, color: badge.text }}
+                      >
+                        {badge.label}
+                      </span>
                     </div>
                     {campaign.hashtag && (
                       <p className="text-xs font-bold mb-1" style={{ color: '#E8192C' }}>{campaign.hashtag}</p>
@@ -108,10 +125,24 @@ export default async function CampaignsPage() {
                         {new Date(campaign.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
                     )}
+                    {(campaign.cta_primary_label || campaign.cta_secondary_label) && (
+                      <div className="flex gap-2 mt-3">
+                        {campaign.cta_primary_label && (
+                          <span className="text-xs font-semibold px-3 py-1.5 rounded text-white" style={{ backgroundColor: '#E8192C' }}>
+                            {campaign.cta_primary_label}
+                          </span>
+                        )}
+                        {campaign.cta_secondary_label && (
+                          <span className="text-xs font-semibold px-3 py-1.5 rounded border border-gray-200 text-navy">
+                            {campaign.cta_secondary_label}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </Link>
-                ))}
-              </div>
-            )}
+                )
+              })}
+            </div>
           </>
         ) : (
           <div className="text-center py-20 text-gray-400">

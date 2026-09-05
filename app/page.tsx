@@ -5,6 +5,7 @@ import ArticleCard from '@/components/ArticleCard'
 import MemberMeter from '@/components/MemberMeter'
 import HeroSection from '@/components/HeroSection'
 import GetInvolved from '@/components/GetInvolved'
+import SectionHeader from '@/components/SectionHeader'
 import { getCampaignStatus, STATUS_BADGE_STYLE } from '@/lib/campaigns'
 
 export default async function HomePage() {
@@ -22,7 +23,7 @@ export default async function HomePage() {
       .select('*')
       .eq('published', true)
       .order('created_at', { ascending: false })
-      .limit(6),
+      .limit(4),
     supabase
       .from('member_stats')
       .select('*')
@@ -40,14 +41,12 @@ export default async function HomePage() {
   ])
 
   const articles = articlesRes.data ?? []
-  const allCampaigns = campaignsRes.data ?? []
+  const recentCampaigns = campaignsRes.data ?? []
   const activities = activitiesRes.data ?? []
   const dispatch = settingsRes.data?.dispatch ?? null
 
   const heroCampaign =
-    allCampaigns.find((c: any) => c.is_hero_featured && getCampaignStatus(c) === 'active') ?? null
-  const activeCampaigns = allCampaigns.filter((c: any) => getCampaignStatus(c) === 'active')
-  const recentCampaigns = allCampaigns.slice(0, 4)
+    recentCampaigns.find((c: any) => c.is_hero_featured && getCampaignStatus(c) === 'active') ?? null
 
   const memberStats = statsRes.data ?? {
     total: 0,
@@ -66,53 +65,31 @@ export default async function HomePage() {
 
       {/* ── Latest News ── */}
       {articles.length > 0 && (
-        <section className="max-w-[1280px] mx-auto px-4 sm:px-6 py-14 sm:py-20">
-          <div className="flex items-center justify-between mb-8 pb-3 border-b border-gray-100">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#E8192C] block mb-1">
-                Dispatches & Updates
-              </span>
-              <h2 className="font-headline font-black uppercase text-2xl md:text-3xl text-[#0D1B2A]">
-                <span className="text-[#E8192C]">Latest</span> News
-              </h2>
-            </div>
-            <Link
+        <section className="border-t border-gray-100 py-14 sm:py-20 px-4 sm:px-6">
+          <div className="max-w-[1280px] mx-auto">
+            <SectionHeader
+              eyebrow="Dispatches & Updates"
+              title={<><span className="text-[#E8192C]">Latest</span> News</>}
               href="/news-room"
-              className="text-xs font-bold tracking-wider uppercase text-[#E8192C] hover:text-[#c91424] transition-colors"
-            >
-              View all →
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {articles.map((article: any) => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {articles.map((article: any) => (
+                <ArticleCard key={article.id} article={article} />
+              ))}
+            </div>
           </div>
         </section>
       )}
 
       {/* ── Our Campaigns (most recent, any status) ── */}
       {recentCampaigns.length > 0 && (
-        <section className="border-t border-gray-100 py-14 sm:py-20 px-4 sm:px-6">
+        <section className="border-t border-gray-100 bg-slate-50/50 py-14 sm:py-20 px-4 sm:px-6">
           <div className="max-w-[1280px] mx-auto">
-            <div className="flex items-center justify-between mb-8 pb-3 border-b border-gray-100">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#E8192C] block mb-1">
-                  Press Freedom in Action
-                </span>
-                <h2 className="font-headline font-black uppercase text-2xl md:text-3xl text-[#0D1B2A]">
-                  Our <span className="text-[#E8192C]">Campaigns</span>
-                </h2>
-              </div>
-              <Link
-                href="/campaigns"
-                className="text-xs font-bold tracking-wider uppercase text-[#E8192C] hover:text-[#c91424] transition-colors"
-              >
-                View all →
-              </Link>
-            </div>
-
+            <SectionHeader
+              eyebrow="Press Freedom in Action"
+              title={<>Our <span className="text-[#E8192C]">Campaigns</span></>}
+              href="/campaigns"
+            />
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
               {recentCampaigns.map((c: any) => {
                 const status = getCampaignStatus(c)
@@ -160,107 +137,16 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ── Active Campaigns ── */}
-      {activeCampaigns.length > 0 && (
-        <section className="border-t border-gray-100 bg-slate-50/50 py-14 sm:py-20 px-4 sm:px-6">
-          <div className="max-w-[1280px] mx-auto">
-            <div className="flex items-center justify-between mb-8 pb-3 border-b border-gray-200/70">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#E8192C] block mb-1">
-                  Advocacy & Movements
-                </span>
-                <h2 className="font-headline font-black uppercase text-2xl md:text-3xl text-[#0D1B2A]">
-                  <span className="text-[#E8192C]">Active</span> Campaigns
-                </h2>
-              </div>
-              <Link
-                href="/campaigns"
-                className="text-xs font-bold tracking-wider uppercase text-[#E8192C] hover:text-[#c91424] transition-colors"
-              >
-                View all →
-              </Link>
-            </div>
-
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {activeCampaigns.slice(0, 3).map((c: any) => {
-                const status = getCampaignStatus(c)
-                const badge = STATUS_BADGE_STYLE[status]
-                return (
-                  <Link
-                    key={c.id}
-                    href={`/campaigns/${c.slug}`}
-                    className="group bg-white rounded-xl border border-gray-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
-                  >
-                    <div className="aspect-video relative bg-[#0D1B2A] overflow-hidden">
-                      {c.cover_image ? (
-                        <Image
-                          src={c.cover_image}
-                          alt={c.title}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="font-headline text-white/10 text-6xl font-black">#</span>
-                        </div>
-                      )}
-                      <span
-                        className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full shadow-xs"
-                        style={{ backgroundColor: badge.bg, color: badge.text }}
-                      >
-                        {badge.label}
-                      </span>
-                    </div>
-
-                    <div className="p-5 flex-1 flex flex-col justify-between">
-                      <div>
-                        {c.hashtag && (
-                          <p className="text-xs font-bold text-[#E8192C] mb-1.5">{c.hashtag}</p>
-                        )}
-                        <h3 className="font-bold text-[#0D1B2A] text-base leading-snug group-hover:text-[#E8192C] transition-colors line-clamp-2">
-                          {c.title}
-                        </h3>
-                      </div>
-
-                      {c.event_date && (
-                        <p className="text-gray-400 text-xs font-medium mt-4 pt-3 border-t border-gray-100">
-                          {new Date(c.event_date).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* ── Activities & Initiatives ── */}
       {activities.length > 0 && (
         <section className="border-t border-gray-100 py-14 sm:py-20 px-4 sm:px-6">
           <div className="max-w-[1280px] mx-auto">
-            <div className="flex items-center justify-between mb-8 pb-3 border-b border-gray-100">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#E8192C] block mb-1">
-                  On the Ground
-                </span>
-                <h2 className="font-headline font-black uppercase text-2xl md:text-3xl text-[#0D1B2A]">
-                  Recent <span className="text-[#E8192C]">Activities</span>
-                </h2>
-              </div>
-              <Link
-                href="/the-association/activities"
-                className="text-xs font-bold tracking-wider uppercase text-[#E8192C] hover:text-[#c91424] transition-colors"
-              >
-                View full archive →
-              </Link>
-            </div>
-
+            <SectionHeader
+              eyebrow="On the Ground"
+              title={<>Recent <span className="text-[#E8192C]">Activities</span></>}
+              href="/the-association/activities"
+              linkLabel="View full archive"
+            />
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {activities.map((activity: any, idx: number) => (
                 <div
@@ -293,8 +179,8 @@ export default async function HomePage() {
       )}
 
       {/* ── Membership ── */}
-      <section style={{ backgroundColor: '#F5F4F0' }} className="py-16 md:py-24">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-12 md:gap-20 items-start">
+      <section style={{ backgroundColor: '#F5F4F0' }} className="border-t border-gray-100 py-14 sm:py-20 px-4 sm:px-6">
+        <div className="max-w-[1280px] mx-auto grid md:grid-cols-2 gap-12 md:gap-20 items-start">
           <div>
             <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4 text-[#E8192C]">
               Be the Voice

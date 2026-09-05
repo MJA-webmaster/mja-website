@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Trash2, GripVertical } from 'lucide-react'
+import { Plus, Trash2, Pencil, Check, X, AlertCircle } from 'lucide-react'
 
 type Activity = {
   id: string
@@ -13,144 +13,242 @@ type Activity = {
   created_at: string
 }
 
-const inputClass = 'w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-navy focus:outline-none focus:border-gray-400 transition-colors'
-const labelClass = 'block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5'
+const inputClass =
+  'w-full border border-slate-200 rounded-lg px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#E8192C]/15 focus:border-[#E8192C] transition-all'
+const labelClass = 'block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5'
 
-const EMPTY = {
-  title: '',
-  description: '',
-  year: new Date().getFullYear(),
-  order: 0,
-}
+const defaultYear = new Date().getFullYear()
 
 export default function ActivitiesAdminClient({ activities: initial }: { activities: Activity[] }) {
-  const [activities, setActivities] = useState(initial)
+  const [activities, setActivities] = useState<Activity[]>(initial)
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [form, setForm] = useState(EMPTY)
   const [filterYear, setFilterYear] = useState<number | 'all'>('all')
 
-  const years = Array.from(new Set(activities.map(a => a.year))).sort((a, b) => b - a)
-  const filtered = filterYear === 'all'
-    ? activities
-    : activities.filter(a => a.year === filterYear)
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    year: defaultYear,
+    order: 0,
+  })
+
+  const years = Array.from(new Set(activities.map((a) => a.year))).sort((a, b) => b - a)
+  const filtered = filterYear === 'all' 
+    ? activities 
+    : activities.filter((a) => a.year === filterYear)
+
+  function openCreateForm() {
+    setError(null)
+    setEditingId(null)
+    
+    // Auto-calculate next sequence order for current year
+    const targetYear = filterYear === 'all' ? defaultYear : filterYear
+    const yearItems = activities.filter((a) => a.year === targetYear)
+    const nextOrder = yearItems.length > 0 ? Math.max(...yearItems.map((a) => a.order)) + 1 : 0
+
+    setForm({
+      title: '',
+      description: '',
+      year: targetYear,
+      order: nextOrder,
+    })
+    setShowForm(true)
+  }
+
+  function startEdit(activity: Activity) {
+    setError(null)
+    setEditingId(activity.id)
+    setForm({
+      title: activity.title,
+      description: activity.description ?? '',
+      year: activity.year,
+      order: activity.order,
+    })
+    setShowForm(true)
+  }
+
+  function closeForm() {
+    setShowForm(false)
+    setEditingId(null)
+    setError(null)
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target
-    setForm(f => ({ ...f, [name]: name === 'year' || name === 'order' ? Number(value) : value }))
+    setForm((f) => ({ ...f, [name]: name === 'year' || name === 'order' ? Number(value) : value }))
   }
 
   async function handleSave() {
-    if (!form.title) return
+    if (!form.title.trim()) return
     setSaving(true)
     setError(null)
     const supabase = createClient()
-    const { data, error } = await supabase
-      .from('activities')
-      .insert({
-        title: form.title,
-        description: form.description || null,
-        year: form.year,
-        order: form.order,
-      })
-      .select()
-      .single()
 
-    if (error) {
-      setError(error.message)
-    } else if (data) {
-      setActivities(prev => [data, ...prev].sort((a, b) => b.year - a.year || a.order - b.order))
-      setForm(EMPTY)
-      setShowForm(false)
+    const payload = {
+      title: form.title.trim(),
+      description: form.description.trim() || null,
+      year: form.year,
+      order: form.order,
     }
+
+    if (editingId) {
+      // Update
+      const { data, error: err } = await supabase
+        .from('activities')
+        .update(payload)
+        .eq('id', editingId)
+        .select()
+        .single()
+
+      if (err) {
+        setError(err.message)
+      } else if (data) {
+        setActivities((prev) =>
+          prev
+            .map((item) => (item.id === editingId ? data : item))
+            .sort((a, b) => b.year - a.year || a.order - b.order)
+        )
+        closeForm()
+      }
+    } else {
+      // Create
+      const { data, error: err } = await supabase
+        .from('activities')
+        .insert(payload)
+        .select()
+        .single()
+
+      if (err) {
+        setError(err.message)
+      } else if (data) {
+        setActivities((prev) => [data, ...prev].sort((a, b) => b.year - a.year || a.order - b.order))
+        closeForm()
+      }
+    }
+
     setSaving(false)
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this activity?')) return
+    if (!confirm('Are you sure you want to delete this activity?')) return
     const supabase = createClient()
-    const { error } = await supabase.from('activities').delete().eq('id', id)
-    if (!error) setActivities(prev => prev.filter(a => a.id !== id))
+    const { error: err } = await supabase.from('activities').delete().eq('id', id)
+    if (!err) {
+      setActivities((prev) => {
+        const next = prev.filter((a) => a.id !== id)
+        if (filterYear !== 'all' && !next.some((a) => a.year === filterYear)) {
+          setFilterYear('all')
+        }
+        return next
+      })
+      if (editingId === id) closeForm()
+    }
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6 max-w-5xl">
+      {/* Header Bar */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-headline text-3xl font-bold text-navy">Activities</h1>
-          <p className="text-gray-400 text-sm mt-1">{activities.length} activities</p>
+          <h1 className="font-headline text-2xl sm:text-3xl font-bold text-slate-900">Activities</h1>
+          <p className="text-slate-400 text-xs mt-0.5">
+            {activities.length} total across {years.length} {years.length === 1 ? 'year' : 'years'}
+          </p>
         </div>
         <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 text-white px-5 py-2.5 rounded-lg text-sm font-semibold"
+          onClick={showForm ? closeForm : openCreateForm}
+          className="flex items-center gap-2 text-white px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow-xs hover:bg-[#c91424]"
           style={{ backgroundColor: '#E8192C' }}
         >
-          <Plus size={16} />
-          Add Activity
+          {showForm ? <X size={15} /> : <Plus size={15} />}
+          {showForm ? 'Cancel' : 'Add Activity'}
         </button>
       </div>
 
+      {/* Slide-Down Edit/Create Panel */}
       {showForm && (
-        <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
-          <h2 className="font-semibold text-navy mb-4">New Activity</h2>
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h2 className="font-bold text-sm text-slate-900 uppercase tracking-wide font-headline">
+              {editingId ? 'Edit Activity' : 'Add New Activity'}
+            </h2>
+            <span className="text-[11px] text-slate-400">Press Esc or Cancel to discard</span>
+          </div>
+
           <div className="space-y-4">
             <div>
-              <label className={labelClass}>Title *</label>
+              <label className={labelClass}>Activity Title *</label>
               <input
-                name="title" value={form.title} onChange={handleChange}
-                placeholder="e.g. Press Freedom Workshop"
+                name="title"
+                value={form.title}
+                onChange={handleChange}
+                placeholder="e.g. Safety Training for Investigative Reporters"
                 className={inputClass}
+                autoFocus
               />
             </div>
+
             <div>
-              <label className={labelClass}>Description</label>
+              <label className={labelClass}>Description / Highlights</label>
               <textarea
-                name="description" value={form.description} onChange={handleChange}
-                placeholder="Brief description of the activity"
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                placeholder="Brief summary of key outcomes, trainers, or attendee scope..."
                 rows={3}
-                className={inputClass + ' resize-none'}
+                className={`${inputClass} resize-none`}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Year</label>
                 <input
-                  type="number" name="year" value={form.year} onChange={handleChange}
-                  min={2000} max={2099}
+                  type="number"
+                  name="year"
+                  value={form.year}
+                  onChange={handleChange}
+                  min={2000}
+                  max={2099}
                   className={inputClass}
                 />
               </div>
               <div>
-                <label className={labelClass}>Order</label>
+                <label className={labelClass}>Display Sequence Order</label>
                 <input
-                  type="number" name="order" value={form.order} onChange={handleChange}
+                  type="number"
+                  name="order"
+                  value={form.order}
+                  onChange={handleChange}
                   min={0}
                   className={inputClass}
                 />
-                <p className="text-[10px] text-gray-300 mt-1">Lower number appears first within year</p>
+                <p className="text-[11px] text-slate-400 mt-1">Lower order numbers appear first within the selected year.</p>
               </div>
             </div>
 
             {error && (
-              <p className="text-sm px-4 py-3 rounded-lg"
-                style={{ color: '#E8192C', backgroundColor: 'rgba(232,25,44,0.08)', border: '1px solid rgba(232,25,44,0.2)' }}>
-                {error}
-              </p>
+              <div className="flex items-center gap-2 text-xs text-rose-700 bg-rose-50 border border-rose-200/80 px-3.5 py-2.5 rounded-lg">
+                <AlertCircle size={15} className="shrink-0" />
+                <span>{error}</span>
+              </div>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={handleSave}
-                disabled={saving || !form.title}
-                className="text-white px-6 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
+                disabled={saving || !form.title.trim()}
+                className="flex items-center gap-1.5 text-white px-5 py-2 rounded-lg text-xs font-bold disabled:opacity-50 transition-colors shadow-xs"
                 style={{ backgroundColor: '#E8192C' }}
               >
-                {saving ? 'Saving...' : 'Save Activity'}
+                <Check size={14} />
+                {saving ? 'Saving...' : editingId ? 'Update Activity' : 'Save Activity'}
               </button>
               <button
-                onClick={() => { setShowForm(false); setError(null) }}
-                className="border border-gray-200 text-gray-500 px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50"
+                onClick={closeForm}
+                className="border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors"
               >
                 Cancel
               </button>
@@ -159,51 +257,91 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
         </div>
       )}
 
-      {/* Year filter */}
-      <div className="flex flex-wrap gap-2 mb-5">
-        {(['all', ...years] as const).map((y) => (
-          <button
-            key={y}
-            onClick={() => setFilterYear(y as number | 'all')}
-            className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-            style={{
-              backgroundColor: filterYear === y ? '#0D1B2A' : '#F3F4F6',
-              color: filterYear === y ? 'white' : '#6B7280',
-            }}
-          >
-            {y === 'all' ? 'All Years' : y}
-          </button>
-        ))}
+      {/* Year Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-3">
+        {(['all', ...years] as const).map((y) => {
+          const count = y === 'all' ? activities.length : activities.filter((a) => a.year === y).length
+          const isActive = filterYear === y
+
+          return (
+            <button
+              key={y}
+              onClick={() => setFilterYear(y as number | 'all')}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                isActive
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <span>{y === 'all' ? 'All Activities' : y}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                  isActive ? 'bg-white/20 text-white' : 'bg-slate-200/70 text-slate-500'
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          )
+        })}
       </div>
 
-      {/* List */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        <div className="divide-y divide-gray-50">
+      {/* Activity Items List */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="divide-y divide-slate-100">
           {filtered.map((activity) => (
-            <div key={activity.id} className="flex items-start gap-4 px-6 py-4">
-              <GripVertical size={16} className="text-gray-200 mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-sm font-semibold text-navy">{activity.title}</p>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">
-                    {activity.year}
-                  </span>
+            <div
+              key={activity.id}
+              className={`flex items-start justify-between gap-4 px-5 py-4 transition-colors hover:bg-slate-50/60 ${
+                editingId === activity.id ? 'bg-rose-50/40' : ''
+              }`}
+            >
+              <div className="flex items-start gap-3.5 min-w-0">
+                <span className="shrink-0 w-6 h-6 rounded-md bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-mono font-bold mt-0.5">
+                  #{activity.order}
+                </span>
+                
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <h3 className="text-sm font-bold text-slate-900 leading-snug">{activity.title}</h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-mono">
+                      {activity.year}
+                    </span>
+                  </div>
+                  {activity.description && (
+                    <p className="text-xs text-slate-500 leading-relaxed max-w-2xl">{activity.description}</p>
+                  )}
                 </div>
-                {activity.description && (
-                  <p className="text-xs text-gray-400 leading-relaxed">{activity.description}</p>
-                )}
               </div>
-              <button
-                onClick={() => handleDelete(activity.id)}
-                className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
-              >
-                <Trash2 size={15} />
-              </button>
+
+              <div className="flex items-center gap-1 shrink-0 ml-2">
+                <button
+                  onClick={() => startEdit(activity)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                  title="Edit activity"
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  onClick={() => handleDelete(activity.id)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                  title="Delete activity"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
           ))}
+
           {filtered.length === 0 && (
-            <div className="px-6 py-12 text-center text-gray-400 text-sm">
-              No activities yet. Click &quot;Add Activity&quot; to get started.
+            <div className="px-6 py-14 text-center">
+              <p className="text-xs text-slate-400 mb-2">No activities listed for this criteria.</p>
+              <button
+                onClick={openCreateForm}
+                className="text-xs font-bold text-[#E8192C] hover:underline"
+              >
+                + Add the first activity
+              </button>
             </div>
           )}
         </div>

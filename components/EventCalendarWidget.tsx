@@ -12,12 +12,22 @@ interface EventItem {
   venue?: string | null
 }
 
+interface MomentItem {
+  id: string
+  title: string
+  date: string
+  parentSlug: string | null
+  parentTitle: string
+}
+
 export default function EventCalendarWidget({
   currentEventId,
   allEvents,
+  moments = [],
 }: {
   currentEventId: string
   allEvents: EventItem[]
+  moments?: MomentItem[]
 }) {
   const currentEvent = allEvents.find((e) => e.id === currentEventId)
   const initialDate = currentEvent ? new Date(currentEvent.event_date) : new Date()
@@ -34,12 +44,24 @@ export default function EventCalendarWidget({
     return d.getFullYear() === viewYear && d.getMonth() === viewMonth
   })
 
+  const momentsInMonth = moments.filter((m) => {
+    const d = new Date(m.date)
+    return d.getFullYear() === viewYear && d.getMonth() === viewMonth
+  })
+
   const eventsByDay = eventsInMonth.reduce((acc, e) => {
     const day = new Date(e.event_date).getDate()
     if (!acc[day]) acc[day] = []
     acc[day].push(e)
     return acc
   }, {} as Record<number, EventItem[]>)
+
+  const momentsByDay = momentsInMonth.reduce((acc, m) => {
+    const day = new Date(m.date).getDate()
+    if (!acc[day]) acc[day] = []
+    acc[day].push(m)
+    return acc
+  }, {} as Record<number, MomentItem[]>)
 
   function prevMonth() {
     if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1) }
@@ -51,12 +73,14 @@ export default function EventCalendarWidget({
   }
 
   const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-  const sortedMonthEvents = [...eventsInMonth].sort(
-    (a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
-  )
+
+  const combinedList = [
+    ...eventsInMonth.map((e) => ({ type: 'event' as const, id: e.id, title: e.title, date: e.event_date, slug: e.slug })),
+    ...momentsInMonth.map((m) => ({ type: 'moment' as const, id: m.id, title: m.title, date: m.date, slug: m.parentSlug, parentTitle: m.parentTitle })),
+  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200/80 p-5 grid grid-cols-1 sm:grid-cols-[1fr_220px] gap-6">
+    <div className="bg-white rounded-xl border border-gray-200/80 p-5 grid grid-cols-1 sm:grid-cols-[1fr_240px] gap-6">
       {/* Calendar grid */}
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -74,59 +98,84 @@ export default function EventCalendarWidget({
           ))}
           {cells.map((day, i) => {
             const dayEvents = day ? eventsByDay[day] : undefined
+            const dayMoments = day ? momentsByDay[day] : undefined
             const isCurrent = dayEvents?.some((e) => e.id === currentEventId)
             const hasEvent = !!dayEvents?.length
+            const hasMoment = !!dayMoments?.length
 
             return (
-              <div key={i} className="aspect-square flex items-center justify-center relative">
+              <div key={i} className="aspect-square flex flex-col items-center justify-center relative gap-0.5">
                 {day && (
-                  <span
-                    className={`w-full h-full flex items-center justify-center rounded-lg text-xs ${
-                      isCurrent ? 'text-white font-bold' : hasEvent ? 'font-semibold text-navy' : 'text-gray-500'
-                    }`}
-                    style={isCurrent ? { backgroundColor: '#E8192C' } : hasEvent ? { backgroundColor: '#FEE2E2', color: '#E8192C' } : {}}
-                  >
-                    {day}
-                  </span>
+                  <>
+                    <span
+                      className={`w-full h-full flex items-center justify-center rounded-lg text-xs ${
+                        isCurrent ? 'text-white font-bold' : hasEvent ? 'font-semibold text-navy' : 'text-gray-500'
+                      }`}
+                      style={isCurrent ? { backgroundColor: '#E8192C' } : hasEvent ? { backgroundColor: '#FEE2E2', color: '#E8192C' } : {}}
+                    >
+                      {day}
+                    </span>
+                    {hasMoment && !isCurrent && (
+                      <span className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#0D1B2A' }} />
+                    )}
+                  </>
                 )}
               </div>
             )
           })}
         </div>
+        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#E8192C' }} />
+            <span className="text-[10px] text-gray-400">Event</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#0D1B2A' }} />
+            <span className="text-[10px] text-gray-400">Related update</span>
+          </div>
+        </div>
       </div>
 
-      {/* Event list for the visible month */}
+      {/* Combined list */}
       <div>
         <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">
-          Events in {new Date(viewYear, viewMonth, 1).toLocaleDateString('en-US', { month: 'short' })}
+          Timeline in {new Date(viewYear, viewMonth, 1).toLocaleDateString('en-US', { month: 'short' })}
         </p>
-        <div className="space-y-2">
-          {sortedMonthEvents.length === 0 && (
-            <p className="text-xs text-gray-400">No events this month.</p>
+        <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+          {combinedList.length === 0 && (
+            <p className="text-xs text-gray-400">Nothing this month.</p>
           )}
-          {sortedMonthEvents.map((e) => {
-            const isCurrent = e.id === currentEventId
+          {combinedList.map((item) => {
+            const isCurrentEvent = item.type === 'event' && item.id === currentEventId
             const content = (
               <div
                 className="rounded-lg px-3 py-2 transition-colors"
-                style={isCurrent ? { backgroundColor: '#E8192C', color: 'white' } : { backgroundColor: '#F9FAFB' }}
+                style={
+                  isCurrentEvent
+                    ? { backgroundColor: '#E8192C', color: 'white' }
+                    : item.type === 'moment'
+                    ? { backgroundColor: '#F1F5F9' }
+                    : { backgroundColor: '#F9FAFB' }
+                }
               >
-                <p className={`text-[10px] font-bold ${isCurrent ? 'text-white/80' : 'text-gray-400'}`}>
-                  {new Date(e.event_date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
-                  {' · '}
-                  {new Date(e.event_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                <p className={`text-[10px] font-bold ${isCurrentEvent ? 'text-white/80' : 'text-gray-400'}`}>
+                  {new Date(item.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                  {item.type === 'moment' && ' · Update'}
                 </p>
-                <p className={`text-xs font-semibold leading-snug ${isCurrent ? 'text-white' : 'text-navy'}`}>
-                  {e.title}
+                <p className={`text-xs font-semibold leading-snug ${isCurrentEvent ? 'text-white' : 'text-navy'}`}>
+                  {item.title}
                 </p>
+                {item.type === 'moment' && (
+                  <p className="text-[10px] text-gray-400 mt-0.5">on {item.parentTitle}</p>
+                )}
               </div>
             )
-            return e.slug && !isCurrent ? (
-              <Link key={e.id} href={`/the-association/activities/${e.slug}`} className="block hover:opacity-80 transition-opacity">
+            return item.slug && !isCurrentEvent ? (
+              <Link key={`${item.type}-${item.id}`} href={`/the-association/activities/${item.slug}`} className="block hover:opacity-80 transition-opacity">
                 {content}
               </Link>
             ) : (
-              <div key={e.id}>{content}</div>
+              <div key={`${item.type}-${item.id}`}>{content}</div>
             )
           })}
         </div>

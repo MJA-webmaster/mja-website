@@ -26,7 +26,7 @@ export default async function MembershipPolicyPage() {
               <span style={{ color: '#E8192C' }}>Policy</span>
             </h1>
             {doc?.file_url && (
-              
+              <a
                 href={doc.file_url}
                 download
                 className="inline-block text-white font-semibold px-6 py-3 rounded text-sm transition-opacity hover:opacity-85 whitespace-nowrap"
@@ -44,7 +44,7 @@ export default async function MembershipPolicyPage() {
                   <p className="text-gray-400 text-sm mb-4">
                     Your browser can&apos;t preview the PDF here.
                   </p>
-                  
+                  <a
                     href={doc.file_url}
                     className="inline-block text-white font-semibold px-6 py-3 rounded text-sm transition-opacity hover:opacity-85"
                     style={{ backgroundColor: '#E8192C' }}

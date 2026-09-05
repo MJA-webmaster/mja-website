@@ -43,7 +43,7 @@ export default function EventCountdown({ eventDate }: { eventDate: string }) {
           <p className="font-headline text-2xl font-black" style={{ color: '#E8192C' }}>
             {String(u.value).padStart(2, '0')}
           </p>
-          <p className="text-[10px} font-bold uppercase tracking-wide text-gray-400 mt-0.5">{u.label}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mt-0.5">{u.label}</p>
         </div>
       ))}
     </div>

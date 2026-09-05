@@ -138,5 +138,9 @@ export type Activity = {
   cover_image: string | null
   published: boolean
   updates: { date: string; title: string; description?: string }[]
+  registration_url: string | null
+  gallery: string[]
+  tweet_urls: string[]
+  media_kit_url: string | null
   created_at: string
 }

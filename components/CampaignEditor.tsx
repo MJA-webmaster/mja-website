@@ -61,6 +61,7 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
     cta_secondary_url: campaign?.cta_secondary_url ?? '',
     media_kit_url: campaign?.media_kit_url ?? '',
     milestones: (campaign?.milestones ?? []) as Milestone[],
+    tweet_urls: (campaign?.tweet_urls ?? []) as string[],
   })
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')

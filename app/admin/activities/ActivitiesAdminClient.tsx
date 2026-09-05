@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import ImageUpload from '@/components/ImageUpload'
 import { Plus, Trash2, Pencil, Check, X, AlertCircle } from 'lucide-react'
 
 type Activity = {
@@ -13,8 +14,13 @@ type Activity = {
   order: number
   event_date: string | null
   venue: string | null
+  cover_image: string | null
   published: boolean
   updates: { date: string; title: string; description?: string }[]
+  registration_url: string | null
+  gallery: string[]
+  tweet_urls: string[]
+  media_kit_url: string | null
   created_at: string
 }
 
@@ -30,6 +36,23 @@ function slugify(text: string) {
   return text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
 }
 
+const EMPTY_FORM = {
+  title: '',
+  slug: '',
+  description: '',
+  year: defaultYear,
+  order: 0,
+  event_date: '',
+  venue: '',
+  cover_image: '',
+  published: true,
+  updates: [] as UpdateEntry[],
+  registration_url: '',
+  gallery: [] as string[],
+  tweet_urls: [] as string[],
+  media_kit_url: '',
+}
+
 export default function ActivitiesAdminClient({ activities: initial }: { activities: Activity[] }) {
   const [activities, setActivities] = useState<Activity[]>(initial)
   const [showForm, setShowForm] = useState(false)
@@ -39,17 +62,7 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
   const [filterYear, setFilterYear] = useState<number | 'all'>('all')
   const [slugManual, setSlugManual] = useState(false)
 
-  const [form, setForm] = useState({
-    title: '',
-    slug: '',
-    description: '',
-    year: defaultYear,
-    order: 0,
-    event_date: '',
-    venue: '',
-    published: true,
-    updates: [] as UpdateEntry[],
-  })
+  const [form, setForm] = useState(EMPTY_FORM)
 
   const years = Array.from(new Set(activities.map((a) => a.year))).sort((a, b) => b - a)
   const filtered = filterYear === 'all'
@@ -65,17 +78,7 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
     const yearItems = activities.filter((a) => a.year === targetYear)
     const nextOrder = yearItems.length > 0 ? Math.max(...yearItems.map((a) => a.order)) + 1 : 0
 
-    setForm({
-      title: '',
-      slug: '',
-      description: '',
-      year: targetYear,
-      order: nextOrder,
-      event_date: '',
-      venue: '',
-      published: true,
-      updates: [],
-    })
+    setForm({ ...EMPTY_FORM, year: targetYear, order: nextOrder })
     setShowForm(true)
   }
 
@@ -91,8 +94,13 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
       order: activity.order,
       event_date: activity.event_date ? activity.event_date.slice(0, 16) : '',
       venue: activity.venue ?? '',
+      cover_image: activity.cover_image ?? '',
       published: activity.published,
       updates: activity.updates ?? [],
+      registration_url: activity.registration_url ?? '',
+      gallery: activity.gallery ?? [],
+      tweet_urls: activity.tweet_urls ?? [],
+      media_kit_url: activity.media_kit_url ?? '',
     })
     setShowForm(true)
   }
@@ -116,6 +124,7 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
     }
   }
 
+  // Updates
   function addUpdate() {
     setForm((f) => ({ ...f, updates: [...f.updates, { date: '', title: '', description: '' }] }))
   }
@@ -128,6 +137,36 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
   }
   function removeUpdate(i: number) {
     setForm((f) => ({ ...f, updates: f.updates.filter((_, idx) => idx !== i) }))
+  }
+
+  // Gallery
+  function addGalleryImage() {
+    setForm((f) => ({ ...f, gallery: [...f.gallery, ''] }))
+  }
+  function updateGalleryImage(i: number, url: string) {
+    setForm((f) => {
+      const next = [...f.gallery]
+      next[i] = url
+      return { ...f, gallery: next }
+    })
+  }
+  function removeGalleryImage(i: number) {
+    setForm((f) => ({ ...f, gallery: f.gallery.filter((_, idx) => idx !== i) }))
+  }
+
+  // Tweets
+  function addTweetUrl() {
+    setForm((f) => ({ ...f, tweet_urls: [...f.tweet_urls, ''] }))
+  }
+  function updateTweetUrl(i: number, value: string) {
+    setForm((f) => {
+      const next = [...f.tweet_urls]
+      next[i] = value
+      return { ...f, tweet_urls: next }
+    })
+  }
+  function removeTweetUrl(i: number) {
+    setForm((f) => ({ ...f, tweet_urls: f.tweet_urls.filter((_, idx) => idx !== i) }))
   }
 
   async function handleSave() {
@@ -144,8 +183,13 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
       order: form.order,
       event_date: form.event_date ? new Date(form.event_date).toISOString() : null,
       venue: form.venue.trim() || null,
+      cover_image: form.cover_image || null,
       published: form.published,
       updates: form.updates.filter((u) => u.date && u.title),
+      registration_url: form.registration_url.trim() || null,
+      gallery: form.gallery.map((g) => g.trim()).filter(Boolean),
+      tweet_urls: form.tweet_urls.map((t) => t.trim()).filter(Boolean),
+      media_kit_url: form.media_kit_url.trim() || null,
     }
 
     if (editingId) {
@@ -204,7 +248,7 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-headline text-2xl sm:text-3xl font-bold text-slate-900">Activities</h1>
+          <h1 className="font-headline text-2xl sm:text-3xl font-bold text-slate-900">Events</h1>
           <p className="text-slate-400 text-xs mt-0.5">
             {activities.length} total across {years.length} {years.length === 1 ? 'year' : 'years'}
           </p>
@@ -215,15 +259,15 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
           style={{ backgroundColor: '#E8192C' }}
         >
           {showForm ? <X size={15} /> : <Plus size={15} />}
-          {showForm ? 'Cancel' : 'Add Activity'}
+          {showForm ? 'Cancel' : 'Add Event'}
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <h2 className="font-bold text-sm text-slate-900 uppercase tracking-wide font-headline">
-              {editingId ? 'Edit Activity' : 'Add New Activity'}
+              {editingId ? 'Edit Event' : 'Add New Event'}
             </h2>
             <span className="text-[11px] text-slate-400">Press Esc or Cancel to discard</span>
           </div>
@@ -309,8 +353,29 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
                   min={0}
                   className={inputClass}
                 />
-                <p className="text-[11px] text-slate-400 mt-1">Lower order numbers appear first within the selected year.</p>
               </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Cover Image</label>
+              <div className="w-full max-w-xs aspect-video rounded-lg overflow-hidden border border-slate-200">
+                <ImageUpload
+                  value={form.cover_image}
+                  folder="activities"
+                  onChange={(url) => setForm((f) => ({ ...f, cover_image: url }))}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Registration URL</label>
+              <input
+                name="registration_url"
+                value={form.registration_url}
+                onChange={handleChange}
+                placeholder="https://forms.gle/... or event page link"
+                className={inputClass}
+              />
             </div>
 
             <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
@@ -324,14 +389,83 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
               Published
             </label>
 
+            {/* Gallery */}
+            <div className="pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-3">
+                <label className={labelClass}>Gallery</label>
+                <button type="button" onClick={addGalleryImage} className="text-xs font-bold text-[#E8192C] hover:underline">
+                  + Add image
+                </button>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                {form.gallery.map((url, i) => (
+                  <div key={i} className="relative">
+                    <div className="aspect-square rounded-lg overflow-hidden border border-slate-200">
+                      <ImageUpload
+                        value={url}
+                        folder="activities/gallery"
+                        onChange={(newUrl) => updateGalleryImage(i, newUrl)}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeGalleryImage(i)}
+                      className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-rose-600 flex items-center justify-center text-xs shadow-sm"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                {form.gallery.length === 0 && (
+                  <p className="text-[11px] text-slate-400 col-span-full">No gallery images yet.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Tweets */}
+            <div className="pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-3">
+                <label className={labelClass}>Featured Tweets / Posts</label>
+                <button type="button" onClick={addTweetUrl} className="text-xs font-bold text-[#E8192C] hover:underline">
+                  + Add tweet
+                </button>
+              </div>
+              <div className="space-y-2">
+                {form.tweet_urls.length === 0 && (
+                  <p className="text-[11px] text-slate-400">No tweets added yet.</p>
+                )}
+                {form.tweet_urls.map((url, i) => (
+                  <div key={i} className="flex gap-2">
+                    <input
+                      value={url}
+                      onChange={(e) => updateTweetUrl(i, e.target.value)}
+                      placeholder="https://x.com/user/status/..."
+                      className={`${inputClass} text-xs`}
+                    />
+                    <button type="button" onClick={() => removeTweetUrl(i)} className="text-slate-300 hover:text-rose-600 text-xs px-1">
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Media Kit URL</label>
+              <input
+                name="media_kit_url"
+                value={form.media_kit_url}
+                onChange={handleChange}
+                placeholder="Link to press kit / assets folder"
+                className={inputClass}
+              />
+            </div>
+
+            {/* Updates */}
             <div className="pt-3 border-t border-slate-100">
               <div className="flex items-center justify-between mb-3">
                 <label className={labelClass}>Upcoming Updates</label>
-                <button
-                  type="button"
-                  onClick={addUpdate}
-                  className="text-xs font-bold text-[#E8192C] hover:underline"
-                >
+                <button type="button" onClick={addUpdate} className="text-xs font-bold text-[#E8192C] hover:underline">
                   + Add update
                 </button>
               </div>
@@ -385,7 +519,7 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
                 style={{ backgroundColor: '#E8192C' }}
               >
                 <Check size={14} />
-                {saving ? 'Saving...' : editingId ? 'Update Activity' : 'Save Activity'}
+                {saving ? 'Saving...' : editingId ? 'Update Event' : 'Save Event'}
               </button>
               <button
                 onClick={closeForm}
@@ -413,7 +547,7 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
               }`}
             >
-              <span>{y === 'all' ? 'All Activities' : y}</span>
+              <span>{y === 'all' ? 'All Events' : y}</span>
               <span
                 className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                   isActive ? 'bg-white/20 text-white' : 'bg-slate-200/70 text-slate-500'
@@ -469,14 +603,14 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
                 <button
                   onClick={() => startEdit(activity)}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                  title="Edit activity"
+                  title="Edit event"
                 >
                   <Pencil size={15} />
                 </button>
                 <button
                   onClick={() => handleDelete(activity.id)}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                  title="Delete activity"
+                  title="Delete event"
                 >
                   <Trash2 size={15} />
                 </button>
@@ -486,12 +620,12 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
 
           {filtered.length === 0 && (
             <div className="px-6 py-14 text-center">
-              <p className="text-xs text-slate-400 mb-2">No activities listed for this criteria.</p>
+              <p className="text-xs text-slate-400 mb-2">No events listed for this criteria.</p>
               <button
                 onClick={openCreateForm}
                 className="text-xs font-bold text-[#E8192C] hover:underline"
               >
-                + Add the first activity
+                + Add the first event
               </button>
             </div>
           )}

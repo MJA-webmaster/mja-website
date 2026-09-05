@@ -146,7 +146,7 @@ export default async function ActivityDetailPage({ params }: Props) {
 
             {/* Tweets */}
             {activity.tweet_urls?.length > 0 && (
-              <div className="sm:col-span-2 bg-white rounded-xl border border-gray-200/80 p-5">
+              <div className="sm:col-span-2 lg:col-span-3 bg-white rounded-xl border border-gray-200/80 p-5">
                 <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">On Social</p>
                 <CampaignTwitterFeed tweetUrls={activity.tweet_urls} />
               </div>
@@ -157,10 +157,17 @@ export default async function ActivityDetailPage({ params }: Props) {
               <Link
                 href={activity.media_kit_url}
                 target="_blank"
-                className="bg-white rounded-xl border border-gray-200/80 p-5 hover:border-gray-300 transition-colors flex flex-col justify-center"
+                className="sm:col-span-2 lg:col-span-3 bg-white rounded-xl border border-gray-200/80 p-5 hover:border-gray-300 hover:shadow-sm transition-all flex items-center gap-4"
               >
-                <p className="font-semibold text-navy text-sm mb-1">Media Kit</p>
-                <p className="text-xs text-gray-400">Photos & press assets</p>
+                <div className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#FEE2E2' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#E8192C" strokeWidth="2" className="w-5 h-5">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-semibold text-navy text-sm">Media Kit</p>
+                  <p className="text-xs text-gray-400">Photos & press assets</p>
+                </div>
               </Link>
             )}
 

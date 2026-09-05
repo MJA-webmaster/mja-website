@@ -11,7 +11,6 @@ export type Article = {
   created_at: string
   updated_at: string
 }
-
 export type Campaign = {
   id: string
   title: string
@@ -36,7 +35,6 @@ export type Campaign = {
   milestones: { date: string; title: string; description?: string }[]
   tweet_urls: string[]
 }
-
 export type Member = {
   id: string
   name: string
@@ -59,7 +57,6 @@ export type Member = {
   fee_paid_until: string | null
   sort_order: number
 }
-
 export type ExecutiveCommitteeMember = {
   id: string
   name: string
@@ -76,7 +73,6 @@ export type ExecutiveCommitteeMember = {
   order: number
   created_at: string
 }
-
 export type TeamMember = {
   id: string
   name: string
@@ -86,12 +82,11 @@ export type TeamMember = {
   order: number
   created_at: string
 }
-
 export type Resource = {
   id: string
   title: string
   description: string | null
-  category: 'publications' | 'annual-reports' | 'financials' | 'multimedia'
+  category: 'publications' | 'annual-reports' | 'financials' | 'multimedia' | 'governance'
   subcategory: string | null
   file_url: string | null
   external_url: string | null
@@ -100,13 +95,11 @@ export type Resource = {
   published: boolean
   created_at: string
 }
-
 export type NewsletterSubscriber = {
   id: string
   email: string
   subscribed_at: string
 }
-
 export type MemberStats = {
   local: number
   international: number
@@ -116,7 +109,6 @@ export type MemberStats = {
   male: number
   female: number
 }
-
 export type PageContent = {
   id: string
   slug: string
@@ -124,7 +116,6 @@ export type PageContent = {
   content: string | null
   updated_at: string
 }
-
 export type LedgerEntry = {
   id: string
   entry_date: string
@@ -133,5 +124,19 @@ export type LedgerEntry = {
   description: string
   payee: string | null
   amount: number
+  created_at: string
+}
+export type Activity = {
+  id: string
+  title: string
+  slug: string
+  description: string | null
+  year: number
+  order: number
+  event_date: string | null
+  venue: string | null
+  cover_image: string | null
+  published: boolean
+  updates: { date: string; title: string; description?: string }[]
   created_at: string
 }

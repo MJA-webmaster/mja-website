@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import ImageUpload from '@/components/ImageUpload'
-import { Plus, Trash2, Pencil, Check, X, AlertCircle } from 'lucide-react'
+import { Plus, Trash2, Pencil, Check, X, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 
 type Activity = {
   id: string
@@ -53,9 +53,19 @@ const EMPTY_FORM = {
   media_kit_url: '',
 }
 
+const STEPS = [
+  { key: 'details', label: 'Details' },
+  { key: 'media', label: 'Media' },
+  { key: 'engagement', label: 'Engagement' },
+  { key: 'updates', label: 'Updates' },
+] as const
+
+type StepKey = (typeof STEPS)[number]['key']
+
 export default function ActivitiesAdminClient({ activities: initial }: { activities: Activity[] }) {
   const [activities, setActivities] = useState<Activity[]>(initial)
   const [showForm, setShowForm] = useState(false)
+  const [step, setStep] = useState<StepKey>('details')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -69,10 +79,15 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
     ? activities
     : activities.filter((a) => a.year === filterYear)
 
+  const stepIndex = STEPS.findIndex((s) => s.key === step)
+  const isFirstStep = stepIndex === 0
+  const isLastStep = stepIndex === STEPS.length - 1
+
   function openCreateForm() {
     setError(null)
     setEditingId(null)
     setSlugManual(false)
+    setStep('details')
 
     const targetYear = filterYear === 'all' ? defaultYear : filterYear
     const yearItems = activities.filter((a) => a.year === targetYear)
@@ -86,6 +101,7 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
     setError(null)
     setEditingId(activity.id)
     setSlugManual(true)
+    setStep('details')
     setForm({
       title: activity.title,
       slug: activity.slug ?? '',
@@ -169,8 +185,19 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
     setForm((f) => ({ ...f, tweet_urls: f.tweet_urls.filter((_, idx) => idx !== i) }))
   }
 
+  function goNext() {
+    if (!isLastStep) setStep(STEPS[stepIndex + 1].key)
+  }
+  function goBack() {
+    if (!isFirstStep) setStep(STEPS[stepIndex - 1].key)
+  }
+
   async function handleSave() {
-    if (!form.title.trim()) return
+    if (!form.title.trim()) {
+      setStep('details')
+      setError('Title is required.')
+      return
+    }
     setSaving(true)
     setError(null)
     const supabase = createClient()
@@ -264,254 +291,316 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
       </div>
 
       {showForm && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h2 className="font-bold text-sm text-slate-900 uppercase tracking-wide font-headline">
-              {editingId ? 'Edit Event' : 'Add New Event'}
-            </h2>
-            <span className="text-[11px] text-slate-400">Press Esc or Cancel to discard</span>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          {/* Step progress bar */}
+          <div className="flex items-center border-b border-slate-100 px-6 py-4">
+            {STEPS.map((s, i) => {
+              const isActive = s.key === step
+              const isDone = i < stepIndex
+              return (
+                <div key={s.key} className="flex items-center flex-1 last:flex-none">
+                  <button
+                    type="button"
+                    onClick={() => setStep(s.key)}
+                    className="flex items-center gap-2 shrink-0"
+                  >
+                    <span
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 transition-colors"
+                      style={
+                        isActive
+                          ? { backgroundColor: '#E8192C', color: 'white' }
+                          : isDone
+                          ? { backgroundColor: '#FEE2E2', color: '#E8192C' }
+                          : { backgroundColor: '#F1F5F9', color: '#94A3B8' }
+                      }
+                    >
+                      {isDone ? <Check size={12} /> : i + 1}
+                    </span>
+                    <span
+                      className={`text-xs font-bold hidden sm:inline ${isActive ? 'text-slate-900' : 'text-slate-400'}`}
+                    >
+                      {s.label}
+                    </span>
+                  </button>
+                  {i < STEPS.length - 1 && (
+                    <div className="flex-1 h-px bg-slate-100 mx-3" />
+                  )}
+                </div>
+              )
+            })}
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className={labelClass}>Event Title *</label>
-              <input
-                name="title"
-                value={form.title}
-                onChange={handleChange}
-                placeholder="e.g. Safety Training for Investigative Reporters"
-                className={inputClass}
-                autoFocus
-              />
-            </div>
+          <div className="p-6">
+            {/* Step 1: Details */}
+            {step === 'details' && (
+              <div className="space-y-4">
+                <div>
+                  <label className={labelClass}>Event Title *</label>
+                  <input
+                    name="title"
+                    value={form.title}
+                    onChange={handleChange}
+                    placeholder="e.g. Safety Training for Investigative Reporters"
+                    className={inputClass}
+                    autoFocus
+                  />
+                </div>
 
-            <div>
-              <label className={labelClass}>URL Slug</label>
-              <input
-                name="slug"
-                value={form.slug}
-                onChange={(e) => { setSlugManual(true); handleChange(e) }}
-                className={`${inputClass} font-mono text-xs`}
-              />
-            </div>
+                <div>
+                  <label className={labelClass}>URL Slug</label>
+                  <input
+                    name="slug"
+                    value={form.slug}
+                    onChange={(e) => { setSlugManual(true); handleChange(e) }}
+                    className={`${inputClass} font-mono text-xs`}
+                  />
+                </div>
 
-            <div>
-              <label className={labelClass}>Description / Highlights</label>
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                placeholder="Brief summary of key outcomes, trainers, or attendee scope..."
-                rows={3}
-                className={`${inputClass} resize-none`}
-              />
-            </div>
+                <div>
+                  <label className={labelClass}>Description / Highlights</label>
+                  <textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    placeholder="Brief summary of key outcomes, trainers, or attendee scope..."
+                    rows={3}
+                    className={`${inputClass} resize-none`}
+                  />
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Date & Time</label>
-                <input
-                  type="datetime-local"
-                  name="event_date"
-                  value={form.event_date}
-                  onChange={handleChange}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Venue</label>
-                <input
-                  name="venue"
-                  value={form.venue}
-                  onChange={handleChange}
-                  placeholder="e.g. Dharubaaruge, Malé"
-                  className={inputClass}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Year</label>
-                <input
-                  type="number"
-                  name="year"
-                  value={form.year}
-                  onChange={handleChange}
-                  min={2000}
-                  max={2099}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Display Sequence Order</label>
-                <input
-                  type="number"
-                  name="order"
-                  value={form.order}
-                  onChange={handleChange}
-                  min={0}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className={labelClass}>Cover Image</label>
-              <div className="w-full max-w-xs aspect-video rounded-lg overflow-hidden border border-slate-200">
-                <ImageUpload
-                  value={form.cover_image}
-                  folder="activities"
-                  onChange={(url) => setForm((f) => ({ ...f, cover_image: url }))}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className={labelClass}>Registration URL</label>
-              <input
-                name="registration_url"
-                value={form.registration_url}
-                onChange={handleChange}
-                placeholder="https://forms.gle/... or event page link"
-                className={inputClass}
-              />
-            </div>
-
-            <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                name="published"
-                checked={form.published}
-                onChange={handleChange}
-                style={{ accentColor: '#E8192C' }}
-              />
-              Published
-            </label>
-
-            {/* Gallery */}
-            <div className="pt-3 border-t border-slate-100">
-              <div className="flex items-center justify-between mb-3">
-                <label className={labelClass}>Gallery</label>
-                <button type="button" onClick={addGalleryImage} className="text-xs font-bold text-[#E8192C] hover:underline">
-                  + Add image
-                </button>
-              </div>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {form.gallery.map((url, i) => (
-                  <div key={i} className="relative">
-                    <div className="aspect-square rounded-lg overflow-hidden border border-slate-200">
-                      <ImageUpload
-                        value={url}
-                        folder="activities/gallery"
-                        onChange={(newUrl) => updateGalleryImage(i, newUrl)}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeGalleryImage(i)}
-                      className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-rose-600 flex items-center justify-center text-xs shadow-sm"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-                {form.gallery.length === 0 && (
-                  <p className="text-[11px] text-slate-400 col-span-full">No gallery images yet.</p>
-                )}
-              </div>
-            </div>
-
-            {/* Tweets */}
-            <div className="pt-3 border-t border-slate-100">
-              <div className="flex items-center justify-between mb-3">
-                <label className={labelClass}>Featured Tweets / Posts</label>
-                <button type="button" onClick={addTweetUrl} className="text-xs font-bold text-[#E8192C] hover:underline">
-                  + Add tweet
-                </button>
-              </div>
-              <div className="space-y-2">
-                {form.tweet_urls.length === 0 && (
-                  <p className="text-[11px] text-slate-400">No tweets added yet.</p>
-                )}
-                {form.tweet_urls.map((url, i) => (
-                  <div key={i} className="flex gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelClass}>Date & Time</label>
                     <input
-                      value={url}
-                      onChange={(e) => updateTweetUrl(i, e.target.value)}
-                      placeholder="https://x.com/user/status/..."
-                      className={`${inputClass} text-xs`}
+                      type="datetime-local"
+                      name="event_date"
+                      value={form.event_date}
+                      onChange={handleChange}
+                      className={inputClass}
                     />
-                    <button type="button" onClick={() => removeTweetUrl(i)} className="text-slate-300 hover:text-rose-600 text-xs px-1">
-                      ✕
+                  </div>
+                  <div>
+                    <label className={labelClass}>Venue</label>
+                    <input
+                      name="venue"
+                      value={form.venue}
+                      onChange={handleChange}
+                      placeholder="e.g. Dharubaaruge, Malé"
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelClass}>Year</label>
+                    <input
+                      type="number"
+                      name="year"
+                      value={form.year}
+                      onChange={handleChange}
+                      min={2000}
+                      max={2099}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Display Sequence Order</label>
+                    <input
+                      type="number"
+                      name="order"
+                      value={form.order}
+                      onChange={handleChange}
+                      min={0}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    name="published"
+                    checked={form.published}
+                    onChange={handleChange}
+                    style={{ accentColor: '#E8192C' }}
+                  />
+                  Published
+                </label>
+              </div>
+            )}
+
+            {/* Step 2: Media */}
+            {step === 'media' && (
+              <div className="space-y-6">
+                <div>
+                  <label className={labelClass}>Cover Image</label>
+                  <div className="w-full max-w-xs aspect-video rounded-lg overflow-hidden border border-slate-200">
+                    <ImageUpload
+                      value={form.cover_image}
+                      folder="activities"
+                      onChange={(url) => setForm((f) => ({ ...f, cover_image: url }))}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className={labelClass}>Gallery</label>
+                    <button type="button" onClick={addGalleryImage} className="text-xs font-bold text-[#E8192C] hover:underline">
+                      + Add image
                     </button>
                   </div>
-                ))}
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    {form.gallery.map((url, i) => (
+                      <div key={i} className="relative">
+                        <div className="aspect-square rounded-lg overflow-hidden border border-slate-200">
+                          <ImageUpload
+                            value={url}
+                            folder="activities/gallery"
+                            onChange={(newUrl) => updateGalleryImage(i, newUrl)}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeGalleryImage(i)}
+                          className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-rose-600 flex items-center justify-center text-xs shadow-sm"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    {form.gallery.length === 0 && (
+                      <p className="text-[11px] text-slate-400 col-span-full">No gallery images yet.</p>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
-            <div>
-              <label className={labelClass}>Media Kit URL</label>
-              <input
-                name="media_kit_url"
-                value={form.media_kit_url}
-                onChange={handleChange}
-                placeholder="Link to press kit / assets folder"
-                className={inputClass}
-              />
-            </div>
+            {/* Step 3: Engagement */}
+            {step === 'engagement' && (
+              <div className="space-y-6">
+                <div>
+                  <label className={labelClass}>Registration URL</label>
+                  <input
+                    name="registration_url"
+                    value={form.registration_url}
+                    onChange={handleChange}
+                    placeholder="https://forms.gle/... or event page link"
+                    className={inputClass}
+                  />
+                </div>
 
-            {/* Updates */}
-            <div className="pt-3 border-t border-slate-100">
-              <div className="flex items-center justify-between mb-3">
-                <label className={labelClass}>Upcoming Updates</label>
-                <button type="button" onClick={addUpdate} className="text-xs font-bold text-[#E8192C] hover:underline">
-                  + Add update
-                </button>
+                <div>
+                  <label className={labelClass}>Media Kit URL</label>
+                  <input
+                    name="media_kit_url"
+                    value={form.media_kit_url}
+                    onChange={handleChange}
+                    placeholder="Link to press kit / assets folder"
+                    className={inputClass}
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className={labelClass}>Featured Tweets / Posts</label>
+                    <button type="button" onClick={addTweetUrl} className="text-xs font-bold text-[#E8192C] hover:underline">
+                      + Add tweet
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {form.tweet_urls.length === 0 && (
+                      <p className="text-[11px] text-slate-400">No tweets added yet.</p>
+                    )}
+                    {form.tweet_urls.map((url, i) => (
+                      <div key={i} className="flex gap-2">
+                        <input
+                          value={url}
+                          onChange={(e) => updateTweetUrl(i, e.target.value)}
+                          placeholder="https://x.com/user/status/..."
+                          className={`${inputClass} text-xs`}
+                        />
+                        <button type="button" onClick={() => removeTweetUrl(i)} className="text-slate-300 hover:text-rose-600 text-xs px-1">
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="space-y-3">
-                {form.updates.length === 0 && (
-                  <p className="text-[11px] text-slate-400">No updates yet.</p>
-                )}
-                {form.updates.map((u, i) => (
-                  <div key={i} className="border border-slate-100 rounded-lg p-3 space-y-2">
-                    <div className="flex gap-2">
+            )}
+
+            {/* Step 4: Updates */}
+            {step === 'updates' && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className={labelClass}>Upcoming Updates</label>
+                  <button type="button" onClick={addUpdate} className="text-xs font-bold text-[#E8192C] hover:underline">
+                    + Add update
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {form.updates.length === 0 && (
+                    <p className="text-[11px] text-slate-400">No updates yet. You can publish now and add these later.</p>
+                  )}
+                  {form.updates.map((u, i) => (
+                    <div key={i} className="border border-slate-100 rounded-lg p-3 space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="date"
+                          value={u.date}
+                          onChange={(e) => updateUpdate(i, 'date', e.target.value)}
+                          className={`${inputClass} text-xs`}
+                        />
+                        <button type="button" onClick={() => removeUpdate(i)} className="text-slate-300 hover:text-rose-600 text-xs px-1">
+                          ✕
+                        </button>
+                      </div>
                       <input
-                        type="date"
-                        value={u.date}
-                        onChange={(e) => updateUpdate(i, 'date', e.target.value)}
+                        value={u.title}
+                        onChange={(e) => updateUpdate(i, 'title', e.target.value)}
+                        placeholder="Update title (e.g. Venue changed)"
                         className={`${inputClass} text-xs`}
                       />
-                      <button type="button" onClick={() => removeUpdate(i)} className="text-slate-300 hover:text-rose-600 text-xs px-1">
-                        ✕
-                      </button>
+                      <textarea
+                        value={u.description ?? ''}
+                        onChange={(e) => updateUpdate(i, 'description', e.target.value)}
+                        placeholder="Short note (optional)"
+                        rows={2}
+                        className={`${inputClass} text-xs resize-none`}
+                      />
                     </div>
-                    <input
-                      value={u.title}
-                      onChange={(e) => updateUpdate(i, 'title', e.target.value)}
-                      placeholder="Update title (e.g. Venue changed)"
-                      className={`${inputClass} text-xs`}
-                    />
-                    <textarea
-                      value={u.description ?? ''}
-                      onChange={(e) => updateUpdate(i, 'description', e.target.value)}
-                      placeholder="Short note (optional)"
-                      rows={2}
-                      className={`${inputClass} text-xs resize-none`}
-                    />
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {error && (
-              <div className="flex items-center gap-2 text-xs text-rose-700 bg-rose-50 border border-rose-200/80 px-3.5 py-2.5 rounded-lg">
+              <div className="flex items-center gap-2 text-xs text-rose-700 bg-rose-50 border border-rose-200/80 px-3.5 py-2.5 rounded-lg mt-4">
                 <AlertCircle size={15} className="shrink-0" />
                 <span>{error}</span>
               </div>
             )}
+          </div>
 
-            <div className="flex items-center gap-3 pt-2">
+          {/* Footer nav */}
+          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+            <button
+              onClick={isFirstStep ? closeForm : goBack}
+              className="flex items-center gap-1.5 border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-white transition-colors"
+            >
+              {isFirstStep ? (
+                'Cancel'
+              ) : (
+                <>
+                  <ChevronLeft size={14} /> Back
+                </>
+              )}
+            </button>
+
+            {isLastStep ? (
               <button
                 onClick={handleSave}
                 disabled={saving || !form.title.trim()}
@@ -521,13 +610,15 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
                 <Check size={14} />
                 {saving ? 'Saving...' : editingId ? 'Update Event' : 'Save Event'}
               </button>
+            ) : (
               <button
-                onClick={closeForm}
-                className="border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors"
+                onClick={goNext}
+                className="flex items-center gap-1.5 text-white px-5 py-2 rounded-lg text-xs font-bold transition-colors shadow-xs"
+                style={{ backgroundColor: '#E8192C' }}
               >
-                Cancel
+                Next <ChevronRight size={14} />
               </button>
-            </div>
+            )}
           </div>
         </div>
       )}

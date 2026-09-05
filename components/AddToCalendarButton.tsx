@@ -68,7 +68,7 @@ export default function AddToCalendarButton({
       </button>
       {open && (
         <div className="absolute z-10 mt-1 w-full bg-white rounded-lg border border-gray-200 shadow-lg overflow-hidden">
-          
+          <a
             href={googleUrl}
             target="_blank"
             rel="noopener noreferrer"

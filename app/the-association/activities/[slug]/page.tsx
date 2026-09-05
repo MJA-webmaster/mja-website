@@ -9,6 +9,7 @@ import EventCountdown from '@/components/EventCountdown'
 import EventGallery from '@/components/EventGallery'
 import EventShare from '@/components/EventShare'
 import EventCalendarWidget from '@/components/EventCalendarWidget'
+import AddToCalendarButton from '@/components/AddToCalendarButton'
 import CampaignTwitterFeed from '@/components/CampaignTwitterFeed'
 import type { Activity } from '@/lib/types'
 import type { Metadata } from 'next'
@@ -42,6 +43,21 @@ export default async function ActivityDetailPage({ params }: Props) {
 
   const allEvents = allEventsRaw ?? []
 
+  const { data: allActivitiesWithUpdates } = await supabase
+    .from('activities')
+    .select('id, title, slug, updates')
+    .eq('published', true)
+
+  const allMoments = (allActivitiesWithUpdates ?? []).flatMap((a: any) =>
+    (a.updates ?? []).map((u: any, i: number) => ({
+      id: `${a.id}-${i}`,
+      title: u.title,
+      date: u.date,
+      parentSlug: a.slug,
+      parentTitle: a.title,
+    }))
+  )
+
   const sortedUpdates = [...(activity.updates ?? [])].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   )
@@ -74,7 +90,7 @@ export default async function ActivityDetailPage({ params }: Props) {
               </div>
             )}
 
-            {/* Countdown + register + share */}
+            {/* Countdown + register + calendar + share */}
             <div className="bg-white rounded-xl border border-gray-200/80 p-5 flex flex-col justify-between gap-4">
               {activity.event_date ? (
                 <div>
@@ -94,6 +110,14 @@ export default async function ActivityDetailPage({ params }: Props) {
                   >
                     Register for Event
                   </Link>
+                )}
+                {activity.event_date && (
+                  <AddToCalendarButton
+                    title={activity.title}
+                    description={activity.description ?? undefined}
+                    location={activity.venue ?? undefined}
+                    startDate={activity.event_date}
+                  />
                 )}
                 <EventShare title={activity.title} url={eventUrl} />
               </div>
@@ -132,7 +156,7 @@ export default async function ActivityDetailPage({ params }: Props) {
             {/* Calendar widget */}
             {activity.event_date && (
               <div className="sm:col-span-2 lg:col-span-3">
-                <EventCalendarWidget currentEventId={activity.id} allEvents={allEvents} />
+                <EventCalendarWidget currentEventId={activity.id} allEvents={allEvents} moments={allMoments} />
               </div>
             )}
 

@@ -1,140 +1,169 @@
-'use client'
-
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import Image from 'next/image'
+import { createClient } from '@/lib/supabase/server'
 import ArticleCard from '@/components/ArticleCard'
 import MemberMeter from '@/components/MemberMeter'
 import HeroSection from '@/components/HeroSection'
 import GetInvolved from '@/components/GetInvolved'
 import { getCampaignStatus, STATUS_BADGE_STYLE } from '@/lib/campaigns'
 
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: '-40px' },
-  transition: { duration: 0.65, delay, ease: [0.22, 1, 0.36, 1] },
-})
+export default async function HomePage() {
+  const supabase = createClient()
 
-export default function HomePage() {
-  const [data, setData] = useState<any>({
-    articles: [],
-    heroCampaign: null,
-    campaigns: [],
-    stats: null,
-    activities: [],
-    dispatch: null,
-  })
+  const [articlesRes, campaignsRes, statsRes, activitiesRes, settingsRes] = await Promise.all([
+    supabase
+      .from('articles')
+      .select('*')
+      .eq('published', true)
+      .order('published_at', { ascending: false })
+      .limit(4),
+    supabase
+      .from('campaigns')
+      .select('*')
+      .eq('published', true)
+      .order('created_at', { ascending: false })
+      .limit(6),
+    supabase
+      .from('member_stats')
+      .select('*')
+      .maybeSingle(),
+    supabase
+      .from('activities')
+      .select('*')
+      .order('year', { ascending: false })
+      .order('order', { ascending: true })
+      .limit(4),
+    supabase
+      .from('settings')
+      .select('dispatch')
+      .maybeSingle(),
+  ])
 
-  useEffect(() => {
-    const supabase = createClient()
-    Promise.all([
-      supabase.from('articles').select('*').eq('published', true).order('published_at', { ascending: false }).limit(4),
-      supabase.from('campaigns').select('*').eq('published', true).order('created_at', { ascending: false }).limit(6),
-      supabase.from('member_stats').select('*').single(),
-      supabase.from('activities').select('*').eq('year', new Date().getFullYear()).order('order', { ascending: true }).limit(4),
-      supabase.from('settings').select('dispatch').single(),
-    ]).then(([articles, campaigns, stats, activities, settings]) => {
-      const allCampaigns = campaigns.data ?? []
-      const heroCampaign = allCampaigns.find(
-        (c: any) => c.is_hero_featured && getCampaignStatus(c) === 'active'
-      ) ?? null
-      const activeCampaigns = allCampaigns.filter((c: any) => getCampaignStatus(c) === 'active')
+  const articles = articlesRes.data ?? []
+  const allCampaigns = campaignsRes.data ?? []
+  const activities = activitiesRes.data ?? []
+  const dispatch = settingsRes.data?.dispatch ?? null
 
-      setData({
-        articles: articles.data ?? [],
-        heroCampaign,
-        campaigns: activeCampaigns,
-        stats: stats.data,
-        activities: activities.data ?? [],
-        dispatch: settings.data?.dispatch ?? null,
-      })
-    })
-  }, [])
+  const heroCampaign =
+    allCampaigns.find((c: any) => c.is_hero_featured && getCampaignStatus(c) === 'active') ?? null
+  const activeCampaigns = allCampaigns.filter((c: any) => getCampaignStatus(c) === 'active')
 
-  const memberStats = data.stats ?? {
-    total: 0, media_outlets: 0, male: 0, female: 0,
-    local: 0, international: 0, non_member_contributors: 0,
+  const memberStats = statsRes.data ?? {
+    total: 0,
+    media_outlets: 0,
+    male: 0,
+    female: 0,
+    local: 0,
+    international: 0,
+    non_member_contributors: 0,
   }
 
   return (
     <>
       {/* ── Hero ── */}
-      <HeroSection campaign={data.heroCampaign} dispatch={data.dispatch} />
+      <HeroSection campaign={heroCampaign} dispatch={dispatch} />
 
       {/* ── Latest News ── */}
-      {data.articles.length > 0 && (
-        <section className="max-w-[1280px] mx-auto px-4 sm:px-6 py-16">
-          <motion.div {...fadeUp()} className="flex items-center justify-between mb-8">
-            <h2 className="font-headline font-black uppercase text-2xl md:text-3xl" style={{ color: '#0D1B2A' }}>
-              <span style={{ color: '#E8192C' }}>Latest</span> News
-            </h2>
+      {articles.length > 0 && (
+        <section className="max-w-[1280px] mx-auto px-4 sm:px-6 py-14 sm:py-20">
+          <div className="flex items-center justify-between mb-8 pb-3 border-b border-gray-100">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#E8192C] block mb-1">
+                Dispatches & Updates
+              </span>
+              <h2 className="font-headline font-black uppercase text-2xl md:text-3xl text-[#0D1B2A]">
+                <span className="text-[#E8192C]">Latest</span> News
+              </h2>
+            </div>
             <Link
               href="/news-room"
-              className="text-xs font-bold tracking-wider uppercase hover:underline"
-              style={{ color: '#E8192C' }}
+              className="text-xs font-bold tracking-wider uppercase text-[#E8192C] hover:text-[#c91424] transition-colors"
             >
               View all →
             </Link>
-          </motion.div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {data.articles.map((article: any, i: number) => (
-              <motion.div key={article.id} {...fadeUp(i * 0.07)}>
-                <ArticleCard article={article} />
-              </motion.div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {articles.map((article: any) => (
+              <ArticleCard key={article.id} article={article} />
             ))}
           </div>
         </section>
       )}
 
-      {/* ── Campaigns ── */}
-      {data.campaigns.length > 0 && (
-        <section className="border-t border-gray-100 py-16 px-4 sm:px-6">
+      {/* ── Active Campaigns ── */}
+      {activeCampaigns.length > 0 && (
+        <section className="border-t border-gray-100 bg-slate-50/50 py-14 sm:py-20 px-4 sm:px-6">
           <div className="max-w-[1280px] mx-auto">
-            <motion.div {...fadeUp()} className="flex items-center justify-between mb-8">
-              <h2 className="font-headline font-black uppercase text-2xl md:text-3xl" style={{ color: '#0D1B2A' }}>
-                <span style={{ color: '#E8192C' }}>Active</span> Campaigns
-              </h2>
+            <div className="flex items-center justify-between mb-8 pb-3 border-b border-gray-200/70">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#E8192C] block mb-1">
+                  Advocacy & Movements
+                </span>
+                <h2 className="font-headline font-black uppercase text-2xl md:text-3xl text-[#0D1B2A]">
+                  <span className="text-[#E8192C]">Active</span> Campaigns
+                </h2>
+              </div>
               <Link
                 href="/campaigns"
-                className="text-xs font-bold tracking-wider uppercase hover:underline"
-                style={{ color: '#E8192C' }}
+                className="text-xs font-bold tracking-wider uppercase text-[#E8192C] hover:text-[#c91424] transition-colors"
               >
                 View all →
               </Link>
-            </motion.div>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
-              {data.campaigns.slice(0, 3).map((c: any, i: number) => {
+            </div>
+
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {activeCampaigns.slice(0, 3).map((c: any) => {
                 const status = getCampaignStatus(c)
                 const badge = STATUS_BADGE_STYLE[status]
                 return (
-                  <motion.div key={c.id} {...fadeUp(i * 0.07)}>
-                    <Link href={`/campaigns/${c.slug}`} className="group block">
-                      <div className="rounded-xl overflow-hidden aspect-video mb-3 relative" style={{ backgroundColor: '#0D1B2A' }}>
-                        {c.cover_image ? (
-                          <img src={c.cover_image} alt={c.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <span className="font-headline text-white/10 text-6xl font-black">#</span>
-                          </div>
+                  <Link
+                    key={c.id}
+                    href={`/campaigns/${c.slug}`}
+                    className="group bg-white rounded-xl border border-gray-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
+                  >
+                    <div className="aspect-video relative bg-[#0D1B2A] overflow-hidden">
+                      {c.cover_image ? (
+                        <Image
+                          src={c.cover_image}
+                          alt={c.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="font-headline text-white/10 text-6xl font-black">#</span>
+                        </div>
+                      )}
+                      <span
+                        className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full shadow-xs"
+                        style={{ backgroundColor: badge.bg, color: badge.text }}
+                      >
+                        {badge.label}
+                      </span>
+                    </div>
+
+                    <div className="p-5 flex-1 flex flex-col justify-between">
+                      <div>
+                        {c.hashtag && (
+                          <p className="text-xs font-bold text-[#E8192C] mb-1.5">{c.hashtag}</p>
                         )}
-                        <span
-                          className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full"
-                          style={{ backgroundColor: badge.bg, color: badge.text }}
-                        >
-                          {badge.label}
-                        </span>
+                        <h3 className="font-bold text-[#0D1B2A] text-base leading-snug group-hover:text-[#E8192C] transition-colors line-clamp-2">
+                          {c.title}
+                        </h3>
                       </div>
-                      {c.hashtag && <p className="text-xs font-bold mb-1" style={{ color: '#E8192C' }}>{c.hashtag}</p>}
-                      <h3 className="font-bold text-navy text-sm uppercase leading-snug group-hover:text-red transition-colors">{c.title}</h3>
+
                       {c.event_date && (
-                        <p className="text-gray-400 text-xs mt-1">
-                          {new Date(c.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        <p className="text-gray-400 text-xs font-medium mt-4 pt-3 border-t border-gray-100">
+                          {new Date(c.event_date).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
                         </p>
                       )}
-                    </Link>
-                  </motion.div>
+                    </div>
+                  </Link>
                 )
               })}
             </div>
@@ -142,41 +171,52 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── Upcoming Activities ── */}
-      {data.activities.length > 0 && (
-        <section className="border-t border-gray-100 py-16 px-4 sm:px-6">
+      {/* ── Activities & Initiatives ── */}
+      {activities.length > 0 && (
+        <section className="border-t border-gray-100 py-14 sm:py-20 px-4 sm:px-6">
           <div className="max-w-[1280px] mx-auto">
-            <motion.div {...fadeUp()} className="flex items-center justify-between mb-8">
-              <h2 className="font-headline font-black uppercase text-2xl md:text-3xl" style={{ color: '#0D1B2A' }}>
-                <span style={{ color: '#E8192C' }}>Upcoming</span> Activities
-              </h2>
+            <div className="flex items-center justify-between mb-8 pb-3 border-b border-gray-100">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#E8192C] block mb-1">
+                  On the Ground
+                </span>
+                <h2 className="font-headline font-black uppercase text-2xl md:text-3xl text-[#0D1B2A]">
+                  Recent <span className="text-[#E8192C]">Activities</span>
+                </h2>
+              </div>
               <Link
                 href="/the-association/activities"
-                className="text-xs font-bold tracking-wider uppercase hover:underline"
-                style={{ color: '#E8192C' }}
+                className="text-xs font-bold tracking-wider uppercase text-[#E8192C] hover:text-[#c91424] transition-colors"
               >
-                View all →
+                View full archive →
               </Link>
-            </motion.div>
-            <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {data.activities.map((activity: any, i: number) => (
-                <motion.div
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {activities.map((activity: any, idx: number) => (
+                <div
                   key={activity.id}
-                  {...fadeUp(i * 0.07)}
-                  className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-sm transition-shadow"
+                  className="group bg-white rounded-xl border border-gray-200/80 p-5 shadow-xs hover:border-gray-300 hover:shadow-sm transition-all flex flex-col justify-between"
                 >
-                  <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#E8192C' }}>
-                    {activity.year}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-slate-600 font-mono">
+                        {activity.year}
+                      </span>
+                      <span className="text-xs font-mono font-bold text-gray-300 group-hover:text-[#E8192C] transition-colors">
+                        #{String(idx + 1).padStart(2, '0')}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-[#0D1B2A] text-sm leading-snug mb-2 group-hover:text-[#E8192C] transition-colors">
+                      {activity.title}
+                    </h3>
+                    {activity.description && (
+                      <p className="text-gray-500 text-xs leading-relaxed line-clamp-3">
+                        {activity.description}
+                      </p>
+                    )}
                   </div>
-                  <h3 className="font-bold text-navy text-[14px] leading-snug mb-1">
-                    {activity.title}
-                  </h3>
-                  {activity.description && (
-                    <p className="text-gray-400 text-xs leading-relaxed line-clamp-2">
-                      {activity.description}
-                    </p>
-                  )}
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
@@ -186,37 +226,35 @@ export default function HomePage() {
       {/* ── Membership ── */}
       <section style={{ backgroundColor: '#F5F4F0' }} className="py-16 md:py-24">
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-12 md:gap-20 items-start">
-          <motion.div {...fadeUp()}>
-            <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: '#E8192C' }}>
+          <div>
+            <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4 text-[#E8192C]">
               Be the Voice
             </p>
             <h2
-              className="font-headline font-black uppercase leading-[0.93] mb-6"
-              style={{ fontSize: 'clamp(32px, 4.5vw, 54px)', color: '#0D1B2A' }}
+              className="font-headline font-black uppercase leading-[0.93] mb-6 text-[#0D1B2A]"
+              style={{ fontSize: 'clamp(32px, 4.5vw, 54px)' }}
             >
               For Freedom<br />of Press
             </h2>
-            <p className="leading-[1.85] mb-8 max-w-md" style={{ fontSize: 15, color: '#6B7280' }}>
+            <p className="leading-[1.85] mb-8 max-w-md text-[15px] text-gray-600">
               Freedom of information is the foundation of any democracy. By becoming a member of MJA,
               you support the integrity of journalism in every corner of the Maldives.
             </p>
             <Link
               href="/join-mja"
-              className="inline-block text-white font-semibold px-8 py-3.5 rounded text-sm transition-opacity hover:opacity-85"
-              style={{ backgroundColor: '#E8192C' }}
+              className="inline-block text-white font-semibold px-8 py-3.5 rounded text-sm transition-opacity hover:opacity-90 bg-[#E8192C]"
             >
               Become a Member
             </Link>
-          </motion.div>
-          <motion.div {...fadeUp(0.15)}>
+          </div>
+          <div>
             <MemberMeter stats={memberStats} />
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* ── Get Involved ── */}
       <GetInvolved />
-
     </>
   )
 }

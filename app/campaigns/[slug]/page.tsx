@@ -196,6 +196,7 @@ export default async function CampaignPage({ params }: Props) {
                 <CampaignTwitterFeed tweetUrls={campaign.tweet_urls} />
               </div>
             )}
+          </div>
 
           {/* Right: 33% (4 cols) - Media Kit & Quick Facts */}
           <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-6">

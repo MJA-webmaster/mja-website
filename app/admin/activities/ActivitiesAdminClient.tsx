@@ -7,17 +7,28 @@ import { Plus, Trash2, Pencil, Check, X, AlertCircle } from 'lucide-react'
 type Activity = {
   id: string
   title: string
+  slug: string | null
   description: string | null
   year: number
   order: number
+  event_date: string | null
+  venue: string | null
+  published: boolean
+  updates: { date: string; title: string; description?: string }[]
   created_at: string
 }
+
+type UpdateEntry = { date: string; title: string; description?: string }
 
 const inputClass =
   'w-full border border-slate-200 rounded-lg px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#E8192C]/15 focus:border-[#E8192C] transition-all'
 const labelClass = 'block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5'
 
 const defaultYear = new Date().getFullYear()
+
+function slugify(text: string) {
+  return text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
+}
 
 export default function ActivitiesAdminClient({ activities: initial }: { activities: Activity[] }) {
   const [activities, setActivities] = useState<Activity[]>(initial)
@@ -26,33 +37,44 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filterYear, setFilterYear] = useState<number | 'all'>('all')
+  const [slugManual, setSlugManual] = useState(false)
 
   const [form, setForm] = useState({
     title: '',
+    slug: '',
     description: '',
     year: defaultYear,
     order: 0,
+    event_date: '',
+    venue: '',
+    published: true,
+    updates: [] as UpdateEntry[],
   })
 
   const years = Array.from(new Set(activities.map((a) => a.year))).sort((a, b) => b - a)
-  const filtered = filterYear === 'all' 
-    ? activities 
+  const filtered = filterYear === 'all'
+    ? activities
     : activities.filter((a) => a.year === filterYear)
 
   function openCreateForm() {
     setError(null)
     setEditingId(null)
-    
-    // Auto-calculate next sequence order for current year
+    setSlugManual(false)
+
     const targetYear = filterYear === 'all' ? defaultYear : filterYear
     const yearItems = activities.filter((a) => a.year === targetYear)
     const nextOrder = yearItems.length > 0 ? Math.max(...yearItems.map((a) => a.order)) + 1 : 0
 
     setForm({
       title: '',
+      slug: '',
       description: '',
       year: targetYear,
       order: nextOrder,
+      event_date: '',
+      venue: '',
+      published: true,
+      updates: [],
     })
     setShowForm(true)
   }
@@ -60,11 +82,17 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
   function startEdit(activity: Activity) {
     setError(null)
     setEditingId(activity.id)
+    setSlugManual(true)
     setForm({
       title: activity.title,
+      slug: activity.slug ?? '',
       description: activity.description ?? '',
       year: activity.year,
       order: activity.order,
+      event_date: activity.event_date ? activity.event_date.slice(0, 16) : '',
+      venue: activity.venue ?? '',
+      published: activity.published,
+      updates: activity.updates ?? [],
     })
     setShowForm(true)
   }
@@ -76,8 +104,30 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    const { name, value } = e.target
-    setForm((f) => ({ ...f, [name]: name === 'year' || name === 'order' ? Number(value) : value }))
+    const { name, value, type } = e.target
+    const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked
+      : (name === 'year' || name === 'order') ? Number(value)
+      : value
+
+    if (name === 'title' && !slugManual) {
+      setForm((f) => ({ ...f, title: value, slug: slugify(value) }))
+    } else {
+      setForm((f) => ({ ...f, [name]: val }))
+    }
+  }
+
+  function addUpdate() {
+    setForm((f) => ({ ...f, updates: [...f.updates, { date: '', title: '', description: '' }] }))
+  }
+  function updateUpdate(i: number, field: keyof UpdateEntry, value: string) {
+    setForm((f) => {
+      const next = [...f.updates]
+      next[i] = { ...next[i], [field]: value }
+      return { ...f, updates: next }
+    })
+  }
+  function removeUpdate(i: number) {
+    setForm((f) => ({ ...f, updates: f.updates.filter((_, idx) => idx !== i) }))
   }
 
   async function handleSave() {
@@ -88,13 +138,17 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
 
     const payload = {
       title: form.title.trim(),
+      slug: form.slug.trim() || slugify(form.title),
       description: form.description.trim() || null,
       year: form.year,
       order: form.order,
+      event_date: form.event_date ? new Date(form.event_date).toISOString() : null,
+      venue: form.venue.trim() || null,
+      published: form.published,
+      updates: form.updates.filter((u) => u.date && u.title),
     }
 
     if (editingId) {
-      // Update
       const { data, error: err } = await supabase
         .from('activities')
         .update(payload)
@@ -113,7 +167,6 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
         closeForm()
       }
     } else {
-      // Create
       const { data, error: err } = await supabase
         .from('activities')
         .insert(payload)
@@ -149,7 +202,6 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
 
   return (
     <div className="space-y-6 max-w-5xl">
-      {/* Header Bar */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-headline text-2xl sm:text-3xl font-bold text-slate-900">Activities</h1>
@@ -167,7 +219,6 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
         </button>
       </div>
 
-      {/* Slide-Down Edit/Create Panel */}
       {showForm && (
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -179,7 +230,7 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
 
           <div className="space-y-4">
             <div>
-              <label className={labelClass}>Activity Title *</label>
+              <label className={labelClass}>Event Title *</label>
               <input
                 name="title"
                 value={form.title}
@@ -187,6 +238,16 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
                 placeholder="e.g. Safety Training for Investigative Reporters"
                 className={inputClass}
                 autoFocus
+              />
+            </div>
+
+            <div>
+              <label className={labelClass}>URL Slug</label>
+              <input
+                name="slug"
+                value={form.slug}
+                onChange={(e) => { setSlugManual(true); handleChange(e) }}
+                className={`${inputClass} font-mono text-xs`}
               />
             </div>
 
@@ -200,6 +261,29 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
                 rows={3}
                 className={`${inputClass} resize-none`}
               />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Date & Time</label>
+                <input
+                  type="datetime-local"
+                  name="event_date"
+                  value={form.event_date}
+                  onChange={handleChange}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Venue</label>
+                <input
+                  name="venue"
+                  value={form.venue}
+                  onChange={handleChange}
+                  placeholder="e.g. Dharubaaruge, Malé"
+                  className={inputClass}
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -226,6 +310,63 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
                   className={inputClass}
                 />
                 <p className="text-[11px] text-slate-400 mt-1">Lower order numbers appear first within the selected year.</p>
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                name="published"
+                checked={form.published}
+                onChange={handleChange}
+                style={{ accentColor: '#E8192C' }}
+              />
+              Published
+            </label>
+
+            <div className="pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-3">
+                <label className={labelClass}>Upcoming Updates</label>
+                <button
+                  type="button"
+                  onClick={addUpdate}
+                  className="text-xs font-bold text-[#E8192C] hover:underline"
+                >
+                  + Add update
+                </button>
+              </div>
+              <div className="space-y-3">
+                {form.updates.length === 0 && (
+                  <p className="text-[11px] text-slate-400">No updates yet.</p>
+                )}
+                {form.updates.map((u, i) => (
+                  <div key={i} className="border border-slate-100 rounded-lg p-3 space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        value={u.date}
+                        onChange={(e) => updateUpdate(i, 'date', e.target.value)}
+                        className={`${inputClass} text-xs`}
+                      />
+                      <button type="button" onClick={() => removeUpdate(i)} className="text-slate-300 hover:text-rose-600 text-xs px-1">
+                        ✕
+                      </button>
+                    </div>
+                    <input
+                      value={u.title}
+                      onChange={(e) => updateUpdate(i, 'title', e.target.value)}
+                      placeholder="Update title (e.g. Venue changed)"
+                      className={`${inputClass} text-xs`}
+                    />
+                    <textarea
+                      value={u.description ?? ''}
+                      onChange={(e) => updateUpdate(i, 'description', e.target.value)}
+                      placeholder="Short note (optional)"
+                      rows={2}
+                      className={`${inputClass} text-xs resize-none`}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -257,7 +398,6 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
         </div>
       )}
 
-      {/* Year Filter Tabs */}
       <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-3">
         {(['all', ...years] as const).map((y) => {
           const count = y === 'all' ? activities.length : activities.filter((a) => a.year === y).length
@@ -286,7 +426,6 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
         })}
       </div>
 
-      {/* Activity Items List */}
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="divide-y divide-slate-100">
           {filtered.map((activity) => (
@@ -300,14 +439,26 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
                 <span className="shrink-0 w-6 h-6 rounded-md bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-mono font-bold mt-0.5">
                   #{activity.order}
                 </span>
-                
+
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <h3 className="text-sm font-bold text-slate-900 leading-snug">{activity.title}</h3>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-mono">
                       {activity.year}
                     </span>
+                    {!activity.published && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-500">Draft</span>
+                    )}
                   </div>
+                  {(activity.event_date || activity.venue) && (
+                    <p className="text-xs text-slate-400 mb-1">
+                      {activity.event_date && new Date(activity.event_date).toLocaleString('en-US', {
+                        month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+                      })}
+                      {activity.event_date && activity.venue && ' · '}
+                      {activity.venue}
+                    </p>
+                  )}
                   {activity.description && (
                     <p className="text-xs text-slate-500 leading-relaxed max-w-2xl">{activity.description}</p>
                   )}

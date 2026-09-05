@@ -1,19 +1,13 @@
 export const dynamic = 'force-dynamic'
 
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import AssociationSidebar from '@/components/AssociationSidebar'
+import type { Activity } from '@/lib/types'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { 
-  title: 'Our Activities | Maldives Journalists Association' 
-}
-
-type Activity = {
-  id: string
-  title: string
-  description: string | null
-  year: number
-  order: number
+export const metadata: Metadata = {
+  title: 'Our Activities | Maldives Journalists Association',
 }
 
 export default async function ActivitiesPage() {
@@ -21,12 +15,12 @@ export default async function ActivitiesPage() {
   const { data: activities } = await supabase
     .from('activities')
     .select('*')
+    .eq('published', true)
     .order('year', { ascending: false })
     .order('order', { ascending: true })
 
   const typedActivities = (activities ?? []) as Activity[]
 
-  // Group activities by year
   const grouped = typedActivities.reduce((acc, a) => {
     if (!acc[a.year]) acc[a.year] = []
     acc[a.year].push(a)
@@ -38,21 +32,18 @@ export default async function ActivitiesPage() {
   return (
     <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 md:py-14">
       <div className="md:flex md:gap-14 items-start">
-        {/* Navigation Sidebar */}
         <AssociationSidebar />
 
-        {/* Main Content Area */}
         <div className="flex-1 min-w-0">
-          {/* Header */}
           <div className="border-b border-slate-200/80 pb-6 mb-10">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#E8192C] block mb-1">
-              Archive & Initiatives
+              Events & Initiatives
             </span>
             <h1 className="font-headline text-3xl sm:text-4xl font-black uppercase tracking-tight text-slate-900">
               Our <span className="text-[#E8192C]">Activities</span>
             </h1>
             <p className="text-sm text-slate-500 mt-2 max-w-xl">
-              Key workshops, campaigns, press rallies, and advocacy efforts organized by the association.
+              Workshops, campaigns, press rallies, and events organized by the association — join us.
             </p>
           </div>
 
@@ -60,7 +51,6 @@ export default async function ActivitiesPage() {
             <div className="space-y-12">
               {years.map((year) => (
                 <section key={year} className="relative">
-                  {/* Sticky/Prominent Year Header */}
                   <div className="flex items-center gap-4 mb-5">
                     <div className="flex items-center gap-2">
                       <span className="font-headline text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
@@ -73,30 +63,51 @@ export default async function ActivitiesPage() {
                     <div className="flex-1 h-px bg-slate-200/70" />
                   </div>
 
-                  {/* Activity Grid / Cards */}
                   <div className="grid grid-cols-1 gap-4">
-                    {grouped[year].map((activity, idx) => (
-                      <article 
-                        key={activity.id} 
-                        className="group bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all flex items-start gap-4"
-                      >
-                        {/* Numerical accent / sequence counter */}
-                        <div className="shrink-0 w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-xs font-mono font-bold text-slate-400 group-hover:text-[#E8192C] group-hover:bg-rose-50 transition-colors mt-0.5">
-                          {String(idx + 1).padStart(2, '0')}
-                        </div>
+                    {grouped[year].map((activity, idx) => {
+                      const card = (
+                        <article className="group bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all flex items-start gap-4">
+                          <div className="shrink-0 w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-xs font-mono font-bold text-slate-400 group-hover:text-[#E8192C] group-hover:bg-rose-50 transition-colors mt-0.5">
+                            {String(idx + 1).padStart(2, '0')}
+                          </div>
 
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-slate-900 text-base sm:text-lg leading-snug group-hover:text-[#E8192C] transition-colors mb-1.5">
-                            {activity.title}
-                          </h3>
-                          {activity.description && (
-                            <p className="text-slate-600 text-sm leading-relaxed max-w-3xl whitespace-pre-line">
-                              {activity.description}
-                            </p>
-                          )}
-                        </div>
-                      </article>
-                    ))}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-slate-900 text-base sm:text-lg leading-snug group-hover:text-[#E8192C] transition-colors mb-1.5">
+                              {activity.title}
+                            </h3>
+                            {(activity.event_date || activity.venue) && (
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-slate-500 mb-2">
+                                {activity.event_date && (
+                                  <span>
+                                    {new Date(activity.event_date).toLocaleDateString('en-US', {
+                                      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+                                    })}
+                                    {' · '}
+                                    {new Date(activity.event_date).toLocaleTimeString('en-US', {
+                                      hour: 'numeric', minute: '2-digit',
+                                    })}
+                                  </span>
+                                )}
+                                {activity.venue && <span>{activity.venue}</span>}
+                              </div>
+                            )}
+                            {activity.description && (
+                              <p className="text-slate-600 text-sm leading-relaxed max-w-3xl whitespace-pre-line">
+                                {activity.description}
+                              </p>
+                            )}
+                          </div>
+                        </article>
+                      )
+
+                      return activity.slug ? (
+                        <Link key={activity.id} href={`/the-association/activities/${activity.slug}`}>
+                          {card}
+                        </Link>
+                      ) : (
+                        <div key={activity.id}>{card}</div>
+                      )
+                    })}
                   </div>
                 </section>
               ))}

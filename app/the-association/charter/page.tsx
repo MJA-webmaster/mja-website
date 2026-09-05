@@ -27,7 +27,7 @@ export default async function CharterPage() {
               <span style={{ color: '#E8192C' }}>MJA</span><br />
               Charter
             </h1>
-            
+            <a
               href={fileUrl}
               download
               className="inline-block text-white font-semibold px-6 py-3 rounded text-sm transition-opacity hover:opacity-85 whitespace-nowrap"
@@ -42,7 +42,7 @@ export default async function CharterPage() {
                 <p className="text-gray-400 text-sm mb-4">
                   Your browser can&apos;t preview the PDF here.
                 </p>
-                
+                <a
                   href={fileUrl}
                   className="inline-block text-white font-semibold px-6 py-3 rounded text-sm transition-opacity hover:opacity-85"
                   style={{ backgroundColor: '#E8192C' }}

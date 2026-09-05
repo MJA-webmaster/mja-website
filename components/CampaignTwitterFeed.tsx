@@ -2,27 +2,33 @@
 
 import { useEffect, useRef } from 'react'
 
-export default function CampaignTwitterFeed({ hashtag }: { hashtag: string }) {
+export default function CampaignTwitterFeed({ tweetUrls }: { tweetUrls: string[] }) {
   const ref = useRef<HTMLDivElement>(null)
-  const tag = hashtag.replace('#', '')
 
   useEffect(() => {
     const el = ref.current
-    if (!el) return
+    if (!el || tweetUrls.length === 0) return
 
-    el.innerHTML =
-      '<a class="twitter-timeline" data-height="600" data-theme="light" ' +
-      'href="https://twitter.com/hashtag/' + tag + '?src=hash">' +
-      'Posts tagged #' + tag +
-      '</a>'
+    el.innerHTML = tweetUrls
+      .map(
+        (url) =>
+          '<blockquote class="twitter-tweet" data-theme="light">' +
+          '<a href="' + url + '"></a>' +
+          '</blockquote>'
+      )
+      .join('')
 
-    function loadWidget() {
+    function loadWidgets() {
       ;(window as any).twttr?.widgets?.load(el)
     }
 
-    const existing = document.getElementById('twitter-wjs') as HTMLScriptElement | null
-    if (existing) {
-      loadWidget()
+    const existingScript = document.getElementById('twitter-wjs') as HTMLScriptElement | null
+    if (existingScript) {
+      if ((window as any).twttr?.widgets) {
+        loadWidgets()
+      } else {
+        existingScript.addEventListener('load', loadWidgets, { once: true })
+      }
       return
     }
 
@@ -30,11 +36,11 @@ export default function CampaignTwitterFeed({ hashtag }: { hashtag: string }) {
     script.id = 'twitter-wjs'
     script.src = 'https://platform.twitter.com/widgets.js'
     script.async = true
-    script.onload = loadWidget
+    script.onload = loadWidgets
     document.body.appendChild(script)
-  }, [tag])
+  }, [tweetUrls])
 
-  return (
-    <div ref={ref} className="rounded-xl border border-gray-100 overflow-hidden" style={{ minHeight: 200 }} />
-  )
+  if (tweetUrls.length === 0) return null
+
+  return <div ref={ref} className="space-y-4" />
 }

@@ -1,19 +1,18 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Article } from '@/lib/types'
-
 interface Props {
   article: Article
   variant?: 'default' | 'featured' | 'compact'
 }
-
 export default function ArticleCard({ article, variant = 'default' }: Props) {
   const date = article.published_at
     ? new Date(article.published_at).toLocaleDateString('en-US', {
         month: 'short', day: 'numeric', year: 'numeric'
       })
     : ''
-
   if (variant === 'compact') {
     return (
       <Link href={`/news-room/${article.slug}`} className="flex gap-3 group">
@@ -40,7 +39,6 @@ export default function ArticleCard({ article, variant = 'default' }: Props) {
       </Link>
     )
   }
-
   if (variant === 'featured') {
     return (
       <Link href={`/news-room/${article.slug}`}
@@ -66,7 +64,6 @@ export default function ArticleCard({ article, variant = 'default' }: Props) {
       </Link>
     )
   }
-
   return (
     <Link href={`/news-room/${article.slug}`} className="group block">
       {article.cover_image && (

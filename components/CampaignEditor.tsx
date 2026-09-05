@@ -108,6 +108,20 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
     setForm(f => ({ ...f, milestones: f.milestones.filter((_, idx) => idx !== i) }))
   }
 
+  function addTweetUrl() {
+    setForm(f => ({ ...f, tweet_urls: [...f.tweet_urls, ''] }))
+  }
+  function updateTweetUrl(i: number, value: string) {
+    setForm(f => {
+      const next = [...f.tweet_urls]
+      next[i] = value
+      return { ...f, tweet_urls: next }
+    })
+  }
+  function removeTweetUrl(i: number) {
+    setForm(f => ({ ...f, tweet_urls: f.tweet_urls.filter((_, idx) => idx !== i) }))
+  }
+
   function uploadAndInsertImage(file: File) {
     const supabase = createClient()
     const ext = file.name.split('.').pop()
@@ -156,6 +170,7 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
       cta_secondary_url: form.cta_secondary_url || null,
       media_kit_url: form.media_kit_url || null,
       milestones: form.milestones.filter(m => m.date && m.title),
+      tweet_urls: form.tweet_urls.map(u => u.trim()).filter(Boolean),
       updated_at: new Date().toISOString(),
     }
 
@@ -403,6 +418,35 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
                   rows={2}
                   className={inputClass + ' text-xs resize-none'}
                 />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Featured tweets */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-navy text-sm">Featured Tweets</h3>
+            <button type="button" onClick={addTweetUrl} className="text-xs font-semibold" style={{ color: '#E8192C' }}>
+              + Add
+            </button>
+          </div>
+          <p className="text-[11px] text-gray-400 leading-relaxed mb-3">
+            Paste individual tweet/post URLs (e.g. https://x.com/user/status/123...). Rendered as live embeds.
+          </p>
+          <div className="space-y-2">
+            {form.tweet_urls.length === 0 && (
+              <p className="text-[11px] text-gray-400">No tweets added yet.</p>
+            )}
+            {form.tweet_urls.map((url, i) => (
+              <div key={i} className="flex gap-2">
+                <input
+                  value={url}
+                  onChange={(e) => updateTweetUrl(i, e.target.value)}
+                  placeholder="https://x.com/user/status/..."
+                  className={inputClass + ' text-xs'}
+                />
+                <button type="button" onClick={() => removeTweetUrl(i)} className="text-gray-300 hover:text-red-500 text-xs px-1">✕</button>
               </div>
             ))}
           </div>

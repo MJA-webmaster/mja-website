@@ -185,18 +185,17 @@ export default async function CampaignPage({ params }: Props) {
               </div>
             )}
 
-            {campaign.hashtag && (
+            {campaign.tweet_urls && campaign.tweet_urls.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-200/80 p-8 shadow-xs">
                 <div className="flex items-center justify-between mb-6 pb-3 border-b border-gray-100">
                   <h2 className="font-headline text-xs font-bold uppercase tracking-wider text-gray-400">
-                    Live Feed · {campaign.hashtag}
+                    On Social{campaign.hashtag ? ` · ${campaign.hashtag}` : ''}
                   </h2>
-                  <span className="text-xs text-[#E8192C] font-semibold">Latest Posts</span>
+                  <span className="text-xs text-[#E8192C] font-semibold">Featured Posts</span>
                 </div>
-                <CampaignTwitterFeed hashtag={campaign.hashtag} />
+                <CampaignTwitterFeed tweetUrls={campaign.tweet_urls} />
               </div>
             )}
-          </div>
 
           {/* Right: 33% (4 cols) - Media Kit & Quick Facts */}
           <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-6">

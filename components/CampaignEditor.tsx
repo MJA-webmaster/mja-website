@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
-import Link from '@tiptap/extension-link'
+import LinkExtension from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
@@ -16,6 +17,7 @@ import {
   Bold, Italic, Underline as UnderlineIcon,
   List, ListOrdered, Quote, Heading2, Heading3,
   Image as ImageIcon, AlignLeft, AlignCenter, AlignRight,
+  Calendar, MapPin, Hash, Plus, Trash2, ExternalLink, Check, AlertCircle, ArrowLeft
 } from 'lucide-react'
 
 function slugify(text: string) {
@@ -27,11 +29,12 @@ function ToolbarButton({ onClick, active, title, children }: {
 }) {
   return (
     <button
-      type="button" onClick={onClick} title={title}
-      className="w-8 h-8 flex items-center justify-center rounded transition-colors"
-      style={{ backgroundColor: active ? '#0D1B2A' : 'transparent', color: active ? 'white' : '#6B7280' }}
-      onMouseEnter={(e) => { if (!active) e.currentTarget.style.backgroundColor = '#F3F4F6' }}
-      onMouseLeave={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'transparent' }}
+      type="button" 
+      onClick={onClick} 
+      title={title}
+      className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
+        active ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'
+      }`}
     >
       {children}
     </button>
@@ -64,7 +67,7 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
     tweet_urls: (campaign?.tweet_urls ?? []) as string[],
   })
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null)
   const [slugManual, setSlugManual] = useState(Boolean(campaign))
 
   const editor = useEditor({
@@ -73,12 +76,12 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
       Underline,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Image.configure({ inline: false, allowBase64: false }),
-      Link.configure({ openOnClick: false }),
-      Placeholder.configure({ placeholder: 'Full campaign content...' }),
+      LinkExtension.configure({ openOnClick: false }),
+      Placeholder.configure({ placeholder: 'Write the primary campaign statement or case narrative...' }),
     ],
     content: campaign?.content ?? '',
     editorProps: {
-      attributes: { class: 'prose prose-sm max-w-none focus:outline-none min-h-[280px] px-5 py-4' },
+      attributes: { class: 'prose prose-slate max-w-none focus:outline-none min-h-[340px] px-6 py-5' },
     },
   })
 
@@ -147,7 +150,7 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
   async function handleSave(publishNow?: boolean) {
     if (!form.title) return
     setSaving(true)
-    setMessage('')
+    setMessage(null)
     const supabase = createClient()
     const shouldPublish = publishNow !== undefined ? publishNow : form.published
 
@@ -185,282 +188,434 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
 
     setSaving(false)
     if (error) {
-      setMessage(`Error: ${error.message}`)
+      setMessage({ text: error.message, error: true })
     } else {
-      setMessage(shouldPublish ? 'Published!' : 'Draft saved.')
+      setMessage({ text: shouldPublish ? 'Campaign published!' : 'Draft saved successfully.' })
       setForm(f => ({ ...f, published: shouldPublish }))
       if (!campaign) setTimeout(() => router.push('/admin/campaigns'), 1200)
     }
   }
 
-  const inputClass = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none text-navy focus:border-gray-400 transition-colors'
-  const labelClass = 'text-xs font-bold uppercase tracking-wide text-gray-500 block mb-1.5'
+  const inputClass = 'w-full border border-slate-200 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8192C]/20 focus:border-[#E8192C] transition-all'
+  const labelClass = 'text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1.5'
 
   return (
-    <div className="grid grid-cols-[1fr_300px] gap-6 items-start">
-      {/* Main */}
-      <div className="space-y-4">
-        <input
-          name="title" value={form.title} onChange={handleChange}
-          placeholder="Campaign title..."
-          className="w-full font-headline text-3xl font-bold text-navy border-0 border-b-2 border-gray-100 pb-3 focus:outline-none placeholder:text-gray-200"
-          onFocus={(e) => e.target.style.borderColor = '#E8192C'}
-          onBlur={(e) => e.target.style.borderColor = '#F3F4F6'}
-        />
-        <input
-          name="hashtag" value={form.hashtag} onChange={handleChange}
-          placeholder="#Hashtag (optional)"
-          className="w-full text-sm border border-gray-200 rounded-lg px-4 py-3 focus:outline-none text-navy"
-          onFocus={(e) => e.target.style.borderColor = '#E8192C'}
-          onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
-        />
-        <textarea
-          name="description" value={form.description} onChange={handleChange}
-          placeholder="Short description shown in listings..."
-          rows={2}
-          className="w-full text-sm border border-gray-200 rounded-lg px-4 py-3 focus:outline-none text-navy resize-none"
-          onFocus={(e) => e.target.style.borderColor = '#E8192C'}
-          onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
-        />
-
-        {/* Tiptap editor */}
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-gray-100 bg-gray-50">
-            <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive('heading', { level: 2 })} title="Heading 2"><Heading2 size={15} /></ToolbarButton>
-            <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive('heading', { level: 3 })} title="Heading 3"><Heading3 size={15} /></ToolbarButton>
-            <div className="w-px h-5 bg-gray-200 mx-1" />
-            <ToolbarButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive('bold')} title="Bold"><Bold size={15} /></ToolbarButton>
-            <ToolbarButton onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive('italic')} title="Italic"><Italic size={15} /></ToolbarButton>
-            <ToolbarButton onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive('underline')} title="Underline"><UnderlineIcon size={15} /></ToolbarButton>
-            <div className="w-px h-5 bg-gray-200 mx-1" />
-            <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('left').run()} active={editor?.isActive({ textAlign: 'left' })} title="Align left"><AlignLeft size={15} /></ToolbarButton>
-            <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('center').run()} active={editor?.isActive({ textAlign: 'center' })} title="Align center"><AlignCenter size={15} /></ToolbarButton>
-            <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('right').run()} active={editor?.isActive({ textAlign: 'right' })} title="Align right"><AlignRight size={15} /></ToolbarButton>
-            <div className="w-px h-5 bg-gray-200 mx-1" />
-            <ToolbarButton onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive('bulletList')} title="Bullet list"><List size={15} /></ToolbarButton>
-            <ToolbarButton onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive('orderedList')} title="Numbered list"><ListOrdered size={15} /></ToolbarButton>
-            <ToolbarButton onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive('blockquote')} title="Quote"><Quote size={15} /></ToolbarButton>
-            <div className="w-px h-5 bg-gray-200 mx-1" />
-            <ToolbarButton onClick={handleImageToolbar} active={false} title="Insert image"><ImageIcon size={15} /></ToolbarButton>
+    <div className="space-y-6 pb-20">
+      {/* Top Action Sticky Header */}
+      <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 -mx-6 px-6 py-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/campaigns"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+            title="Return to campaigns"
+          >
+            <ArrowLeft size={18} />
+          </Link>
+          <div>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              {campaign ? 'Editing Campaign' : 'Create Campaign'}
+            </span>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-slate-900 leading-none truncate max-w-sm">
+                {form.title || 'Untitled Campaign'}
+              </h2>
+              <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
+                form.published ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+              }`}>
+                {form.published ? 'Live' : 'Draft'}
+              </span>
+            </div>
           </div>
-          <EditorContent editor={editor} />
         </div>
-      </div>
 
-      {/* Sidebar */}
-      <div className="space-y-4 sticky top-6">
-        {/* Publishing */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <h3 className="font-semibold text-navy text-sm mb-4">Publishing</h3>
-          <div className="space-y-3 mb-5">
-            <div className="flex items-center justify-between">
-              <span className={`text-xs px-2 py-1 rounded-full font-medium ${form.published ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                {form.published ? 'Published' : 'Draft'}
+        <div className="flex items-center gap-3">
+          {message && (
+            <span className={`text-xs flex items-center gap-1.5 font-medium ${message.error ? 'text-rose-600' : 'text-emerald-600'}`}>
+              {message.error ? <AlertCircle size={14} /> : <Check size={14} />}
+              {message.text}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => handleSave(false)} 
+            disabled={saving || !form.title}
+            className="border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-50 disabled:opacity-50 transition-colors"
+          >
+            Save Draft
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSave(true)} 
+            disabled={saving || !form.title}
+            className="bg-[#E8192C] text-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-[#c91424] disabled:opacity-50 transition-colors shadow-sm"
+          >
+            {saving ? 'Saving...' : form.published ? 'Update Campaign' : 'Publish'}
+          </button>
+        </div>
+      </header>
+
+      {/* Main Grid: 2/3 Editorial, 1/3 Settings */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        {/* Editorial Left Section (8 Columns) */}
+        <div className="lg:col-span-8 space-y-6">
+          
+          {/* Main Title & Teaser Box */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <div>
+              <label className={labelClass}>Campaign Headline</label>
+              <input
+                name="title" 
+                value={form.title} 
+                onChange={handleChange}
+                placeholder="e.g. Free Shahzan & Leevan"
+                className="w-full font-headline text-2xl sm:text-3xl font-bold text-slate-900 border-0 border-b border-slate-200 pb-2 focus:outline-none focus:border-[#E8192C] placeholder:text-slate-300"
+              />
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4 pt-2">
+              <div>
+                <label className={labelClass}>
+                  <Hash size={13} className="inline mr-1 -mt-0.5 text-slate-400" />
+                  Campaign Hashtag
+                </label>
+                <input
+                  name="hashtag" 
+                  value={form.hashtag} 
+                  onChange={handleChange}
+                  placeholder="#FreeAdhadhuJournalists"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>URL Slug</label>
+                <input
+                  name="slug" 
+                  value={form.slug} 
+                  onChange={(e) => { setSlugManual(true); handleChange(e) }}
+                  className={`${inputClass} font-mono text-xs`}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Short Brief / Subtitle</label>
+              <textarea
+                name="description" 
+                value={form.description} 
+                onChange={handleChange}
+                placeholder="A concise 1-2 sentence advocacy summary displayed across cards and search..."
+                rows={2}
+                className={`${inputClass} resize-none`}
+              />
+            </div>
+          </div>
+
+          {/* Statement & Body Rich Editor */}
+          <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <div className="px-6 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Primary Case Statement & Content
               </span>
             </div>
 
-            <div>
-              <label className={labelClass}>Slug</label>
-              <input
-                name="slug" value={form.slug} onChange={(e) => { setSlugManual(true); handleChange(e) }}
-                className={inputClass + ' font-mono text-xs'}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Event Date</label>
-              <input type="date" name="event_date" value={form.event_date} onChange={handleChange} className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Event Location</label>
-              <input name="event_location" value={form.event_location} onChange={handleChange} placeholder="e.g. Malé, Republic Square" className={inputClass} />
+            {/* Toolbar */}
+            <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-slate-100 bg-white">
+              <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive('heading', { level: 2 })} title="Heading 2"><Heading2 size={15} /></ToolbarButton>
+              <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive('heading', { level: 3 })} title="Heading 3"><Heading3 size={15} /></ToolbarButton>
+              <div className="w-px h-4 bg-slate-200 mx-1" />
+              <ToolbarButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive('bold')} title="Bold"><Bold size={15} /></ToolbarButton>
+              <ToolbarButton onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive('italic')} title="Italic"><Italic size={15} /></ToolbarButton>
+              <ToolbarButton onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive('underline')} title="Underline"><UnderlineIcon size={15} /></ToolbarButton>
+              <div className="w-px h-4 bg-slate-200 mx-1" />
+              <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('left').run()} active={editor?.isActive({ textAlign: 'left' })} title="Align left"><AlignLeft size={15} /></ToolbarButton>
+              <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('center').run()} active={editor?.isActive({ textAlign: 'center' })} title="Align center"><AlignCenter size={15} /></ToolbarButton>
+              <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('right').run()} active={editor?.isActive({ textAlign: 'right' })} title="Align right"><AlignRight size={15} /></ToolbarButton>
+              <div className="w-px h-4 bg-slate-200 mx-1" />
+              <ToolbarButton onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive('bulletList')} title="Bullet list"><List size={15} /></ToolbarButton>
+              <ToolbarButton onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive('orderedList')} title="Numbered list"><ListOrdered size={15} /></ToolbarButton>
+              <ToolbarButton onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive('blockquote')} title="Quote"><Quote size={15} /></ToolbarButton>
+              <div className="w-px h-4 bg-slate-200 mx-1" />
+              <ToolbarButton onClick={handleImageToolbar} active={false} title="Insert image"><ImageIcon size={15} /></ToolbarButton>
             </div>
 
+            <EditorContent editor={editor} />
+          </div>
+
+          {/* Timeline Milestones Section (Chronologically Displayed with Stable Editing) */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Chronological Milestones</h3>
+                <p className="text-xs text-slate-400">Items are ordered below chronologically to mirror the public site.</p>
+              </div>
+              <button
+                type="button" 
+                onClick={addMilestone} 
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#E8192C] hover:bg-rose-50 px-3 py-1.5 rounded-md transition-colors"
+              >
+                <Plus size={14} /> Add Milestone
+              </button>
+            </div>
+
+            {form.milestones.length === 0 ? (
+              <div className="text-center py-8 border-2 border-dashed border-slate-100 rounded-lg">
+                <p className="text-xs text-slate-400">No events recorded. Click "Add Milestone" to populate the timeline.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {form.milestones
+                  .map((m, originalIndex) => ({ ...m, originalIndex }))
+                  .sort((a, b) => {
+                    if (!a.date) return 1
+                    if (!b.date) return -1
+                    return new Date(a.date).getTime() - new Date(b.date).getTime()
+                  })
+                  .map((m, displayIndex) => (
+                    <div key={m.originalIndex} className="flex gap-4 items-start bg-slate-50/70 border border-slate-200/70 rounded-lg p-4 group">
+                      <span className="w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-400 shrink-0 mt-1">
+                        {displayIndex + 1}
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 flex-1">
+                        <div className="sm:col-span-4">
+                          <input
+                            type="date"
+                            value={m.date}
+                            onChange={(e) => updateMilestone(m.originalIndex, 'date', e.target.value)}
+                            className={`${inputClass} text-xs bg-white`}
+                          />
+                        </div>
+                        <div className="sm:col-span-8">
+                          <input
+                            value={m.title}
+                            onChange={(e) => updateMilestone(m.originalIndex, 'title', e.target.value)}
+                            placeholder="Event Title (e.g. Criminal Court Gag Order)"
+                            className={`${inputClass} text-xs bg-white font-semibold`}
+                          />
+                        </div>
+                        <div className="sm:col-span-12">
+                          <textarea
+                            value={m.description ?? ''}
+                            onChange={(e) => updateMilestone(m.originalIndex, 'description', e.target.value)}
+                            placeholder="Event context or summary sentence..."
+                            rows={2}
+                            className={`${inputClass} text-xs bg-white resize-none`}
+                          />
+                        </div>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => removeMilestone(m.originalIndex)} 
+                        className="text-slate-300 hover:text-rose-600 p-1 transition-colors"
+                        title="Delete event"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+
+          {/* Curated Tweets Section */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Curated Tweet / Post Links</h3>
+                <p className="text-xs text-slate-400">Add individual X post links to feature alongside hashtag feeds.</p>
+              </div>
+              <button
+                type="button" 
+                onClick={addTweetUrl} 
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#E8192C] hover:bg-rose-50 px-3 py-1.5 rounded-md transition-colors"
+              >
+                <Plus size={14} /> Add Tweet
+              </button>
+            </div>
+
+            {form.tweet_urls.length === 0 ? (
+              <p className="text-xs text-slate-400 italic">No specific tweets linked.</p>
+            ) : (
+              <div className="space-y-2">
+                {form.tweet_urls.map((url, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <input
+                      value={url}
+                      onChange={(e) => updateTweetUrl(i, e.target.value)}
+                      placeholder="https://x.com/user/status/..."
+                      className={`${inputClass} text-xs`}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => removeTweetUrl(i)} 
+                      className="text-slate-300 hover:text-rose-600 p-1 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Sidebar Controls (4 Columns) */}
+        <aside className="lg:col-span-4 space-y-6">
+          
+          {/* Cover Image Upload (Placed at top of sidebar) */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-3">
+            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Cover Image / Hero</h3>
+            <ImageUpload
+              value={form.cover_image}
+              folder="campaigns"
+              onChange={(url) => setForm(f => ({ ...f, cover_image: url }))}
+            />
+            <p className="text-[11px] text-slate-400 leading-normal">
+              High resolution landscape image (16:9 or 21:9). Renders in the header hero with dark gradient overlay.
+            </p>
+          </div>
+
+          {/* Logistics & Status */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider pb-2 border-b border-slate-100">
+              Logistics & Classification
+            </h3>
+
             <div>
-              <label className={labelClass}>Status</label>
+              <label className={labelClass}>Status Badge</label>
               <select name="status" value={form.status} onChange={handleChange} className={inputClass}>
-                <option value="">Auto (based on event date)</option>
+                <option value="">Auto (derived from event date)</option>
                 <option value="upcoming">Upcoming</option>
                 <option value="active">Active</option>
-                <option value="past">Past</option>
+                <option value="past">Past / Resolved</option>
               </select>
-              <p className="text-[11px] text-gray-400 leading-relaxed mt-1">
-                Leave on Auto unless you need to override — e.g. mark a resolved campaign as Past.
-              </p>
             </div>
 
-            {/* Hero feature toggle */}
-            <div className="pt-2 border-t border-gray-100">
+            <div>
+              <label className={labelClass}>
+                <Calendar size={13} className="inline mr-1 -mt-0.5 text-slate-400" />
+                Event / Incident Date
+              </label>
+              <input 
+                type="date" 
+                name="event_date" 
+                value={form.event_date} 
+                onChange={handleChange} 
+                className={inputClass} 
+              />
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                <MapPin size={13} className="inline mr-1 -mt-0.5 text-slate-400" />
+                Event Location
+              </label>
+              <input 
+                name="event_location" 
+                value={form.event_location} 
+                onChange={handleChange} 
+                placeholder="e.g. Malé, Maldives" 
+                className={inputClass} 
+              />
+            </div>
+
+            {/* Visibility switches */}
+            <div className="pt-2 border-t border-slate-100 space-y-3">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
-                  type="checkbox" name="is_hero_featured" checked={form.is_hero_featured} onChange={handleChange}
-                  className="mt-0.5" style={{ accentColor: '#E8192C' }}
+                  type="checkbox" 
+                  name="is_hero_featured" 
+                  checked={form.is_hero_featured} 
+                  onChange={handleChange}
+                  className="mt-0.5 accent-[#E8192C]"
                 />
                 <div>
-                  <p className="text-sm font-semibold text-navy">Feature in homepage hero</p>
-                  <p className="text-[11px] text-gray-400 leading-relaxed mt-0.5">
-                    Only takes effect while this campaign's status is Active.
+                  <p className="text-xs font-bold text-slate-900">Pin to Homepage Hero</p>
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    Featured top placement while status is Active.
+                  </p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox" 
+                  name="show_prompt" 
+                  checked={form.show_prompt} 
+                  onChange={handleChange}
+                  className="mt-0.5 accent-[#E8192C]"
+                />
+                <div>
+                  <p className="text-xs font-bold text-slate-900">Show Dialog Prompt</p>
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    Displays an overlay alert to site visitors.
                   </p>
                 </div>
               </label>
             </div>
+          </div>
 
-            {/* Show prompt toggle */}
-            <div className="pt-2 border-t border-gray-100">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox" name="show_prompt" checked={form.show_prompt} onChange={handleChange}
-                  className="mt-0.5" style={{ accentColor: '#E8192C' }}
+          {/* Action Links & Resources */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider pb-2 border-b border-slate-100">
+              Calls to Action & Press
+            </h3>
+
+            <div>
+              <label className={labelClass}>Primary Button</label>
+              <div className="space-y-2">
+                <input 
+                  name="cta_primary_label" 
+                  value={form.cta_primary_label} 
+                  onChange={handleChange} 
+                  placeholder="Label (e.g. Sign Petition)" 
+                  className={inputClass} 
                 />
-                <div>
-                  <p className="text-sm font-semibold text-navy">Show as popup</p>
-                  <p className="text-[11px] text-gray-400 leading-relaxed mt-0.5">
-                    Displays a prompt to site visitors once per session when enabled.
-                  </p>
-                </div>
+                <input 
+                  name="cta_primary_url" 
+                  value={form.cta_primary_url} 
+                  onChange={handleChange} 
+                  placeholder="URL (/petition or https://...)" 
+                  className={`${inputClass} text-xs font-mono`} 
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100">
+              <label className={labelClass}>Secondary Button</label>
+              <div className="space-y-2">
+                <input 
+                  name="cta_secondary_label" 
+                  value={form.cta_secondary_label} 
+                  onChange={handleChange} 
+                  placeholder="Label (e.g. Contact Us)" 
+                  className={inputClass} 
+                />
+                <input 
+                  name="cta_secondary_url" 
+                  value={form.cta_secondary_url} 
+                  onChange={handleChange} 
+                  placeholder="URL (/contact or https://...)" 
+                  className={`${inputClass} text-xs font-mono`} 
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100">
+              <label className={labelClass}>
+                <ExternalLink size={13} className="inline mr-1 -mt-0.5 text-slate-400" />
+                Media Kit Link
               </label>
+              <input
+                name="media_kit_url"
+                value={form.media_kit_url}
+                onChange={handleChange}
+                placeholder="Google Drive, Dropbox, or ZIP URL"
+                className={`${inputClass} text-xs`}
+              />
             </div>
           </div>
-
-          {message && (
-            <p className={`text-xs mb-3 px-3 py-2 rounded ${message.startsWith('Error') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>
-              {message}
-            </p>
-          )}
-
-          <div className="space-y-2">
-            <button
-              onClick={() => handleSave(true)} disabled={saving || !form.title}
-              className="w-full text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
-              style={{ backgroundColor: '#E8192C' }}
-            >
-              {saving ? 'Saving...' : form.published ? 'Update' : 'Publish'}
-            </button>
-            <button
-              onClick={() => handleSave(false)} disabled={saving || !form.title}
-              className="w-full border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50"
-            >
-              Save Draft
-            </button>
-          </div>
-        </div>
-
-        {/* Call to action buttons */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <h3 className="font-semibold text-navy text-sm mb-1">Call to Action</h3>
-          <p className="text-[11px] text-gray-400 leading-relaxed mb-4">
-            Shown on the listing card and the campaign page. Leave blank to hide a button.
-          </p>
-          <div className="space-y-3">
-            <div>
-              <label className={labelClass}>Primary label</label>
-              <input name="cta_primary_label" value={form.cta_primary_label} onChange={handleChange} placeholder="e.g. Join the Rally" className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Primary URL</label>
-              <input name="cta_primary_url" value={form.cta_primary_url} onChange={handleChange} placeholder="/join-mja" className={inputClass} />
-            </div>
-            <div className="pt-2 border-t border-gray-100">
-              <label className={labelClass}>Secondary label</label>
-              <input name="cta_secondary_label" value={form.cta_secondary_label} onChange={handleChange} placeholder="e.g. Contribute" className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Secondary URL</label>
-              <input name="cta_secondary_url" value={form.cta_secondary_url} onChange={handleChange} placeholder="/join-mja" className={inputClass} />
-            </div>
-          </div>
-        </div>
-
-        {/* Media kit */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <h3 className="font-semibold text-navy text-sm mb-3">Media Kit</h3>
-          <input
-            name="media_kit_url"
-            value={form.media_kit_url}
-            onChange={handleChange}
-            placeholder="Link to press kit / assets folder"
-            className={inputClass}
-          />
-        </div>
-
-        {/* Milestones */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-navy text-sm">Milestones</h3>
-            <button type="button" onClick={addMilestone} className="text-xs font-semibold" style={{ color: '#E8192C' }}>
-              + Add
-            </button>
-          </div>
-          <div className="space-y-3">
-            {form.milestones.length === 0 && (
-              <p className="text-[11px] text-gray-400">No milestones yet. Add key dates as the campaign develops.</p>
-            )}
-            {form.milestones.map((m, i) => (
-              <div key={i} className="border border-gray-100 rounded-lg p-3 space-y-2">
-                <div className="flex gap-2">
-                  <input
-                    type="date"
-                    value={m.date}
-                    onChange={(e) => updateMilestone(i, 'date', e.target.value)}
-                    className={inputClass + ' text-xs'}
-                  />
-                  <button type="button" onClick={() => removeMilestone(i)} className="text-gray-300 hover:text-red-500 text-xs px-1">✕</button>
-                </div>
-                <input
-                  value={m.title}
-                  onChange={(e) => updateMilestone(i, 'title', e.target.value)}
-                  placeholder="Milestone title"
-                  className={inputClass + ' text-xs'}
-                />
-                <textarea
-                  value={m.description ?? ''}
-                  onChange={(e) => updateMilestone(i, 'description', e.target.value)}
-                  placeholder="Short note (optional)"
-                  rows={2}
-                  className={inputClass + ' text-xs resize-none'}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Featured tweets */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-navy text-sm">Featured Tweets</h3>
-            <button type="button" onClick={addTweetUrl} className="text-xs font-semibold" style={{ color: '#E8192C' }}>
-              + Add
-            </button>
-          </div>
-          <p className="text-[11px] text-gray-400 leading-relaxed mb-3">
-            Paste individual tweet/post URLs (e.g. https://x.com/user/status/123...). Rendered as live embeds.
-          </p>
-          <div className="space-y-2">
-            {form.tweet_urls.length === 0 && (
-              <p className="text-[11px] text-gray-400">No tweets added yet.</p>
-            )}
-            {form.tweet_urls.map((url, i) => (
-              <div key={i} className="flex gap-2">
-                <input
-                  value={url}
-                  onChange={(e) => updateTweetUrl(i, e.target.value)}
-                  placeholder="https://x.com/user/status/..."
-                  className={inputClass + ' text-xs'}
-                />
-                <button type="button" onClick={() => removeTweetUrl(i)} className="text-gray-300 hover:text-red-500 text-xs px-1">✕</button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Cover image */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <h3 className="font-semibold text-navy text-sm mb-3">Cover Image</h3>
-          <ImageUpload
-            value={form.cover_image}
-            folder="campaigns"
-            onChange={(url) => setForm(f => ({ ...f, cover_image: url }))}
-          />
-        </div>
+        </aside>
       </div>
     </div>
   )

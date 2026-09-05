@@ -34,6 +34,7 @@ export type Campaign = {
   cta_secondary_url: string | null
   media_kit_url: string | null
   milestones: { date: string; title: string; description?: string }[]
+  tweet_urls: string[]
 }
 
 export type Member = {

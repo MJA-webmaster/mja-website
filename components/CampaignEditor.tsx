@@ -17,7 +17,8 @@ import {
   Bold, Italic, Underline as UnderlineIcon,
   List, ListOrdered, Quote, Heading2, Heading3,
   Image as ImageIcon, AlignLeft, AlignCenter, AlignRight,
-  Calendar, MapPin, Hash, Plus, Trash2, ExternalLink, Check, AlertCircle, ArrowLeft
+  Calendar, MapPin, Hash, Plus, Trash2, ExternalLink, Check, AlertCircle, ArrowLeft,
+  ChevronLeft, ChevronRight
 } from 'lucide-react'
 
 function slugify(text: string) {
@@ -29,8 +30,8 @@ function ToolbarButton({ onClick, active, title, children }: {
 }) {
   return (
     <button
-      type="button" 
-      onClick={onClick} 
+      type="button"
+      onClick={onClick}
       title={title}
       className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
         active ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'
@@ -44,8 +45,18 @@ function ToolbarButton({ onClick, active, title, children }: {
 type StatusValue = '' | 'upcoming' | 'active' | 'past'
 type Milestone = { date: string; title: string; description?: string }
 
+const STEPS = [
+  { key: 'details', label: 'Details' },
+  { key: 'content', label: 'Content' },
+  { key: 'media', label: 'Media & CTAs' },
+  { key: 'timeline', label: 'Milestones & Social' },
+] as const
+
+type StepKey = (typeof STEPS)[number]['key']
+
 export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
   const router = useRouter()
+  const [step, setStep] = useState<StepKey>('details')
   const [form, setForm] = useState({
     title: campaign?.title ?? '',
     slug: campaign?.slug ?? '',
@@ -70,6 +81,10 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null)
   const [slugManual, setSlugManual] = useState(Boolean(campaign))
 
+  const stepIndex = STEPS.findIndex((s) => s.key === step)
+  const isFirstStep = stepIndex === 0
+  const isLastStep = stepIndex === STEPS.length - 1
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -81,7 +96,7 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
     ],
     content: campaign?.content ?? '',
     editorProps: {
-      attributes: { class: 'prose prose-slate max-w-none focus:outline-none min-h-[340px] px-6 py-5' },
+      attributes: { class: 'prose prose-slate max-w-none focus:outline-none min-h-[420px] px-6 py-5' },
     },
   })
 
@@ -147,8 +162,19 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
     input.click()
   }
 
+  function goNext() {
+    if (!isLastStep) setStep(STEPS[stepIndex + 1].key)
+  }
+  function goBack() {
+    if (!isFirstStep) setStep(STEPS[stepIndex - 1].key)
+  }
+
   async function handleSave(publishNow?: boolean) {
-    if (!form.title) return
+    if (!form.title) {
+      setStep('details')
+      setMessage({ text: 'Title is required.', error: true })
+      return
+    }
     setSaving(true)
     setMessage(null)
     const supabase = createClient()
@@ -228,121 +254,294 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {message && (
-            <span className={`text-xs flex items-center gap-1.5 font-medium ${message.error ? 'text-rose-600' : 'text-emerald-600'}`}>
-              {message.error ? <AlertCircle size={14} /> : <Check size={14} />}
-              {message.text}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => handleSave(false)} 
-            disabled={saving || !form.title}
-            className="border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-50 disabled:opacity-50 transition-colors"
-          >
-            Save Draft
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSave(true)} 
-            disabled={saving || !form.title}
-            className="bg-[#E8192C] text-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-[#c91424] disabled:opacity-50 transition-colors shadow-sm"
-          >
-            {saving ? 'Saving...' : form.published ? 'Update Campaign' : 'Publish'}
-          </button>
-        </div>
+        {message && (
+          <span className={`text-xs flex items-center gap-1.5 font-medium ${message.error ? 'text-rose-600' : 'text-emerald-600'}`}>
+            {message.error ? <AlertCircle size={14} /> : <Check size={14} />}
+            {message.text}
+          </span>
+        )}
       </header>
 
-      {/* Main Grid: 2/3 Editorial, 1/3 Settings */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        {/* Editorial Left Section (8 Columns) */}
-        <div className="lg:col-span-8 space-y-6">
-          
-          {/* Main Title & Teaser Box */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+      {/* Step progress bar */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs px-6 py-4 flex items-center">
+        {STEPS.map((s, i) => {
+          const isActive = s.key === step
+          const isDone = i < stepIndex
+          return (
+            <div key={s.key} className="flex items-center flex-1 last:flex-none">
+              <button
+                type="button"
+                onClick={() => setStep(s.key)}
+                className="flex items-center gap-2 shrink-0"
+              >
+                <span
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 transition-colors"
+                  style={
+                    isActive
+                      ? { backgroundColor: '#E8192C', color: 'white' }
+                      : isDone
+                      ? { backgroundColor: '#FEE2E2', color: '#E8192C' }
+                      : { backgroundColor: '#F1F5F9', color: '#94A3B8' }
+                  }
+                >
+                  {isDone ? <Check size={12} /> : i + 1}
+                </span>
+                <span className={`text-xs font-bold hidden sm:inline ${isActive ? 'text-slate-900' : 'text-slate-400'}`}>
+                  {s.label}
+                </span>
+              </button>
+              {i < STEPS.length - 1 && <div className="flex-1 h-px bg-slate-100 mx-3" />}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Step 1: Details */}
+      {step === 'details' && (
+        <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+          <div>
+            <label className={labelClass}>Campaign Headline</label>
+            <input
+              name="title"
+              value={form.title}
+              onChange={handleChange}
+              placeholder="e.g. Free Shahzan & Leevan"
+              className="w-full font-headline text-2xl sm:text-3xl font-bold text-slate-900 border-0 border-b border-slate-200 pb-2 focus:outline-none focus:border-[#E8192C] placeholder:text-slate-300"
+              autoFocus
+            />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4 pt-2">
             <div>
-              <label className={labelClass}>Campaign Headline</label>
+              <label className={labelClass}>
+                <Hash size={13} className="inline mr-1 -mt-0.5 text-slate-400" />
+                Campaign Hashtag
+              </label>
               <input
-                name="title" 
-                value={form.title} 
+                name="hashtag"
+                value={form.hashtag}
                 onChange={handleChange}
-                placeholder="e.g. Free Shahzan & Leevan"
-                className="w-full font-headline text-2xl sm:text-3xl font-bold text-slate-900 border-0 border-b border-slate-200 pb-2 focus:outline-none focus:border-[#E8192C] placeholder:text-slate-300"
+                placeholder="#FreeAdhadhuJournalists"
+                className={inputClass}
               />
             </div>
-
-            <div className="grid sm:grid-cols-2 gap-4 pt-2">
-              <div>
-                <label className={labelClass}>
-                  <Hash size={13} className="inline mr-1 -mt-0.5 text-slate-400" />
-                  Campaign Hashtag
-                </label>
-                <input
-                  name="hashtag" 
-                  value={form.hashtag} 
-                  onChange={handleChange}
-                  placeholder="#FreeAdhadhuJournalists"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>URL Slug</label>
-                <input
-                  name="slug" 
-                  value={form.slug} 
-                  onChange={(e) => { setSlugManual(true); handleChange(e) }}
-                  className={`${inputClass} font-mono text-xs`}
-                />
-              </div>
-            </div>
-
             <div>
-              <label className={labelClass}>Short Brief / Subtitle</label>
-              <textarea
-                name="description" 
-                value={form.description} 
-                onChange={handleChange}
-                placeholder="A concise 1-2 sentence advocacy summary displayed across cards and search..."
-                rows={2}
-                className={`${inputClass} resize-none`}
+              <label className={labelClass}>URL Slug</label>
+              <input
+                name="slug"
+                value={form.slug}
+                onChange={(e) => { setSlugManual(true); handleChange(e) }}
+                className={`${inputClass} font-mono text-xs`}
               />
             </div>
           </div>
 
-          {/* Statement & Body Rich Editor */}
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <div className="px-6 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Primary Case Statement & Content
-              </span>
-            </div>
-
-            {/* Toolbar */}
-            <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-slate-100 bg-white">
-              <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive('heading', { level: 2 })} title="Heading 2"><Heading2 size={15} /></ToolbarButton>
-              <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive('heading', { level: 3 })} title="Heading 3"><Heading3 size={15} /></ToolbarButton>
-              <div className="w-px h-4 bg-slate-200 mx-1" />
-              <ToolbarButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive('bold')} title="Bold"><Bold size={15} /></ToolbarButton>
-              <ToolbarButton onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive('italic')} title="Italic"><Italic size={15} /></ToolbarButton>
-              <ToolbarButton onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive('underline')} title="Underline"><UnderlineIcon size={15} /></ToolbarButton>
-              <div className="w-px h-4 bg-slate-200 mx-1" />
-              <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('left').run()} active={editor?.isActive({ textAlign: 'left' })} title="Align left"><AlignLeft size={15} /></ToolbarButton>
-              <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('center').run()} active={editor?.isActive({ textAlign: 'center' })} title="Align center"><AlignCenter size={15} /></ToolbarButton>
-              <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('right').run()} active={editor?.isActive({ textAlign: 'right' })} title="Align right"><AlignRight size={15} /></ToolbarButton>
-              <div className="w-px h-4 bg-slate-200 mx-1" />
-              <ToolbarButton onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive('bulletList')} title="Bullet list"><List size={15} /></ToolbarButton>
-              <ToolbarButton onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive('orderedList')} title="Numbered list"><ListOrdered size={15} /></ToolbarButton>
-              <ToolbarButton onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive('blockquote')} title="Quote"><Quote size={15} /></ToolbarButton>
-              <div className="w-px h-4 bg-slate-200 mx-1" />
-              <ToolbarButton onClick={handleImageToolbar} active={false} title="Insert image"><ImageIcon size={15} /></ToolbarButton>
-            </div>
-
-            <EditorContent editor={editor} />
+          <div>
+            <label className={labelClass}>Short Brief / Subtitle</label>
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="A concise 1-2 sentence advocacy summary displayed across cards and search..."
+              rows={2}
+              className={`${inputClass} resize-none`}
+            />
           </div>
 
-          {/* Timeline Milestones Section (Chronologically Displayed with Stable Editing) */}
+          <div className="grid sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+            <div>
+              <label className={labelClass}>Status Badge</label>
+              <select name="status" value={form.status} onChange={handleChange} className={inputClass}>
+                <option value="">Auto (derived from event date)</option>
+                <option value="upcoming">Upcoming</option>
+                <option value="active">Active</option>
+                <option value="past">Past / Resolved</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>
+                <Calendar size={13} className="inline mr-1 -mt-0.5 text-slate-400" />
+                Event / Incident Date
+              </label>
+              <input type="date" name="event_date" value={form.event_date} onChange={handleChange} className={inputClass} />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>
+              <MapPin size={13} className="inline mr-1 -mt-0.5 text-slate-400" />
+              Event Location
+            </label>
+            <input
+              name="event_location"
+              value={form.event_location}
+              onChange={handleChange}
+              placeholder="e.g. Malé, Maldives"
+              className={inputClass}
+            />
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 space-y-3">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                name="is_hero_featured"
+                checked={form.is_hero_featured}
+                onChange={handleChange}
+                className="mt-0.5 accent-[#E8192C]"
+              />
+              <div>
+                <p className="text-xs font-bold text-slate-900">Pin to Homepage Hero</p>
+                <p className="text-[11px] text-slate-400 leading-snug">Featured top placement while status is Active.</p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                name="show_prompt"
+                checked={form.show_prompt}
+                onChange={handleChange}
+                className="mt-0.5 accent-[#E8192C]"
+              />
+              <div>
+                <p className="text-xs font-bold text-slate-900">Show Dialog Prompt</p>
+                <p className="text-[11px] text-slate-400 leading-snug">Displays an overlay alert to site visitors.</p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                name="published"
+                checked={form.published}
+                onChange={handleChange}
+                className="mt-0.5 accent-[#E8192C]"
+              />
+              <div>
+                <p className="text-xs font-bold text-slate-900">Published</p>
+              </div>
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: Content */}
+      {step === 'content' && (
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div className="px-6 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Primary Case Statement & Content
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-slate-100 bg-white">
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive('heading', { level: 2 })} title="Heading 2"><Heading2 size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive('heading', { level: 3 })} title="Heading 3"><Heading3 size={15} /></ToolbarButton>
+            <div className="w-px h-4 bg-slate-200 mx-1" />
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive('bold')} title="Bold"><Bold size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive('italic')} title="Italic"><Italic size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive('underline')} title="Underline"><UnderlineIcon size={15} /></ToolbarButton>
+            <div className="w-px h-4 bg-slate-200 mx-1" />
+            <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('left').run()} active={editor?.isActive({ textAlign: 'left' })} title="Align left"><AlignLeft size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('center').run()} active={editor?.isActive({ textAlign: 'center' })} title="Align center"><AlignCenter size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign('right').run()} active={editor?.isActive({ textAlign: 'right' })} title="Align right"><AlignRight size={15} /></ToolbarButton>
+            <div className="w-px h-4 bg-slate-200 mx-1" />
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive('bulletList')} title="Bullet list"><List size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive('orderedList')} title="Numbered list"><ListOrdered size={15} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive('blockquote')} title="Quote"><Quote size={15} /></ToolbarButton>
+            <div className="w-px h-4 bg-slate-200 mx-1" />
+            <ToolbarButton onClick={handleImageToolbar} active={false} title="Insert image"><ImageIcon size={15} /></ToolbarButton>
+          </div>
+
+          <EditorContent editor={editor} />
+        </div>
+      )}
+
+      {/* Step 3: Media & CTAs */}
+      {step === 'media' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs space-y-3">
+            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Cover Image / Hero</h3>
+            <div className="max-w-sm">
+              <ImageUpload
+                value={form.cover_image}
+                folder="campaigns"
+                onChange={(url) => setForm(f => ({ ...f, cover_image: url }))}
+              />
+            </div>
+            <p className="text-[11px] text-slate-400 leading-normal">
+              High resolution landscape image (16:9 or 21:9). Renders in the header hero with dark gradient overlay.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider pb-2 border-b border-slate-100">
+              Calls to Action & Press
+            </h3>
+
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div>
+                <label className={labelClass}>Primary Button</label>
+                <div className="space-y-2">
+                  <input
+                    name="cta_primary_label"
+                    value={form.cta_primary_label}
+                    onChange={handleChange}
+                    placeholder="Label (e.g. Sign Petition)"
+                    className={inputClass}
+                  />
+                  <input
+                    name="cta_primary_url"
+                    value={form.cta_primary_url}
+                    onChange={handleChange}
+                    placeholder="URL (/petition or https://...)"
+                    className={`${inputClass} text-xs font-mono`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={labelClass}>Secondary Button</label>
+                <div className="space-y-2">
+                  <input
+                    name="cta_secondary_label"
+                    value={form.cta_secondary_label}
+                    onChange={handleChange}
+                    placeholder="Label (e.g. Contact Us)"
+                    className={inputClass}
+                  />
+                  <input
+                    name="cta_secondary_url"
+                    value={form.cta_secondary_url}
+                    onChange={handleChange}
+                    placeholder="URL (/contact or https://...)"
+                    className={`${inputClass} text-xs font-mono`}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100">
+              <label className={labelClass}>
+                <ExternalLink size={13} className="inline mr-1 -mt-0.5 text-slate-400" />
+                Media Kit Link
+              </label>
+              <input
+                name="media_kit_url"
+                value={form.media_kit_url}
+                onChange={handleChange}
+                placeholder="Google Drive, Dropbox, or ZIP URL"
+                className={`${inputClass} text-xs`}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Milestones & Social */}
+      {step === 'timeline' && (
+        <div className="space-y-6">
           <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
@@ -350,8 +549,8 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
                 <p className="text-xs text-slate-400">Items are ordered below chronologically to mirror the public site.</p>
               </div>
               <button
-                type="button" 
-                onClick={addMilestone} 
+                type="button"
+                onClick={addMilestone}
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-[#E8192C] hover:bg-rose-50 px-3 py-1.5 rounded-md transition-colors"
               >
                 <Plus size={14} /> Add Milestone
@@ -403,9 +602,9 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
                           />
                         </div>
                       </div>
-                      <button 
-                        type="button" 
-                        onClick={() => removeMilestone(m.originalIndex)} 
+                      <button
+                        type="button"
+                        onClick={() => removeMilestone(m.originalIndex)}
                         className="text-slate-300 hover:text-rose-600 p-1 transition-colors"
                         title="Delete event"
                       >
@@ -417,7 +616,6 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
             )}
           </div>
 
-          {/* Curated Tweets Section */}
           <div className="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
@@ -425,8 +623,8 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
                 <p className="text-xs text-slate-400">Add individual X post links to feature alongside hashtag feeds.</p>
               </div>
               <button
-                type="button" 
-                onClick={addTweetUrl} 
+                type="button"
+                onClick={addTweetUrl}
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-[#E8192C] hover:bg-rose-50 px-3 py-1.5 rounded-md transition-colors"
               >
                 <Plus size={14} /> Add Tweet
@@ -445,9 +643,9 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
                       placeholder="https://x.com/user/status/..."
                       className={`${inputClass} text-xs`}
                     />
-                    <button 
-                      type="button" 
-                      onClick={() => removeTweetUrl(i)} 
+                    <button
+                      type="button"
+                      onClick={() => removeTweetUrl(i)}
                       className="text-slate-300 hover:text-rose-600 p-1 transition-colors"
                     >
                       <Trash2 size={16} />
@@ -458,164 +656,51 @@ export default function CampaignEditor({ campaign }: { campaign?: Campaign }) {
             )}
           </div>
         </div>
+      )}
 
-        {/* Sidebar Controls (4 Columns) */}
-        <aside className="lg:col-span-4 space-y-6">
-          
-          {/* Cover Image Upload (Placed at top of sidebar) */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-3">
-            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Cover Image / Hero</h3>
-            <ImageUpload
-              value={form.cover_image}
-              folder="campaigns"
-              onChange={(url) => setForm(f => ({ ...f, cover_image: url }))}
-            />
-            <p className="text-[11px] text-slate-400 leading-normal">
-              High resolution landscape image (16:9 or 21:9). Renders in the header hero with dark gradient overlay.
-            </p>
+      {/* Footer nav */}
+      <div className="flex items-center justify-between bg-white rounded-xl border border-slate-200/80 shadow-xs px-6 py-4">
+        <button
+          onClick={isFirstStep ? () => router.push('/admin/campaigns') : goBack}
+          className="flex items-center gap-1.5 border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors"
+        >
+          {isFirstStep ? (
+            'Cancel'
+          ) : (
+            <>
+              <ChevronLeft size={14} /> Back
+            </>
+          )}
+        </button>
+
+        {isLastStep ? (
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => handleSave(false)}
+              disabled={saving || !form.title}
+              className="border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-50 disabled:opacity-50 transition-colors"
+            >
+              Save Draft
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSave(true)}
+              disabled={saving || !form.title}
+              className="bg-[#E8192C] text-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-[#c91424] disabled:opacity-50 transition-colors shadow-sm"
+            >
+              {saving ? 'Saving...' : form.published ? 'Update Campaign' : 'Publish'}
+            </button>
           </div>
-
-          {/* Logistics & Status */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider pb-2 border-b border-slate-100">
-              Logistics & Classification
-            </h3>
-
-            <div>
-              <label className={labelClass}>Status Badge</label>
-              <select name="status" value={form.status} onChange={handleChange} className={inputClass}>
-                <option value="">Auto (derived from event date)</option>
-                <option value="upcoming">Upcoming</option>
-                <option value="active">Active</option>
-                <option value="past">Past / Resolved</option>
-              </select>
-            </div>
-
-            <div>
-              <label className={labelClass}>
-                <Calendar size={13} className="inline mr-1 -mt-0.5 text-slate-400" />
-                Event / Incident Date
-              </label>
-              <input 
-                type="date" 
-                name="event_date" 
-                value={form.event_date} 
-                onChange={handleChange} 
-                className={inputClass} 
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>
-                <MapPin size={13} className="inline mr-1 -mt-0.5 text-slate-400" />
-                Event Location
-              </label>
-              <input 
-                name="event_location" 
-                value={form.event_location} 
-                onChange={handleChange} 
-                placeholder="e.g. Malé, Maldives" 
-                className={inputClass} 
-              />
-            </div>
-
-            {/* Visibility switches */}
-            <div className="pt-2 border-t border-slate-100 space-y-3">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox" 
-                  name="is_hero_featured" 
-                  checked={form.is_hero_featured} 
-                  onChange={handleChange}
-                  className="mt-0.5 accent-[#E8192C]"
-                />
-                <div>
-                  <p className="text-xs font-bold text-slate-900">Pin to Homepage Hero</p>
-                  <p className="text-[11px] text-slate-400 leading-snug">
-                    Featured top placement while status is Active.
-                  </p>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox" 
-                  name="show_prompt" 
-                  checked={form.show_prompt} 
-                  onChange={handleChange}
-                  className="mt-0.5 accent-[#E8192C]"
-                />
-                <div>
-                  <p className="text-xs font-bold text-slate-900">Show Dialog Prompt</p>
-                  <p className="text-[11px] text-slate-400 leading-snug">
-                    Displays an overlay alert to site visitors.
-                  </p>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          {/* Action Links & Resources */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider pb-2 border-b border-slate-100">
-              Calls to Action & Press
-            </h3>
-
-            <div>
-              <label className={labelClass}>Primary Button</label>
-              <div className="space-y-2">
-                <input 
-                  name="cta_primary_label" 
-                  value={form.cta_primary_label} 
-                  onChange={handleChange} 
-                  placeholder="Label (e.g. Sign Petition)" 
-                  className={inputClass} 
-                />
-                <input 
-                  name="cta_primary_url" 
-                  value={form.cta_primary_url} 
-                  onChange={handleChange} 
-                  placeholder="URL (/petition or https://...)" 
-                  className={`${inputClass} text-xs font-mono`} 
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100">
-              <label className={labelClass}>Secondary Button</label>
-              <div className="space-y-2">
-                <input 
-                  name="cta_secondary_label" 
-                  value={form.cta_secondary_label} 
-                  onChange={handleChange} 
-                  placeholder="Label (e.g. Contact Us)" 
-                  className={inputClass} 
-                />
-                <input 
-                  name="cta_secondary_url" 
-                  value={form.cta_secondary_url} 
-                  onChange={handleChange} 
-                  placeholder="URL (/contact or https://...)" 
-                  className={`${inputClass} text-xs font-mono`} 
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100">
-              <label className={labelClass}>
-                <ExternalLink size={13} className="inline mr-1 -mt-0.5 text-slate-400" />
-                Media Kit Link
-              </label>
-              <input
-                name="media_kit_url"
-                value={form.media_kit_url}
-                onChange={handleChange}
-                placeholder="Google Drive, Dropbox, or ZIP URL"
-                className={`${inputClass} text-xs`}
-              />
-            </div>
-          </div>
-        </aside>
+        ) : (
+          <button
+            onClick={goNext}
+            className="flex items-center gap-1.5 text-white px-5 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm"
+            style={{ backgroundColor: '#E8192C' }}
+          >
+            Next <ChevronRight size={14} />
+          </button>
+        )}
       </div>
     </div>
   )

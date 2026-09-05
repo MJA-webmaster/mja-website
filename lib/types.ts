@@ -129,7 +129,7 @@ export type LedgerEntry = {
 export type Activity = {
   id: string
   title: string
-  slug: string
+  slug: string | null
   description: string | null
   year: number
   order: number

@@ -47,6 +47,7 @@ export default async function HomePage() {
   const heroCampaign =
     allCampaigns.find((c: any) => c.is_hero_featured && getCampaignStatus(c) === 'active') ?? null
   const activeCampaigns = allCampaigns.filter((c: any) => getCampaignStatus(c) === 'active')
+  const recentCampaigns = allCampaigns.slice(0, 4)
 
   const memberStats = statsRes.data ?? {
     total: 0,
@@ -87,6 +88,74 @@ export default async function HomePage() {
             {articles.map((article: any) => (
               <ArticleCard key={article.id} article={article} />
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Our Campaigns (most recent, any status) ── */}
+      {recentCampaigns.length > 0 && (
+        <section className="border-t border-gray-100 py-14 sm:py-20 px-4 sm:px-6">
+          <div className="max-w-[1280px] mx-auto">
+            <div className="flex items-center justify-between mb-8 pb-3 border-b border-gray-100">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#E8192C] block mb-1">
+                  Press Freedom in Action
+                </span>
+                <h2 className="font-headline font-black uppercase text-2xl md:text-3xl text-[#0D1B2A]">
+                  Our <span className="text-[#E8192C]">Campaigns</span>
+                </h2>
+              </div>
+              <Link
+                href="/campaigns"
+                className="text-xs font-bold tracking-wider uppercase text-[#E8192C] hover:text-[#c91424] transition-colors"
+              >
+                View all →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+              {recentCampaigns.map((c: any) => {
+                const status = getCampaignStatus(c)
+                const badge = STATUS_BADGE_STYLE[status]
+                return (
+                  <Link
+                    key={c.id}
+                    href={`/campaigns/${c.slug}`}
+                    className="group bg-white rounded-xl border border-gray-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
+                  >
+                    <div className="aspect-video relative bg-[#0D1B2A] overflow-hidden">
+                      {c.cover_image ? (
+                        <Image
+                          src={c.cover_image}
+                          alt={c.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="font-headline text-white/10 text-5xl font-black">#</span>
+                        </div>
+                      )}
+                      <span
+                        className="absolute top-2.5 left-2.5 text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full shadow-xs"
+                        style={{ backgroundColor: badge.bg, color: badge.text }}
+                      >
+                        {badge.label}
+                      </span>
+                    </div>
+
+                    <div className="p-4">
+                      {c.hashtag && (
+                        <p className="text-[11px] font-bold text-[#E8192C] mb-1">{c.hashtag}</p>
+                      )}
+                      <h3 className="font-bold text-[#0D1B2A] text-sm leading-snug group-hover:text-[#E8192C] transition-colors line-clamp-2">
+                        {c.title}
+                      </h3>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
           </div>
         </section>
       )}

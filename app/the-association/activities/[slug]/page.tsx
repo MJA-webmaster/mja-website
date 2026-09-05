@@ -33,17 +33,14 @@ export default async function ActivityDetailPage({ params }: Props) {
   if (!data) notFound()
   const activity = data as Activity
 
-  const { data: upcomingRaw } = await supabase
+  const { data: allEventsRaw } = await supabase
     .from('activities')
-    .select('id, title, slug, event_date')
+    .select('id, title, slug, event_date, venue')
     .eq('published', true)
     .not('event_date', 'is', null)
-    .neq('id', activity.id)
-    .gte('event_date', new Date().toISOString())
     .order('event_date', { ascending: true })
-    .limit(5)
 
-  const upcoming = upcomingRaw ?? []
+  const allEvents = allEventsRaw ?? []
 
   const sortedUpdates = [...(activity.updates ?? [])].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -134,10 +131,9 @@ export default async function ActivityDetailPage({ params }: Props) {
 
             {/* Calendar widget */}
             {activity.event_date && (
-              <EventCalendarWidget
-                current={{ id: activity.id, title: activity.title, slug: activity.slug, event_date: activity.event_date }}
-                upcoming={upcoming}
-              />
+              <div className="sm:col-span-2 lg:col-span-3">
+                <EventCalendarWidget currentEventId={activity.id} allEvents={allEvents} />
+              </div>
             )}
 
             {/* Gallery */}

@@ -23,14 +23,17 @@ export const RESOURCE_CATEGORIES = [
     blurb: 'Photo and video',
     subcategories: ['Photo', 'Video'],
   },
+  {
+    slug: 'governance',
+    label: 'Governance',
+    blurb: 'Charter, membership policy and bylaws',
+    subcategories: ['Charter', 'Membership Policy', 'Bylaws', 'Code of Conduct'],
+  },
 ] as const
-
 export type ResourceCategorySlug = (typeof RESOURCE_CATEGORIES)[number]['slug']
-
 export function subcategoriesFor(slug: string): readonly string[] {
   return RESOURCE_CATEGORIES.find((c) => c.slug === slug)?.subcategories ?? []
 }
-
 export function labelFor(slug: string): string {
   return RESOURCE_CATEGORIES.find((c) => c.slug === slug)?.label ?? slug
 }

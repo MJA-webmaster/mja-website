@@ -103,13 +103,13 @@ export default function HomePage() {
                 View all →
               </Link>
             </motion.div>
-            <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4 items-stretch">
               {data.activities.map((activity: any, i: number) => {
                 const eventDate = activity.event_date ? new Date(activity.event_date) : null
 
                 return (
-                  <motion.div key={activity.id} {...fadeUp(i * 0.07)} className="h-full">
-                    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full">
+                  <motion.div key={activity.id} {...fadeUp(i * 0.07)} className="flex">
+                    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col w-full">
                       {/* Cover Image Area */}
                       <div className="relative w-full h-44 bg-[#0D1B2A] overflow-hidden flex-shrink-0">
                         {activity.image_url || activity.cover_image ? (
@@ -139,40 +139,45 @@ export default function HomePage() {
 
                       {/* Card Body */}
                       <div className="p-5 flex flex-col flex-1">
-                        {/* Title with yellow bottom highlight */}
-                        <div className="mb-4">
-                          <h3 className="inline-block font-bold text-[#0D1B2A] text-base leading-snug border-b-2 border-amber-400 pb-0.5">
-                            {activity.title}
-                          </h3>
-                        </div>
+                        {/* Title (fixed height for 2 lines) */}
+                        <h3 className="font-bold text-[#0D1B2A] text-base leading-snug line-clamp-2 h-[2.75rem] mb-2">
+                          {activity.title}
+                        </h3>
 
-                        {/* Details Row: Big Date + Location/Time */}
-                        <div className="pt-4 border-t border-gray-100 flex items-start gap-4">
-                          {eventDate && (
+                        {/* Description (fixed height for 2 lines) */}
+                        <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 h-[2.5rem] mb-4">
+                          {activity.description || ''}
+                        </p>
+
+                        {/* Details Row: Aligned across cards */}
+                        <div className="mt-auto pt-4 border-t border-gray-100 flex items-start gap-4 min-h-[58px]">
+                          {eventDate ? (
                             <div className="flex flex-col items-center justify-center min-w-[48px] text-center">
                               <span className="text-3xl font-black leading-none text-[#0D1B2A]">
                                 {String(eventDate.getDate()).padStart(2, '0')}
                               </span>
-                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mt-1">
+                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-600 mt-1">
                                 {eventDate.toLocaleDateString('en-GB', { month: 'short' })}
                               </span>
                             </div>
+                          ) : (
+                            <div className="min-w-[48px]" />
                           )}
 
-                          <div className="space-y-2 flex-1 min-w-0">
+                          <div className="space-y-1.5 flex-1 min-w-0">
                             {activity.event_location && (
-                              <div className="flex items-start gap-2">
-                                <MapPin size={15} className="flex-shrink-0 mt-0.5 text-gray-600" />
-                                <span className="text-xs text-gray-600 leading-snug font-medium line-clamp-2">
+                              <div className="flex items-start gap-1.5">
+                                <MapPin size={14} className="flex-shrink-0 mt-0.5 text-gray-400" />
+                                <span className="text-xs text-gray-500 leading-snug truncate block">
                                   {activity.event_location}
                                 </span>
                               </div>
                             )}
 
                             {activity.event_time && (
-                              <div className="flex items-center gap-2">
-                                <Clock size={15} className="flex-shrink-0 text-gray-600" />
-                                <span className="text-xs text-gray-600 font-medium">
+                              <div className="flex items-center gap-1.5">
+                                <Clock size={14} className="flex-shrink-0 text-gray-400" />
+                                <span className="text-xs text-gray-500 truncate block">
                                   {activity.event_time}
                                 </span>
                               </div>
@@ -181,10 +186,10 @@ export default function HomePage() {
                         </div>
 
                         {/* Bottom Action Button */}
-                        <div className="mt-auto pt-6 flex justify-end">
+                        <div className="pt-5 flex justify-end">
                           <Link
                             href={activity.link || `/the-association/activities/${activity.slug || activity.id}`}
-                            className="inline-flex items-center justify-center px-5 py-2 text-xs font-semibold rounded-full border border-blue-500 text-blue-600 hover:bg-blue-50 transition-colors"
+                            className="inline-flex items-center justify-center px-4 py-1.5 text-xs font-semibold rounded-full border border-[#0D1B2A]/20 text-[#0D1B2A] hover:border-[#E8192C] hover:text-[#E8192C] hover:bg-red-50/50 transition-colors"
                           >
                             View Details
                           </Link>

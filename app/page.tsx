@@ -146,6 +146,12 @@ export default function HomePage() {
                             {activity.title}
                           </h3>
 
+                          {activity.description && (
+                            <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mb-2">
+                              {activity.description}
+                            </p>
+                          )}
+
                           {(activity.event_location || activity.event_time) && (
                             <div className="space-y-1">
                               {activity.event_location && (

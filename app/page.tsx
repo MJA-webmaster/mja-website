@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { Calendar, MapPin } from 'lucide-react'
 import ArticleCard from '@/components/ArticleCard'
 import MemberMeter from '@/components/MemberMeter'
 import NewsletterForm from '@/components/NewsletterForm'
@@ -52,8 +53,8 @@ export default function HomePage() {
 
   return (
     <>
-      {/* ── Hero ── */}
-      <HeroSection campaign={data.campaign} dispatch={data.dispatch} />
+      {/* ── Hero — always default, campaign shown via popup only ── */}
+      <HeroSection campaign={null} dispatch={data.dispatch} />
 
       {/* ── Latest News ── */}
       {data.articles.length > 0 && (
@@ -62,7 +63,11 @@ export default function HomePage() {
             <h2 className="font-headline font-black uppercase text-2xl md:text-3xl" style={{ color: '#0D1B2A' }}>
               <span style={{ color: '#E8192C' }}>Latest</span> News
             </h2>
-            <Link href="/news-room" className="text-xs font-bold tracking-wider uppercase hover:underline" style={{ color: '#E8192C' }}>
+            <Link
+              href="/news-room"
+              className="text-xs font-bold tracking-wider uppercase hover:underline"
+              style={{ color: '#E8192C' }}
+            >
               View all →
             </Link>
           </motion.div>
@@ -84,55 +89,72 @@ export default function HomePage() {
               <h2 className="font-headline font-black uppercase text-2xl md:text-3xl" style={{ color: '#0D1B2A' }}>
                 Activities
               </h2>
-              <Link href="/the-association/activities" className="text-xs font-bold tracking-wider uppercase hover:underline" style={{ color: '#E8192C' }}>
+              <Link
+                href="/the-association/activities"
+                className="text-xs font-bold tracking-wider uppercase hover:underline"
+                style={{ color: '#E8192C' }}
+              >
                 View all →
               </Link>
             </motion.div>
             <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
               {data.activities.map((activity: any, i: number) => (
-                <motion.div
-                  key={activity.id}
-                  {...fadeUp(i * 0.07)}
-                  className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col"
-                >
-                  {/* Top accent bar */}
-                  <div className="h-1 w-full" style={{ backgroundColor: '#E8192C' }} />
+                <motion.div key={activity.id} {...fadeUp(i * 0.07)} className="h-full">
+                  <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
 
-                  <div className="p-5 flex flex-col flex-1">
-                    {/* Title */}
-                    <h3 className="font-bold text-navy text-[14px] leading-snug mb-3">
-                      {activity.title}
-                    </h3>
-
-                    {/* Meta */}
-                    <div className="space-y-1.5 mb-3">
+                    {/* Cover area */}
+                    <div
+                      className="relative flex items-center justify-center overflow-hidden flex-shrink-0"
+                      style={{ backgroundColor: '#0D1B2A', height: 100 }}
+                    >
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          background: 'radial-gradient(circle at 70% 50%, rgba(232,25,44,0.15) 0%, transparent 70%)',
+                        }}
+                      />
+                      <span
+                        className="font-headline font-black text-[64px] leading-none select-none pointer-events-none"
+                        style={{ color: 'rgba(255,255,255,0.04)' }}
+                      >
+                        MJA
+                      </span>
                       {activity.event_date && (
-                        <div className="flex items-center gap-2">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#E8192C' }}>
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                          </svg>
-                          <span className="text-[11px] text-gray-500 font-medium">
-                            {new Date(activity.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            {activity.event_time && ` · ${activity.event_time}`}
+                        <div
+                          className="absolute top-3 left-3 flex flex-col items-center justify-center w-12 h-12 rounded-lg text-white"
+                          style={{ backgroundColor: '#E8192C' }}
+                        >
+                          <span className="text-[20px] font-black leading-none">
+                            {new Date(activity.event_date).getDate()}
                           </span>
-                        </div>
-                      )}
-                      {activity.event_location && (
-                        <div className="flex items-center gap-2">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#E8192C' }}>
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                          </svg>
-                          <span className="text-[11px] text-gray-500">{activity.event_location}</span>
+                          <span className="text-[9px] font-bold uppercase tracking-wider">
+                            {new Date(activity.event_date).toLocaleDateString('en-GB', { month: 'short' })}
+                          </span>
                         </div>
                       )}
                     </div>
 
-                    {/* Description */}
-                    {activity.description && (
-                      <p className="text-gray-400 text-xs leading-relaxed line-clamp-2 mt-auto">
-                        {activity.description}
-                      </p>
-                    )}
+                    {/* Content */}
+                    <div className="p-4 flex flex-col flex-1">
+                      <h3 className="font-bold text-navy text-[13px] leading-snug mb-3">
+                        {activity.title}
+                      </h3>
+                      <div className="space-y-1.5 mt-auto">
+                        {activity.event_location && (
+                          <div className="flex items-start gap-2">
+                            <MapPin size={12} strokeWidth={1.75} className="flex-shrink-0 mt-0.5 text-gray-400" />
+                            <span className="text-[11px] text-gray-500 leading-snug">{activity.event_location}</span>
+                          </div>
+                        )}
+                        {activity.event_time && (
+                          <div className="flex items-center gap-2">
+                            <Calendar size={12} strokeWidth={1.75} className="flex-shrink-0 text-gray-400" />
+                            <span className="text-[11px] text-gray-500">{activity.event_time}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                   </div>
                 </motion.div>
               ))}
@@ -148,7 +170,10 @@ export default function HomePage() {
             <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: '#E8192C' }}>
               Be the Voice
             </p>
-            <h2 className="font-headline font-black uppercase leading-[0.93] mb-6" style={{ fontSize: 'clamp(32px, 4.5vw, 54px)', color: '#0D1B2A' }}>
+            <h2
+              className="font-headline font-black uppercase leading-[0.93] mb-6"
+              style={{ fontSize: 'clamp(32px, 4.5vw, 54px)', color: '#0D1B2A' }}
+            >
               For Freedom<br />of Press
             </h2>
             <p className="leading-[1.85] mb-8 max-w-md" style={{ fontSize: 15, color: '#6B7280' }}>
@@ -173,9 +198,15 @@ export default function HomePage() {
       <GetInvolved />
 
       {/* ── Newsletter ── */}
-      <motion.section {...fadeUp()} className="py-16 md:py-20 px-4 sm:px-6 border-t border-gray-100">
+      <motion.section
+        {...fadeUp()}
+        className="py-16 md:py-20 px-4 sm:px-6 border-t border-gray-100"
+      >
         <div className="max-w-[1280px] mx-auto">
-          <h2 className="font-headline font-bold leading-tight mb-8" style={{ fontSize: 'clamp(26px, 3.5vw, 46px)', color: '#0D1B2A' }}>
+          <h2
+            className="font-headline font-bold leading-tight mb-8"
+            style={{ fontSize: 'clamp(26px, 3.5vw, 46px)', color: '#0D1B2A' }}
+          >
             Don&apos;t wait for information being deprived<br />
             of you to{' '}
             <span style={{ color: '#E8192C' }}>defend it!</span>

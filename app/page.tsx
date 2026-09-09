@@ -145,7 +145,7 @@ export default function HomePage() {
                     {/* Body */}
                     <div className="flex-1 flex flex-col justify-between">
                       <div>
-                        <h3 className="font-bold text-slate-900 text-sm sm:text-[15px] leading-snug line-clamp-2 min-h-[2.5rem] sm:min-h-[2.6rem] group-hover:text-[#E8192C] transition-colors mb-1">
+                        <h3 className="font-bold text-slate-900 text-sm sm:text-[15px] leading-snug line-clamp-2 group-hover:text-[#E8192C] transition-colors mb-1">
                           {activity.title}
                         </h3>
 

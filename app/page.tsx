@@ -93,27 +93,47 @@ export default function HomePage() {
                 <motion.div
                   key={activity.id}
                   {...fadeUp(i * 0.07)}
-                  className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-sm transition-shadow"
+                  className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col"
                 >
-                  <h3 className="font-bold text-navy text-[14px] leading-snug mb-2">
-                    {activity.title}
-                  </h3>
-                  <div className="space-y-1 mb-2">
-                    {activity.event_date && (
-                      <p className="text-[11px] text-gray-500 font-medium">
-                        📅 {new Date(activity.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        {activity.event_time && ` · ${activity.event_time}`}
+                  {/* Top accent bar */}
+                  <div className="h-1 w-full" style={{ backgroundColor: '#E8192C' }} />
+
+                  <div className="p-5 flex flex-col flex-1">
+                    {/* Title */}
+                    <h3 className="font-bold text-navy text-[14px] leading-snug mb-3">
+                      {activity.title}
+                    </h3>
+
+                    {/* Meta */}
+                    <div className="space-y-1.5 mb-3">
+                      {activity.event_date && (
+                        <div className="flex items-center gap-2">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#E8192C' }}>
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                          </svg>
+                          <span className="text-[11px] text-gray-500 font-medium">
+                            {new Date(activity.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {activity.event_time && ` · ${activity.event_time}`}
+                          </span>
+                        </div>
+                      )}
+                      {activity.event_location && (
+                        <div className="flex items-center gap-2">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#E8192C' }}>
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                          </svg>
+                          <span className="text-[11px] text-gray-500">{activity.event_location}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    {activity.description && (
+                      <p className="text-gray-400 text-xs leading-relaxed line-clamp-2 mt-auto">
+                        {activity.description}
                       </p>
                     )}
-                    {activity.event_location && (
-                      <p className="text-[11px] text-gray-500">📍 {activity.event_location}</p>
-                    )}
                   </div>
-                  {activity.description && (
-                    <p className="text-gray-400 text-xs leading-relaxed line-clamp-2">
-                      {activity.description}
-                    </p>
-                  )}
                 </motion.div>
               ))}
             </div>

@@ -25,18 +25,16 @@ export default async function MembersCategoryPage({ params }: { params: { catego
   const supabase = createClient()
   const membershipType = categorySlugToType[params.category]
 
-  const [{ data: members }, { data: stats }] = await Promise.all([
+  const [{ data: members }, { data: allActiveMembers, count: totalCount }] = await Promise.all([
     membershipType
       ? supabase.from('members').select('*').eq('membership_type', membershipType).eq('is_active', true).order('name')
       : Promise.resolve({ data: [] as Member[] }),
-    supabase.from('member_stats').select('*').single(),
+    // Live count + outlet list across ALL active members, not just the current category
+    supabase.from('members').select('representing', { count: 'exact' }).eq('is_active', true),
   ])
 
-  const memberStats = stats
-    ? { ...stats, total: stats.local + stats.international + stats.non_member_contributors }
-    : { local: 2000, international: 1300, non_member_contributors: 560, total: 3860 }
-
-  const outletCount = new Set((members ?? []).map((m: Member) => m.representing).filter(Boolean)).size
+  const totalMembers = totalCount ?? 0
+  const outletCount = new Set((allActiveMembers ?? []).map((m: { representing: string | null }) => m.representing).filter(Boolean)).size
 
   return (
     <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 md:py-14">
@@ -52,9 +50,9 @@ export default async function MembersCategoryPage({ params }: { params: { catego
 
       {/* Metrics ribbon */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-8 text-[13px] font-semibold text-gray-500">
-        <span><span style={{ color: '#0D1B2A' }}>{memberStats.total.toLocaleString()}</span> Members Registered</span>
+        <span><span style={{ color: '#0D1B2A' }}>{totalMembers.toLocaleString()}</span> Members Registered</span>
         <span className="text-gray-300">•</span>
-        <span><span style={{ color: '#0D1B2A' }}>{memberStats.media_outlets || outletCount}</span> Media Outlets</span>
+        <span><span style={{ color: '#0D1B2A' }}>{outletCount}</span> Media Outlets</span>
         <span className="text-gray-300">•</span>
         <span>Nationwide Coverage</span>
       </div>

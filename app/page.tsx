@@ -107,7 +107,7 @@ export default function HomePage() {
               {data.activities.map((activity: any, i: number) => {
                 const eventDate = activity.event_date ? new Date(activity.event_date) : null
                 const href = activity.link || `/the-association/activities/${activity.slug || activity.id}`
-
+      
                 return (
                   <motion.div key={activity.id} {...fadeUp(i * 0.07)} className="flex h-full">
                     <Link
@@ -139,7 +139,7 @@ export default function HomePage() {
                             </span>
                           </div>
                         )}
-
+      
                         {/* Date badge overlay */}
                         {eventDate && (
                           <div className="absolute top-3 left-3 flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-white shadow-md">
@@ -155,32 +155,40 @@ export default function HomePage() {
                           </div>
                         )}
                       </div>
-
+      
                       {/* Card Body */}
                       <div className="p-5 flex flex-col flex-1">
-                        <h3 className="font-bold text-[#0D1B2A] text-base leading-snug line-clamp-2 min-h-[2.75rem] mb-3">
+                        <h3 className="font-bold text-[#0D1B2A] text-base leading-snug line-clamp-2 mb-2">
                           {activity.title}
                         </h3>
-
-                        <div className="space-y-1.5 min-h-[44px]">
-                          {activity.event_location && (
-                            <div className="flex items-start gap-1.5">
-                              <MapPin size={14} className="flex-shrink-0 mt-0.5 text-gray-400" />
-                              <span className="text-xs text-gray-500 leading-snug truncate">
-                                {activity.event_location}
-                              </span>
-                            </div>
-                          )}
-                          {activity.event_time && (
-                            <div className="flex items-center gap-1.5">
-                              <Clock size={14} className="flex-shrink-0 text-gray-400" />
-                              <span className="text-xs text-gray-500 truncate">
-                                {activity.event_time}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
+      
+                        {activity.description && (
+                          <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 mb-3">
+                            {activity.description}
+                          </p>
+                        )}
+      
+                        {(activity.event_location || activity.event_time) && (
+                          <div className="space-y-1.5 mb-3">
+                            {activity.event_location && (
+                              <div className="flex items-start gap-1.5">
+                                <MapPin size={14} className="flex-shrink-0 mt-0.5 text-gray-400" />
+                                <span className="text-xs text-gray-500 leading-snug truncate">
+                                  {activity.event_location}
+                                </span>
+                              </div>
+                            )}
+                            {activity.event_time && (
+                              <div className="flex items-center gap-1.5">
+                                <Clock size={14} className="flex-shrink-0 text-gray-400" />
+                                <span className="text-xs text-gray-500 truncate">
+                                  {activity.event_time}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+      
                         {/* Footer */}
                         <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
                           <span className="text-xs font-semibold" style={{ color: '#0D1B2A' }}>

@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Calendar, MapPin } from 'lucide-react'
+import { MapPin, Clock } from 'lucide-react'
 import ArticleCard from '@/components/ArticleCard'
 import MemberMeter from '@/components/MemberMeter'
 import NewsletterForm from '@/components/NewsletterForm'
@@ -47,8 +48,13 @@ export default function HomePage() {
   }, [])
 
   const memberStats = data.stats ?? {
-    total: 0, media_outlets: 0, male: 0, female: 0,
-    local: 0, international: 0, non_member_contributors: 0,
+    total: 0,
+    media_outlets: 0,
+    male: 0,
+    female: 0,
+    local: 0,
+    international: 0,
+    non_member_contributors: 0,
   }
 
   return (
@@ -98,66 +104,96 @@ export default function HomePage() {
               </Link>
             </motion.div>
             <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {data.activities.map((activity: any, i: number) => (
-                <motion.div key={activity.id} {...fadeUp(i * 0.07)} className="h-full">
-                  <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
+              {data.activities.map((activity: any, i: number) => {
+                const eventDate = activity.event_date ? new Date(activity.event_date) : null
 
-                    {/* Cover area */}
-                    <div
-                      className="relative flex items-center justify-center overflow-hidden flex-shrink-0"
-                      style={{ backgroundColor: '#0D1B2A', height: 100 }}
-                    >
-                      <div
-                        className="absolute inset-0 pointer-events-none"
-                        style={{
-                          background: 'radial-gradient(circle at 70% 50%, rgba(232,25,44,0.15) 0%, transparent 70%)',
-                        }}
-                      />
-                      <span
-                        className="font-headline font-black text-[64px] leading-none select-none pointer-events-none"
-                        style={{ color: 'rgba(255,255,255,0.04)' }}
-                      >
-                        MJA
-                      </span>
-                      {activity.event_date && (
-                        <div
-                          className="absolute top-3 left-3 flex flex-col items-center justify-center w-12 h-12 rounded-lg text-white"
-                          style={{ backgroundColor: '#E8192C' }}
-                        >
-                          <span className="text-[20px] font-black leading-none">
-                            {new Date(activity.event_date).getDate()}
-                          </span>
-                          <span className="text-[9px] font-bold uppercase tracking-wider">
-                            {new Date(activity.event_date).toLocaleDateString('en-GB', { month: 'short' })}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-4 flex flex-col flex-1">
-                      <h3 className="font-bold text-navy text-[13px] leading-snug mb-3">
-                        {activity.title}
-                      </h3>
-                      <div className="space-y-1.5 mt-auto">
-                        {activity.event_location && (
-                          <div className="flex items-start gap-2">
-                            <MapPin size={12} strokeWidth={1.75} className="flex-shrink-0 mt-0.5 text-gray-400" />
-                            <span className="text-[11px] text-gray-500 leading-snug">{activity.event_location}</span>
-                          </div>
-                        )}
-                        {activity.event_time && (
-                          <div className="flex items-center gap-2">
-                            <Calendar size={12} strokeWidth={1.75} className="flex-shrink-0 text-gray-400" />
-                            <span className="text-[11px] text-gray-500">{activity.event_time}</span>
+                return (
+                  <motion.div key={activity.id} {...fadeUp(i * 0.07)} className="h-full">
+                    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full">
+                      {/* Cover Image Area */}
+                      <div className="relative w-full h-44 bg-[#0D1B2A] overflow-hidden flex-shrink-0">
+                        {activity.image_url || activity.cover_image ? (
+                          <Image
+                            src={activity.image_url ?? activity.cover_image}
+                            alt={activity.title}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center relative">
+                            <div
+                              className="absolute inset-0 pointer-events-none"
+                              style={{
+                                background: 'radial-gradient(circle at 70% 50%, rgba(232,25,44,0.15) 0%, transparent 70%)',
+                              }}
+                            />
+                            <span
+                              className="font-headline font-black text-6xl select-none pointer-events-none tracking-wider"
+                              style={{ color: 'rgba(255,255,255,0.06)' }}
+                            >
+                              MJA
+                            </span>
                           </div>
                         )}
                       </div>
-                    </div>
 
-                  </div>
-                </motion.div>
-              ))}
+                      {/* Card Body */}
+                      <div className="p-5 flex flex-col flex-1">
+                        {/* Title with yellow bottom highlight */}
+                        <div className="mb-4">
+                          <h3 className="inline-block font-bold text-[#0D1B2A] text-base leading-snug border-b-2 border-amber-400 pb-0.5">
+                            {activity.title}
+                          </h3>
+                        </div>
+
+                        {/* Details Row: Big Date + Location/Time */}
+                        <div className="pt-4 border-t border-gray-100 flex items-start gap-4">
+                          {eventDate && (
+                            <div className="flex flex-col items-center justify-center min-w-[48px] text-center">
+                              <span className="text-3xl font-black leading-none text-[#0D1B2A]">
+                                {String(eventDate.getDate()).padStart(2, '0')}
+                              </span>
+                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-700 mt-1">
+                                {eventDate.toLocaleDateString('en-GB', { month: 'short' })}
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="space-y-2 flex-1 min-w-0">
+                            {activity.event_location && (
+                              <div className="flex items-start gap-2">
+                                <MapPin size={15} className="flex-shrink-0 mt-0.5 text-gray-600" />
+                                <span className="text-xs text-gray-600 leading-snug font-medium line-clamp-2">
+                                  {activity.event_location}
+                                </span>
+                              </div>
+                            )}
+
+                            {activity.event_time && (
+                              <div className="flex items-center gap-2">
+                                <Clock size={15} className="flex-shrink-0 text-gray-600" />
+                                <span className="text-xs text-gray-600 font-medium">
+                                  {activity.event_time}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Bottom Action Button */}
+                        <div className="mt-auto pt-6 flex justify-end">
+                          <Link
+                            href={activity.link || `/the-association/activities/${activity.slug || activity.id}`}
+                            className="inline-flex items-center justify-center px-5 py-2 text-xs font-semibold rounded-full border border-blue-500 text-blue-600 hover:bg-blue-50 transition-colors"
+                          >
+                            View Details
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              })}
             </div>
           </div>
         </section>

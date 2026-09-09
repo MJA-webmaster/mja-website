@@ -19,10 +19,17 @@ const fadeUp = (delay = 0) => ({
   transition: { duration: 0.65, delay, ease: [0.22, 1, 0.36, 1] },
 })
 
+const statusStyles: Record<string, { bg: string; label: string }> = {
+  active: { bg: '#16A34A', label: 'Active' },
+  upcoming: { bg: '#2563EB', label: 'Upcoming' },
+  past: { bg: '#6B7280', label: 'Past' },
+}
+
 export default function HomePage() {
   const [data, setData] = useState<any>({
     articles: [],
     campaign: null,
+    campaigns: [],
     stats: null,
     activities: [],
     dispatch: null,
@@ -32,14 +39,16 @@ export default function HomePage() {
     const supabase = createClient()
     Promise.all([
       supabase.from('articles').select('*').eq('published', true).order('published_at', { ascending: false }).limit(4),
-      supabase.from('campaigns').select('*').eq('published', true).order('created_at', { ascending: false }).limit(1),
+      supabase.from('campaigns').select('*').eq('published', true).order('created_at', { ascending: false }).limit(4),
       supabase.from('member_stats').select('*').single(),
       supabase.from('activities').select('*').eq('year', new Date().getFullYear()).order('order', { ascending: true }).limit(4),
       supabase.from('settings').select('dispatch').single(),
     ]).then(([articles, campaigns, stats, activities, settings]) => {
+      const campaignList = campaigns.data ?? []
       setData({
         articles: articles.data ?? [],
-        campaign: campaigns.data?.[0] ?? null,
+        campaign: campaignList[0] ?? null,
+        campaigns: campaignList,
         stats: stats.data,
         activities: activities.data ?? [],
         dispatch: settings.data?.dispatch ?? null,
@@ -83,6 +92,103 @@ export default function HomePage() {
                 <ArticleCard article={article} />
               </motion.div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Our Campaigns ── */}
+      {data.campaigns.length > 0 && (
+        <section className="max-w-[1280px] mx-auto px-4 sm:px-6 py-16 border-t border-gray-100">
+          <motion.div {...fadeUp()} className="flex items-center justify-between mb-8">
+            <h2 className="font-headline font-black uppercase text-2xl md:text-3xl" style={{ color: '#0D1B2A' }}>
+              Our Campaigns
+            </h2>
+            <Link
+              href="/campaigns"
+              className="text-xs font-bold tracking-wider uppercase hover:underline"
+              style={{ color: '#E8192C' }}
+            >
+              View all →
+            </Link>
+          </motion.div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {data.campaigns.map((campaign: any, i: number) => {
+              const badge = campaign.status ? statusStyles[campaign.status] : null
+              const eventDate = campaign.event_date
+                ? new Date(campaign.event_date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })
+                : ''
+              const label = campaign.hashtag || eventDate
+
+              return (
+                <motion.div key={campaign.id} {...fadeUp(i * 0.07)} className="flex flex-col h-full">
+                  <Link href={`/campaigns/${campaign.slug}`} className="group flex flex-col">
+                    {/* Image */}
+                    <div className="relative aspect-video w-full rounded-xl overflow-hidden mb-3.5 bg-slate-100 border border-slate-200/60">
+                      {campaign.cover_image ? (
+                        <Image
+                          src={campaign.cover_image}
+                          alt={campaign.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 25vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50">
+                          <span className="font-headline font-black text-2xl text-slate-200 tracking-wider">MJA</span>
+                        </div>
+                      )}
+
+                      {badge && (
+                        <div
+                          className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider text-white"
+                          style={{ backgroundColor: badge.bg }}
+                        >
+                          {badge.label}
+                        </div>
+                      )}
+                    </div>
+
+                    {label && (
+                      <span className="block text-[11px] font-bold uppercase tracking-wider text-[#E8192C] mb-1.5">
+                        {label}
+                      </span>
+                    )}
+                    <h3 className="font-bold text-slate-900 text-sm sm:text-[15px] leading-snug line-clamp-2 group-hover:text-[#E8192C] transition-colors mb-1">
+                      {campaign.title}
+                    </h3>
+
+                    {campaign.description && (
+                      <p className="text-xs text-slate-500 leading-snug line-clamp-2 mb-1.5">
+                        {campaign.description}
+                      </p>
+                    )}
+
+                    {campaign.event_location && (
+                      <div className="flex items-start gap-1.5">
+                        <MapPin size={12} className="flex-shrink-0 mt-0.5 text-slate-400" />
+                        <span className="text-xs text-slate-500 leading-snug line-clamp-1">
+                          {campaign.event_location}
+                        </span>
+                      </div>
+                    )}
+                  </Link>
+
+                  {campaign.cta_primary_label && campaign.cta_primary_url && (
+                    <Link
+                      href={campaign.cta_primary_url}
+                      className="mt-3 inline-flex items-center justify-center px-4 py-2 rounded-full text-xs font-semibold text-white transition-opacity hover:opacity-85 w-fit"
+                      style={{ backgroundColor: '#E8192C' }}
+                    >
+                      {campaign.cta_primary_label}
+                    </Link>
+                  )}
+                </motion.div>
+              )
+            })}
           </div>
         </section>
       )}

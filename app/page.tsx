@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { MapPin, Clock } from 'lucide-react'
+import { MapPin, Clock, ArrowRight } from 'lucide-react'
 import ArticleCard from '@/components/ArticleCard'
 import MemberMeter from '@/components/MemberMeter'
 import NewsletterForm from '@/components/NewsletterForm'
@@ -103,21 +103,25 @@ export default function HomePage() {
                 View all →
               </Link>
             </motion.div>
-            <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4 items-stretch">
+            <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-5 items-stretch">
               {data.activities.map((activity: any, i: number) => {
                 const eventDate = activity.event_date ? new Date(activity.event_date) : null
+                const href = activity.link || `/the-association/activities/${activity.slug || activity.id}`
 
                 return (
-                  <motion.div key={activity.id} {...fadeUp(i * 0.07)} className="flex">
-                    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col w-full">
-                      {/* Cover Image Area */}
+                  <motion.div key={activity.id} {...fadeUp(i * 0.07)} className="flex h-full">
+                    <Link
+                      href={href}
+                      className="group flex flex-col w-full bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:border-transparent transition-all duration-300"
+                    >
+                      {/* Cover Image */}
                       <div className="relative w-full h-44 bg-[#0D1B2A] overflow-hidden flex-shrink-0">
                         {activity.image_url || activity.cover_image ? (
                           <Image
                             src={activity.image_url ?? activity.cover_image}
                             alt={activity.title}
                             fill
-                            className="object-cover"
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center relative">
@@ -135,67 +139,61 @@ export default function HomePage() {
                             </span>
                           </div>
                         )}
+
+                        {/* Date badge overlay */}
+                        {eventDate && (
+                          <div className="absolute top-3 left-3 flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-white shadow-md">
+                            <span className="text-lg font-black leading-none" style={{ color: '#0D1B2A' }}>
+                              {String(eventDate.getDate()).padStart(2, '0')}
+                            </span>
+                            <span
+                              className="text-[9px] font-extrabold uppercase tracking-wider mt-0.5"
+                              style={{ color: '#E8192C' }}
+                            >
+                              {eventDate.toLocaleDateString('en-GB', { month: 'short' })}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Card Body */}
                       <div className="p-5 flex flex-col flex-1">
-                        {/* Title (fixed height for 2 lines) */}
-                        <h3 className="font-bold text-[#0D1B2A] text-base leading-snug line-clamp-2 h-[2.75rem] mb-2">
+                        <h3 className="font-bold text-[#0D1B2A] text-base leading-snug line-clamp-2 min-h-[2.75rem] mb-3">
                           {activity.title}
                         </h3>
 
-                        {/* Description (fixed height for 2 lines) */}
-                        <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 h-[2.5rem] mb-4">
-                          {activity.description || ''}
-                        </p>
-
-                        {/* Details Row: Aligned across cards */}
-                        <div className="mt-auto pt-4 border-t border-gray-100 flex items-start gap-4 min-h-[58px]">
-                          {eventDate ? (
-                            <div className="flex flex-col items-center justify-center min-w-[48px] text-center">
-                              <span className="text-3xl font-black leading-none text-[#0D1B2A]">
-                                {String(eventDate.getDate()).padStart(2, '0')}
-                              </span>
-                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-600 mt-1">
-                                {eventDate.toLocaleDateString('en-GB', { month: 'short' })}
+                        <div className="space-y-1.5 min-h-[44px]">
+                          {activity.event_location && (
+                            <div className="flex items-start gap-1.5">
+                              <MapPin size={14} className="flex-shrink-0 mt-0.5 text-gray-400" />
+                              <span className="text-xs text-gray-500 leading-snug truncate">
+                                {activity.event_location}
                               </span>
                             </div>
-                          ) : (
-                            <div className="min-w-[48px]" />
                           )}
-
-                          <div className="space-y-1.5 flex-1 min-w-0">
-                            {activity.event_location && (
-                              <div className="flex items-start gap-1.5">
-                                <MapPin size={14} className="flex-shrink-0 mt-0.5 text-gray-400" />
-                                <span className="text-xs text-gray-500 leading-snug truncate block">
-                                  {activity.event_location}
-                                </span>
-                              </div>
-                            )}
-
-                            {activity.event_time && (
-                              <div className="flex items-center gap-1.5">
-                                <Clock size={14} className="flex-shrink-0 text-gray-400" />
-                                <span className="text-xs text-gray-500 truncate block">
-                                  {activity.event_time}
-                                </span>
-                              </div>
-                            )}
-                          </div>
+                          {activity.event_time && (
+                            <div className="flex items-center gap-1.5">
+                              <Clock size={14} className="flex-shrink-0 text-gray-400" />
+                              <span className="text-xs text-gray-500 truncate">
+                                {activity.event_time}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Bottom Action Button */}
-                        <div className="pt-5 flex justify-end">
-                          <Link
-                            href={activity.link || `/the-association/activities/${activity.slug || activity.id}`}
-                            className="inline-flex items-center justify-center px-4 py-1.5 text-xs font-semibold rounded-full border border-[#0D1B2A]/20 text-[#0D1B2A] hover:border-[#E8192C] hover:text-[#E8192C] hover:bg-red-50/50 transition-colors"
-                          >
+                        {/* Footer */}
+                        <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                          <span className="text-xs font-semibold" style={{ color: '#0D1B2A' }}>
                             View Details
-                          </Link>
+                          </span>
+                          <ArrowRight
+                            size={15}
+                            className="transition-transform duration-300 group-hover:translate-x-1"
+                            style={{ color: '#E8192C' }}
+                          />
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   </motion.div>
                 )
               })}

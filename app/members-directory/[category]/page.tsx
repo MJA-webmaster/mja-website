@@ -25,16 +25,18 @@ export default async function MembersCategoryPage({ params }: { params: { catego
   const supabase = createClient()
   const membershipType = categorySlugToType[params.category]
 
-  const [{ data: members }, { data: allActiveMembers, count: totalCount }] = await Promise.all([
+  const [{ data: members }, { count: totalCount }, { data: stats }] = await Promise.all([
     membershipType
       ? supabase.from('members').select('*').eq('membership_type', membershipType).eq('is_active', true).order('name')
       : Promise.resolve({ data: [] as Member[] }),
-    // Live count + outlet list across ALL active members, not just the current category
-    supabase.from('members').select('representing', { count: 'exact' }).eq('is_active', true),
+    // Live, accurate total — actual row count of active members
+    supabase.from('members').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    // Media outlets stays sourced from the manually-maintained stats table, same as the homepage widget
+    supabase.from('member_stats').select('media_outlets').single(),
   ])
 
   const totalMembers = totalCount ?? 0
-  const outletCount = new Set((allActiveMembers ?? []).map((m: { representing: string | null }) => m.representing).filter(Boolean)).size
+  const mediaOutlets = stats?.media_outlets ?? 0
 
   return (
     <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-10 md:py-14">
@@ -52,7 +54,7 @@ export default async function MembersCategoryPage({ params }: { params: { catego
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-8 text-[13px] font-semibold text-gray-500">
         <span><span style={{ color: '#0D1B2A' }}>{totalMembers.toLocaleString()}</span> Members Registered</span>
         <span className="text-gray-300">•</span>
-        <span><span style={{ color: '#0D1B2A' }}>{outletCount}</span> Media Outlets</span>
+        <span><span style={{ color: '#0D1B2A' }}>{mediaOutlets.toLocaleString()}</span> Media Outlets</span>
         <span className="text-gray-300">•</span>
         <span>Nationwide Coverage</span>
       </div>

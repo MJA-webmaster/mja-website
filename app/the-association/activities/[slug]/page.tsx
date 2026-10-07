@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import AssociationSidebar from '@/components/AssociationSidebar'
 import EventCountdown from '@/components/EventCountdown'
@@ -16,6 +16,8 @@ import type { Metadata } from 'next'
 
 interface Props { params: { slug: string } }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient()
   const { data } = await supabase.from('activities').select('title, description').eq('slug', params.slug).maybeSingle()
@@ -24,6 +26,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ActivityDetailPage({ params }: Props) {
   const supabase = createClient()
+
+  // Old links used the activity ID. Send them to the slug URL.
+  if (UUID_RE.test(params.slug)) {
+    const { data: byId } = await supabase
+      .from('activities')
+      .select('slug')
+      .eq('id', params.slug)
+      .eq('published', true)
+      .maybeSingle()
+    if (byId?.slug) redirect(`/the-association/activities/${byId.slug}`)
+    notFound()
+  }
+
   const { data } = await supabase
     .from('activities')
     .select('*')

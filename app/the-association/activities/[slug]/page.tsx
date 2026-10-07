@@ -18,6 +18,8 @@ interface Props { params: { slug: string } }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const TZ = 'Indian/Maldives'
+const SITE_URL = 'https://mja.mv'
+const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.jpg`
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -38,6 +40,13 @@ function formatTime(iso: string) {
     minute: '2-digit',
     timeZone: TZ,
   })
+}
+
+// Single line of plain text for share previews
+function toPreviewText(text: string | null | undefined, max = 160) {
+  if (!text) return ''
+  const clean = text.replace(/^[-•*]\s+/gm, '').replace(/\s+/g, ' ').trim()
+  return clean.length > max ? clean.slice(0, max - 1).trimEnd() + '…' : clean
 }
 
 function RichText({ text }: { text: string }) {
@@ -71,13 +80,43 @@ function RichText({ text }: { text: string }) {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  if (UUID_RE.test(params.slug)) return { title: 'Event' }
+
   const supabase = createClient()
   const { data } = await supabase
     .from('activities')
-    .select('title, description')
+    .select('title, slug, description, cover_image, gallery')
     .eq('slug', params.slug)
+    .eq('published', true)
     .maybeSingle()
-  return { title: data?.title ?? 'Event', description: data?.description ?? '' }
+
+  if (!data) return { title: 'Event' }
+
+  const url = `${SITE_URL}/the-association/activities/${data.slug}`
+  const description =
+    toPreviewText(data.description) || 'An event by the Maldives Journalists Association.'
+  const image = data.cover_image || data.gallery?.[0] || DEFAULT_OG_IMAGE
+
+  return {
+    title: data.title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: 'article',
+      siteName: 'MJA',
+      locale: 'en_US',
+      url,
+      title: data.title,
+      description,
+      images: [{ url: image, width: 1200, height: 630, alt: data.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: data.title,
+      description,
+      images: [image],
+    },
+  }
 }
 
 export default async function ActivityDetailPage({ params }: Props) {
@@ -133,7 +172,7 @@ export default async function ActivityDetailPage({ params }: Props) {
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   )
 
-  const eventUrl = `https://mja.mv/the-association/activities/${activity.slug}`
+  const eventUrl = `${SITE_URL}/the-association/activities/${activity.slug}`
   const timeLabel = activity.event_date ? formatTime(activity.event_date) : null
 
   return (

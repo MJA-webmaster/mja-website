@@ -2,48 +2,62 @@
 
 import { useEffect, useState } from 'react'
 
-function getTimeLeft(target: string) {
-  const diff = new Date(target).getTime() - Date.now()
+function getParts(target: number) {
+  const diff = target - Date.now()
   if (diff <= 0) return null
+  const s = Math.floor(diff / 1000)
   return {
-    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-    hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-    minutes: Math.floor((diff / (1000 * 60)) % 60),
-    seconds: Math.floor((diff / 1000) % 60),
+    days: Math.floor(s / 86400),
+    hours: Math.floor((s % 86400) / 3600),
+    minutes: Math.floor((s % 3600) / 60),
+    seconds: s % 60,
   }
 }
 
 export default function EventCountdown({ eventDate }: { eventDate: string }) {
-  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(eventDate))
+  const target = new Date(eventDate).getTime()
+  const [parts, setParts] = useState<ReturnType<typeof getParts>>(null)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    const interval = setInterval(() => setTimeLeft(getTimeLeft(eventDate)), 1000)
-    return () => clearInterval(interval)
-  }, [eventDate])
+    const tick = () => {
+      setParts(getParts(target))
+      setReady(true)
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [target])
 
-  if (!timeLeft) {
-    return (
-      <div className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide px-4 py-2 rounded-lg bg-gray-100 text-gray-500">
-        This event has passed
-      </div>
-    )
+  if (!ready) return <div className="h-[68px]" />
+
+  if (!parts) {
+    return <p className="text-sm font-semibold text-gray-500">This event has passed</p>
   }
 
-  const units = [
-    { label: 'Days', value: timeLeft.days },
-    { label: 'Hours', value: timeLeft.hours },
-    { label: 'Min', value: timeLeft.minutes },
-    { label: 'Sec', value: timeLeft.seconds },
+  const items = [
+    { label: 'Days', value: parts.days },
+    { label: 'Hours', value: parts.hours },
+    { label: 'Min', value: parts.minutes },
+    { label: 'Sec', value: parts.seconds },
   ]
 
   return (
-    <div className="flex gap-3">
-      {units.map((u) => (
-        <div key={u.label} className="text-center bg-white rounded-lg border border-gray-200/80 px-4 py-3 min-w-[64px]">
-          <p className="font-headline text-2xl font-black" style={{ color: '#E8192C' }}>
-            {String(u.value).padStart(2, '0')}
-          </p>
-          <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mt-0.5">{u.label}</p>
+    <div className="grid grid-cols-4 gap-2">
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className="min-w-0 rounded-lg border border-gray-200 py-2.5 text-center"
+        >
+          <div
+            className="text-xl font-black tabular-nums leading-none"
+            style={{ color: '#E8192C' }}
+          >
+            {String(item.value).padStart(2, '0')}
+          </div>
+          <div className="mt-1.5 text-[9px] font-bold uppercase tracking-wide text-gray-400">
+            {item.label}
+          </div>
         </div>
       ))}
     </div>

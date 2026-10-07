@@ -2,73 +2,98 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Pencil } from 'lucide-react'
 
 type Activity = {
   id: string
+  year: number
   title: string
   description: string | null
-  year: number
   order: number
-  event_date: string | null
-  event_time: string | null
-  event_location: string | null
-  created_at: string
 }
 
-const inputClass = 'w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-navy focus:outline-none focus:border-gray-400 transition-colors'
-const labelClass = 'block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5'
-
-const EMPTY = {
-  title: '',
-  description: '',
-  year: new Date().getFullYear(),
-  order: 0,
-  event_date: '',
-  event_time: '',
-  event_location: '',
-}
+const emptyForm = { year: new Date().getFullYear(), title: '', description: '', order: 0 }
 
 export default function ActivitiesAdminClient({ activities: initial }: { activities: Activity[] }) {
   const [activities, setActivities] = useState(initial)
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [form, setForm] = useState(EMPTY)
-  const [filterYear, setFilterYear] = useState<number | 'all'>('all')
-
-  const years = Array.from(new Set(activities.map(a => a.year))).sort((a, b) => b - a)
-  const filtered = filterYear === 'all' ? activities : activities.filter(a => a.year === filterYear)
+  const [error, setError] = useState('')
+  const [form, setForm] = useState(emptyForm)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    const { name, value } = e.target
-    setForm(f => ({ ...f, [name]: name === 'year' || name === 'order' ? Number(value) : value }))
+    setForm({
+      ...form,
+      [e.target.name]: e.target.type === 'number' ? parseInt(e.target.value) || 0 : e.target.value,
+    })
   }
+
+  function startAdd() {
+    setEditingId(null)
+    setForm(emptyForm)
+    setError('')
+    setShowForm(true)
+  }
+
+  function startEdit(a: Activity) {
+    setEditingId(a.id)
+    setForm({ year: a.year, title: a.title, description: a.description ?? '', order: a.order })
+    setError('')
+    setShowForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function cancelForm() {
+    setShowForm(false)
+    setEditingId(null)
+    setForm(emptyForm)
+    setError('')
+  }
+
+  const sortList = (list: Activity[]) =>
+    [...list].sort((a, b) => b.year - a.year || a.order - b.order)
 
   async function handleSave() {
     if (!form.title) return
     setSaving(true)
-    setError(null)
+    setError('')
     const supabase = createClient()
-    const { data, error } = await supabase
-      .from('activities')
-      .insert({
-        title: form.title,
-        description: form.description || null,
-        year: form.year,
-        order: form.order,
-        event_date: form.event_date || null,
-        event_time: form.event_time || null,
-        event_location: form.event_location || null,
-      })
-      .select()
-      .single()
 
-    if (error) { setError(error.message) }
-    else if (data) {
-      setActivities(prev => [data, ...prev].sort((a, b) => b.year - a.year || a.order - b.order))
-      setForm(EMPTY)
-      setShowForm(false)
+    const payload = {
+      year: form.year,
+      title: form.title,
+      description: form.description || null,
+      order: form.order,
+    }
+
+    if (editingId) {
+      const { data, error } = await supabase
+        .from('activities')
+        .update(payload)
+        .eq('id', editingId)
+        .select()
+        .single()
+
+      if (error || !data) {
+        setError(error?.message ?? 'Could not save changes. Make sure you are signed in.')
+      } else {
+        setActivities(prev => sortList(prev.map(a => (a.id === editingId ? data : a))))
+        cancelForm()
+      }
+    } else {
+      const { data, error } = await supabase
+        .from('activities')
+        .insert(payload)
+        .select()
+        .single()
+
+      if (error || !data) {
+        setError(error?.message ?? 'Could not save. Make sure you are signed in.')
+      } else {
+        setActivities(prev => sortList([data, ...prev]))
+        cancelForm()
+      }
     }
     setSaving(false)
   }
@@ -77,8 +102,19 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
     if (!confirm('Delete this activity?')) return
     const supabase = createClient()
     const { error } = await supabase.from('activities').delete().eq('id', id)
-    if (!error) setActivities(prev => prev.filter(a => a.id !== id))
+    if (error) {
+      setError(error.message)
+      return
+    }
+    setActivities(prev => prev.filter(a => a.id !== id))
+    if (editingId === id) cancelForm()
   }
+
+  const grouped = activities.reduce((acc, a) => {
+    if (!acc[a.year]) acc[a.year] = []
+    acc[a.year].push(a)
+    return acc
+  }, {} as Record<number, Activity[]>)
 
   return (
     <div>
@@ -88,126 +124,144 @@ export default function ActivitiesAdminClient({ activities: initial }: { activit
           <p className="text-gray-400 text-sm mt-1">{activities.length} activities</p>
         </div>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={startAdd}
           className="flex items-center gap-2 text-white px-5 py-2.5 rounded-lg text-sm font-semibold"
           style={{ backgroundColor: '#E8192C' }}
         >
-          <Plus size={16} />
-          Add Activity
+          <Plus size={16} /> Add Activity
         </button>
       </div>
 
       {showForm && (
         <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-navy">New Activity</h2>
-            <button onClick={() => { setShowForm(false); setError(null) }} className="text-gray-400 text-lg">×</button>
+          <h2 className="font-semibold text-navy mb-4">
+            {editingId ? 'Edit Activity' : 'New Activity'}
+          </h2>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">Year *</label>
+              <input
+                type="number"
+                name="year"
+                value={form.year}
+                onChange={handleChange}
+                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-navy focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">Display Order</label>
+              <input
+                type="number"
+                name="order"
+                value={form.order}
+                onChange={handleChange}
+                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-navy focus:outline-none"
+              />
+            </div>
           </div>
-          <div className="space-y-4">
-            <div>
-              <label className={labelClass}>Title *</label>
-              <input name="title" value={form.title} onChange={handleChange} placeholder="e.g. Press Freedom Workshop" className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Description</label>
-              <textarea name="description" value={form.description} onChange={handleChange} placeholder="Brief description" rows={2} className={inputClass + ' resize-none'} />
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <label className={labelClass}>Event Date</label>
-                <input type="date" name="event_date" value={form.event_date} onChange={handleChange} className={inputClass} />
-              </div>
-              <div>
-                <label className={labelClass}>Event Time</label>
-                <input type="time" name="event_time" value={form.event_time} onChange={handleChange} className={inputClass} />
-              </div>
-              <div>
-                <label className={labelClass}>Location</label>
-                <input name="event_location" value={form.event_location} onChange={handleChange} placeholder="e.g. MJA Office, Malé" className={inputClass} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Year</label>
-                <input type="number" name="year" value={form.year} onChange={handleChange} min={2000} max={2099} className={inputClass} />
-              </div>
-              <div>
-                <label className={labelClass}>Order</label>
-                <input type="number" name="order" value={form.order} onChange={handleChange} min={0} className={inputClass} />
-                <p className="text-[10px] text-gray-300 mt-1">Lower = appears first</p>
-              </div>
-            </div>
+          <div className="mb-4">
+            <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">Event Title *</label>
+            <input
+              name="title"
+              value={form.title}
+              onChange={handleChange}
+              placeholder="e.g. World Press Freedom Day Rally"
+              className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-navy focus:outline-none"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1.5">Description</label>
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              rows={3}
+              placeholder="What happened at this event..."
+              className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-navy focus:outline-none resize-none"
+            />
+          </div>
 
-            {error && (
-              <p className="text-sm px-4 py-3 rounded-lg" style={{ color: '#E8192C', backgroundColor: 'rgba(232,25,44,0.08)', border: '1px solid rgba(232,25,44,0.2)' }}>
-                {error}
-              </p>
-            )}
+          {error && (
+            <p
+              className="text-sm px-4 py-3 rounded-lg mb-4"
+              style={{ color: '#E8192C', backgroundColor: 'rgba(232,25,44,0.08)' }}
+            >
+              {error}
+            </p>
+          )}
 
-            <div className="flex gap-3">
-              <button onClick={handleSave} disabled={saving || !form.title}
-                className="text-white px-6 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
-                style={{ backgroundColor: '#E8192C' }}>
-                {saving ? 'Saving...' : 'Save Activity'}
-              </button>
-              <button onClick={() => { setShowForm(false); setError(null) }}
-                className="border border-gray-200 text-gray-500 px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50">
-                Cancel
-              </button>
-            </div>
+          <div className="flex gap-3">
+            <button
+              onClick={handleSave}
+              disabled={saving || !form.title}
+              className="text-white px-6 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
+              style={{ backgroundColor: '#E8192C' }}
+            >
+              {saving ? 'Saving...' : editingId ? 'Save Changes' : 'Save Activity'}
+            </button>
+            <button
+              onClick={cancelForm}
+              className="border border-gray-200 text-gray-500 px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
 
-      {/* Year filter */}
-      <div className="flex flex-wrap gap-2 mb-5">
-        {(['all', ...years] as const).map((y) => (
-          <button key={y} onClick={() => setFilterYear(y as number | 'all')}
-            className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-            style={{ backgroundColor: filterYear === y ? '#0D1B2A' : '#F3F4F6', color: filterYear === y ? 'white' : '#6B7280' }}>
-            {y === 'all' ? 'All Years' : y}
-          </button>
-        ))}
-      </div>
+      {!showForm && error && (
+        <p
+          className="text-sm px-4 py-3 rounded-lg mb-4"
+          style={{ color: '#E8192C', backgroundColor: 'rgba(232,25,44,0.08)' }}
+        >
+          {error}
+        </p>
+      )}
 
-      {/* List */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        <div className="divide-y divide-gray-50">
-          {filtered.map((activity) => (
-            <div key={activity.id} className="flex items-start gap-4 px-6 py-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                  <p className="text-sm font-semibold text-navy">{activity.title}</p>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">
-                    {activity.year}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-3 mt-1">
-                  {activity.event_date && (
-                    <span className="text-[11px] text-gray-500">
-                      📅 {new Date(activity.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      {activity.event_time && ` · ${activity.event_time}`}
-                    </span>
-                  )}
-                  {activity.event_location && (
-                    <span className="text-[11px] text-gray-500">📍 {activity.event_location}</span>
-                  )}
-                </div>
-                {activity.description && (
-                  <p className="text-xs text-gray-400 leading-relaxed mt-1">{activity.description}</p>
-                )}
+      <div className="space-y-8">
+        {Object.keys(grouped)
+          .sort((a, b) => Number(b) - Number(a))
+          .map((year) => (
+            <div key={year} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <div className="px-6 py-3 border-b border-gray-100 flex items-center gap-3">
+                <span className="font-headline text-xl font-black" style={{ color: '#E8192C' }}>{year}</span>
+                <span className="text-xs text-gray-400">{grouped[Number(year)].length} events</span>
               </div>
-              <button onClick={() => handleDelete(activity.id)} className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
-                <Trash2 size={15} />
-              </button>
+              <div className="divide-y divide-gray-50">
+                {grouped[Number(year)].map((activity) => (
+                  <div key={activity.id} className="flex items-start justify-between px-6 py-4">
+                    <div className="flex-1 pr-4">
+                      <p className="text-sm font-semibold text-navy">{activity.title}</p>
+                      {activity.description && (
+                        <p className="text-xs text-gray-400 mt-1 leading-relaxed">{activity.description}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <button
+                        onClick={() => startEdit(activity)}
+                        className="text-gray-400 hover:text-navy transition-colors"
+                        aria-label="Edit activity"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(activity.id)}
+                        className="text-gray-300 hover:text-red-500 transition-colors"
+                        aria-label="Delete activity"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
-          {filtered.length === 0 && (
-            <div className="px-6 py-12 text-center text-gray-400 text-sm">
-              No activities yet. Click &quot;Add Activity&quot; to get started.
-            </div>
-          )}
-        </div>
+        {activities.length === 0 && (
+          <div className="bg-white rounded-xl border border-gray-100 px-6 py-12 text-center text-gray-400 text-sm">
+            No activities yet. Add the first one above.
+          </div>
+        )}
       </div>
     </div>
   )

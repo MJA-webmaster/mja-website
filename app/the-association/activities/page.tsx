@@ -10,6 +10,29 @@ export const metadata: Metadata = {
   title: 'Our Activities | Maldives Journalists Association',
 }
 
+const TZ = 'Indian/Maldives'
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: TZ,
+  })
+}
+
+// Date-only entries were saved as 00:00 UTC, so treat that as "no time set"
+function formatTime(iso: string) {
+  const d = new Date(iso)
+  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0) return null
+  return d.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: TZ,
+  })
+}
+
 export default async function ActivitiesPage() {
   const supabase = createClient()
   const { data: activities } = await supabase
@@ -65,6 +88,8 @@ export default async function ActivitiesPage() {
 
                   <div className="grid grid-cols-1 gap-4">
                     {grouped[year].map((activity, idx) => {
+                      const time = activity.event_date ? formatTime(activity.event_date) : null
+
                       const card = (
                         <article className="group bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all flex items-start gap-4">
                           <div className="shrink-0 w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-xs font-mono font-bold text-slate-400 group-hover:text-[#E8192C] group-hover:bg-rose-50 transition-colors mt-0.5">
@@ -79,13 +104,8 @@ export default async function ActivitiesPage() {
                               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-slate-500 mb-2">
                                 {activity.event_date && (
                                   <span>
-                                    {new Date(activity.event_date).toLocaleDateString('en-US', {
-                                      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-                                    })}
-                                    {' · '}
-                                    {new Date(activity.event_date).toLocaleTimeString('en-US', {
-                                      hour: 'numeric', minute: '2-digit',
-                                    })}
+                                    {formatDate(activity.event_date)}
+                                    {time && ` · ${time}`}
                                   </span>
                                 )}
                                 {activity.venue && <span>{activity.venue}</span>}
